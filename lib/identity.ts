@@ -30,6 +30,7 @@ function words(value?: string): string[] {
   if (!value) return [];
   return normalize(value)
     .split(" ")
+    .map((word) => word.replace(/^[.@_-]+|[.@_-]+$/g, ""))
     .filter((word) => word.length > 2 && !STOP_WORDS.has(word));
 }
 

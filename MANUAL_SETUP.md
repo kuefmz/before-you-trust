@@ -8,22 +8,87 @@ This is the operator checklist for the parts that **must not** be hard-coded int
 2. Deploy `dev` as the preview/development environment first.
 3. Confirm Amplify uses Node.js 22 (the repo also pins this in `amplify.yml`).
 4. Set `NEXT_PUBLIC_SITE_URL` to the exact HTTPS URL for that environment.
-5. Only connect `main` to the production domain after CI is green and the real-provider tests below pass.
+5. Set only public/non-secret values in normal Amplify environment variables.
+6. Create the encrypted runtime configuration described in the next section and set only its **parameter name** as `RUNTIME_SECRETS_PARAMETER`.
+7. Attach the least-privilege Amplify SSR Compute role described below.
+8. Only connect `main` to the production domain after CI is green and the real-provider tests below pass.
+
+## 1A. Production secrets: encrypted SSM + Amplify SSR Compute role
+
+Do **not** put Tavily/Brave API keys, the Brevo API key, or the HMAC fingerprint secret into ordinary Amplify environment variables. AWS explicitly recommends that credentials/secrets are not stored there.
+
+Create one AWS Systems Manager Parameter Store **SecureString**, for example:
+
+```text
+/before-you-trust/dev/runtime
+```
+
+Its value should be a JSON object:
+
+```json
+{
+  "SEARCH_PROVIDER": "auto",
+  "TAVILY_API_KEY": "replace-me",
+  "BRAVE_SEARCH_API_KEY": "replace-me-or-remove",
+  "BREVO_API_KEY": "replace-me",
+  "BREVO_FROM_EMAIL": "verified-sender@your-domain",
+  "BREVO_FROM_NAME": "Before You Trust",
+  "OWNER_NOTIFICATION_EMAIL": "your-private-inbox@example.com",
+  "REPEAT_ALERT_EMAIL_TO": "your-private-inbox@example.com",
+  "SEARCH_SIGNAL_TABLE": "before-you-trust-search-signals",
+  "SEARCH_FINGERPRINT_SECRET": "at-least-32-random-characters",
+  "SEARCH_SIGNAL_TTL_DAYS": "30",
+  "REPEAT_SEARCH_ALERT_THRESHOLD": "3",
+  "REPEAT_ALERT_INCLUDE_NAME": "false"
+}
+```
+
+Then add only this **non-secret path** to Amplify:
+
+```text
+RUNTIME_SECRETS_PARAMETER=/before-you-trust/dev/runtime
+```
+
+The repository's `amplify.yml` exposes that parameter *name* to the SSR runtime, but never writes the SecureString value into the build artifact.
+
+### Amplify SSR Compute role
+
+Create/attach an **SSR Compute role** to the Amplify branch. The app uses the AWS SDK default credential chain, so the role provides temporary credentials at runtime.
+
+Minimum policy shape:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["ssm:GetParameter"],
+      "Resource": "arn:aws:ssm:REGION:ACCOUNT_ID:parameter/before-you-trust/dev/runtime"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["dynamodb:UpdateItem"],
+      "Resource": "arn:aws:dynamodb:REGION:ACCOUNT_ID:table/before-you-trust-search-signals"
+    }
+  ]
+}
+```
+
+If you encrypt the SSM SecureString with a customer-managed KMS key, also grant the compute role only the required `kms:Decrypt` permission on that key.
+
+For a public repository, attach the role only to the branches that need it rather than broadly to automatic preview branches.
 
 ## 2. Configure public-web search
 
 Create at least one provider account:
 
-- Tavily: set `TAVILY_API_KEY`
-- Brave Search API: set `BRAVE_SEARCH_API_KEY`
+- Tavily
+- Brave Search API
 
-Set:
+For local development, put keys in `.env.local`. For Amplify production, put them in the encrypted SSM JSON from section 1A. Do **not** add the secret values as normal Amplify variables.
 
-```text
-SEARCH_PROVIDER=auto
-```
-
-In `auto`, Tavily is attempted first when configured and Brave can act as fallback.
+Set `SEARCH_PROVIDER` to `auto`, `tavily`, or `brave`. In `auto`, Tavily is attempted first when configured and Brave can act as fallback.
 
 ### Manual smoke test
 
@@ -42,14 +107,14 @@ Confirm that:
 
 Brevo requires a registered/verified sender for transactional email.
 
-Create a transactional API key and verified sender, then set:
+Create a transactional API key and verified sender. For local development these values can live in `.env.local`; for Amplify production add them to the encrypted SSM JSON:
 
 ```text
-BREVO_API_KEY=...
-BREVO_FROM_EMAIL=verified-sender@your-domain
-BREVO_FROM_NAME=Before You Trust
-OWNER_NOTIFICATION_EMAIL=your-private-inbox@example.com
-REPEAT_ALERT_EMAIL_TO=your-private-inbox@example.com
+BREVO_API_KEY
+BREVO_FROM_EMAIL
+BREVO_FROM_NAME
+OWNER_NOTIFICATION_EMAIL
+REPEAT_ALERT_EMAIL_TO
 ```
 
 The app sends **plain-text** story submissions to you. An optional visitor email is used as `Reply-To`; the visitor is not added to a marketing list.
@@ -86,7 +151,7 @@ Create a DynamoDB table:
 - Point-in-time recovery: optional; consider leaving it **off** because this is short-lived telemetry
 - TTL attribute: `expiresAt`
 
-Set:
+For local development, set these in `.env.local`. For production, put all except the AWS runtime region in the encrypted SSM JSON:
 
 ```text
 SEARCH_SIGNAL_TABLE=before-you-trust-search-signals
@@ -94,8 +159,9 @@ SEARCH_FINGERPRINT_SECRET=<at least 32 random characters>
 SEARCH_SIGNAL_TTL_DAYS=30
 REPEAT_SEARCH_ALERT_THRESHOLD=3
 REPEAT_ALERT_INCLUDE_NAME=false
-AWS_REGION=eu-central-1
 ```
+
+The Amplify runtime supplies AWS credentials through the SSR Compute role; no AWS access-key pair is stored in the app.
 
 Generate a secret, for example:
 
@@ -105,17 +171,7 @@ openssl rand -base64 48
 
 ### IAM
 
-The Amplify server runtime role needs only:
-
-```json
-{
-  "Effect": "Allow",
-  "Action": ["dynamodb:UpdateItem"],
-  "Resource": "arn:aws:dynamodb:REGION:ACCOUNT_ID:table/before-you-trust-search-signals"
-}
-```
-
-Do not grant table scans to the public app.
+Use the single least-privilege SSR Compute role from section 1A. It needs `dynamodb:UpdateItem` on this table and `ssm:GetParameter` on the one runtime SecureString. Do not grant DynamoDB table scans to the public app.
 
 ### What is stored
 
@@ -277,6 +333,9 @@ Before pointing the domain at production:
 - [ ] CI green
 - [ ] production dependency audit green
 - [ ] `NEXT_PUBLIC_SITE_URL` correct
+- [ ] normal Amplify variables contain no API keys/secrets
+- [ ] `RUNTIME_SECRETS_PARAMETER` points to the encrypted SSM JSON
+- [ ] SSR Compute role has only SSM GetParameter + DynamoDB UpdateItem (and KMS decrypt only if needed)
 - [ ] search provider works
 - [ ] story email arrives
 - [ ] story submission is not stored in a DB

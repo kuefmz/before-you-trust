@@ -26,7 +26,7 @@ Before You Trust is an evidence-first public-web research tool. It searches publ
 - Security headers and no-store API responses
 - Unit, API, component, coverage and Playwright end-to-end tests
 - GitHub Actions quality/security gate and weekly scheduled audit
-- AWS Amplify deployment configuration
+- AWS Amplify deployment configuration with runtime SSM secret loading and least-privilege Compute-role support
 
 ## Local setup
 
@@ -47,7 +47,7 @@ TAVILY_API_KEY=...
 BRAVE_SEARCH_API_KEY=...
 ```
 
-Never expose private provider keys through `NEXT_PUBLIC_*`.
+Never expose private provider keys through `NEXT_PUBLIC_*`. For production Amplify, the project supports loading server-only configuration from an encrypted SSM SecureString referenced by `RUNTIME_SECRETS_PARAMETER`, using the Amplify SSR Compute role.
 
 ## Manual production setup
 

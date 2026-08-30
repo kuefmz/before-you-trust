@@ -15,8 +15,9 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "check": "npm run lint && npm run typecheck && npm run test:coverage && npm run build",
-    "fingerprint:name": "node scripts/fingerprint-name.mjs"
+    "check": "npm run deploy:preflight && npm run lint && npm run typecheck && npm run test:coverage && npm run build",
+    "fingerprint:name": "node scripts/fingerprint-name.mjs",
+    "deploy:preflight": "node scripts/deployment-preflight.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "3.1121.0",

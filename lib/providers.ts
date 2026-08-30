@@ -111,47 +111,53 @@ function mockProvider(): SearchProvider {
     name: "mock",
     async search(query) {
       const lower = query.toLowerCase();
+      const subject = query.match(/"([^"]+)"/)?.[1] ?? "Example Person";
+      const slug = subject
+        .toLocaleLowerCase()
+        .normalize("NFKD")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      const company = lower.includes("ubs") ? "UBS" : "Example AG";
 
       if (lower.includes("court") || lower.includes("regulator")) {
-        return [
-          {
-            title: "Example public registry result — Jane Unique-Surname",
-            url: "https://registry.example.org/jane-unique-surname",
-            snippet:
-              "Example-only registry fixture used for automated testing. No real person is represented.",
-          },
-        ];
+        return [{
+          title: `Example public registry result — ${subject}`,
+          url: `https://registry.example.org/${slug}`,
+          snippet: "Example-only registry fixture used for automated testing. No real person is represented.",
+        }];
       }
 
       if (lower.includes("complaint") || lower.includes("allegation")) {
-        return [
-          {
-            title: "Example news mention — Jane Unique-Surname",
-            url: "https://news.example.org/jane-unique-surname",
-            snippet:
-              "Example-only news fixture used for automated testing. The presence of this result is not a real allegation.",
-          },
-        ];
+        return [{
+          title: `Example news mention — ${subject}`,
+          url: `https://news.example.org/${slug}`,
+          snippet: "Example-only news fixture used for automated testing. The presence of this result is not a real allegation.",
+        }];
+      }
+
+      if (lower.includes("instagram.com") || lower.includes("tiktok.com") || lower.includes("facebook.com") || lower.includes("x.com")) {
+        return [{
+          title: `${subject} — public social profile`,
+          url: `https://www.instagram.com/${slug}/`,
+          snippet: `${subject} public social profile. Zurich and ${company} are mentioned in the example fixture.`,
+        }];
       }
 
       return [
         {
-          title: "Jane Unique-Surname — Professional profile",
-          url: "https://www.linkedin.com/in/jane-unique-surname",
-          snippet:
-            "Jane Unique-Surname, data professional in Zurich at Example AG.",
+          title: `${subject} — Professional profile`,
+          url: `https://www.linkedin.com/in/${slug}`,
+          snippet: `${subject}, data professional in Zurich at ${company}.`,
         },
         {
-          title: "jane-unique-surname · GitHub",
-          url: "https://github.com/jane-unique-surname",
-          snippet:
-            "Public projects by Jane Unique-Surname. Example AG and Zurich are mentioned in the profile.",
+          title: `${slug} · GitHub`,
+          url: `https://github.com/${slug}`,
+          snippet: `Public projects by ${subject}. ${company} and Zurich are mentioned in the profile.`,
         },
         {
-          title: "Jane Unique-Surname — Example conference",
-          url: "https://conference.example.org/speakers/jane-unique-surname",
-          snippet:
-            "Speaker biography for Jane Unique-Surname, based in Zurich.",
+          title: `${subject} — Example conference`,
+          url: `https://conference.example.org/speakers/${slug}`,
+          snippet: `Speaker biography for ${subject}, based in Zurich.`,
         },
       ];
     },

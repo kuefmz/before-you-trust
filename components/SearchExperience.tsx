@@ -483,6 +483,21 @@ export function SearchExperience() {
           </p>
         </div>
 
+        {photoWarning ? (
+          <div className="photo-warning" role="note">
+            {photoWarning} Text and social search results are still shown.
+          </div>
+        ) : null}
+
+        {imageResponse ? (
+          <div className="image-match-summary" role="note">
+            <strong>Photo web match:</strong>{" "}
+            {imageResponse.matches.length} public pages,{" "}
+            {imageResponse.exactImageMatches} full-image matches and{" "}
+            {imageResponse.partialImageMatches} partial matches found.
+          </div>
+        ) : null}
+
         {error ? (
           <div aria-live="polite" className="error-banner" role="alert">
             {error}
@@ -574,7 +589,8 @@ export function SearchExperience() {
         </label>
 
         <label className="field">
-          <span>Username</span>
+          <span>Known username / handle</span>
+          <small>The person’s public handle, e.g. @kuefmz — not your username.</small>
           <input
             autoComplete="off"
             maxLength={120}
@@ -585,7 +601,7 @@ export function SearchExperience() {
         </label>
 
         <label className="field">
-          <span>Known profile URL</span>
+          <span>Known website or profile URL</span>
           <input
             autoComplete="off"
             maxLength={500}
@@ -594,6 +610,62 @@ export function SearchExperience() {
             type="url"
             value={form.profileUrl}
           />
+        </label>
+
+        <label className="field field--wide">
+          <span>Social profiles or handles</span>
+          <small>
+            Instagram, TikTok, Facebook, X, LinkedIn, YouTube or GitHub —
+            paste links or handles, separated by commas or new lines.
+          </small>
+          <textarea
+            maxLength={2500}
+            onChange={(event) => update("socialProfiles", event.target.value)}
+            placeholder={"@knownhandle\nhttps://instagram.com/knownprofile"}
+            rows={3}
+            value={form.socialProfiles}
+          />
+        </label>
+
+        <label className="photo-upload field--wide">
+          <span>Photo (optional)</span>
+          <small>
+            JPG, PNG or WebP, up to 5 MB. We use it only for transient public-web
+            image matching; it is not stored by Before You Trust.
+          </small>
+          <input
+            accept="image/jpeg,image/png,image/webp"
+            aria-label="Photo of the person"
+            onChange={(event) => {
+              const nextPhoto = event.target.files?.[0] ?? null;
+              if (nextPhoto && nextPhoto.size > 5 * 1024 * 1024) {
+                setError("Photo must be 5 MB or smaller.");
+                event.target.value = "";
+                return;
+              }
+              if (photoPreview) URL.revokeObjectURL(photoPreview);
+              setPhoto(nextPhoto);
+              setPhotoPreview(nextPhoto ? URL.createObjectURL(nextPhoto) : null);
+              setPhotoWarning(null);
+            }}
+            type="file"
+          />
+          {photoPreview ? (
+            <div className="photo-preview">
+              <img alt="Selected person preview" src={photoPreview} />
+              <button
+                className="button button--ghost"
+                onClick={() => {
+                  URL.revokeObjectURL(photoPreview);
+                  setPhoto(null);
+                  setPhotoPreview(null);
+                }}
+                type="button"
+              >
+                Remove photo
+              </button>
+            </div>
+          ) : null}
         </label>
 
         <label className="field">
@@ -658,7 +730,7 @@ export function SearchExperience() {
           </button>
           <span>
             Searched names are never sent to GA4. If repeat monitoring is
-            enabled, only a keyed fingerprint and count are retained.{" "}
+            enabled, only a keyed fingerprint and count are retained. Photos are not stored.{" "}
             <a href="/privacy">Privacy details</a>
           </span>
         </div>

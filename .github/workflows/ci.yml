@@ -35,6 +35,9 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
+      - name: Deployment preflight
+        run: npm run deploy:preflight
+
       - name: Lint
         run: npm run lint
 

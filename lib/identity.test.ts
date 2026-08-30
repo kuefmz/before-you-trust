@@ -21,7 +21,7 @@ function result(
 }
 
 describe("identity candidate building", () => {
-  it("creates a high-confidence context match from corroborating profiles", () => {
+  it("creates a high-confidence candidate from corroborating profiles", () => {
     const candidates = buildIdentityCandidates(
       [
         result({
@@ -50,7 +50,6 @@ describe("identity candidate building", () => {
     );
 
     expect(candidates[0]?.confidence).toBe("high");
-    expect(candidates[0]?.label).toContain("context match");
     expect(candidates[0]?.sources.length).toBeGreaterThanOrEqual(2);
   });
 

@@ -34,7 +34,7 @@ function words(value?: string): string[] {
 }
 
 function haystack(result: SearchResult): string {
-  return normalize(\`\${result.title} \${result.snippet} \${result.url}\`);
+  return normalize(`${result.title} ${result.snippet} ${result.url}`);
 }
 
 function scoreResult(
@@ -125,7 +125,7 @@ function stableId(value: string): string {
     hash ^= value.charCodeAt(index);
     hash = Math.imul(hash, 16777619);
   }
-  return \`candidate-\${(hash >>> 0).toString(16)}\`;
+  return `candidate-${(hash >>> 0).toString(16)}`;
 }
 
 function relatedByAnchor(anchor: SearchResult, candidate: SearchResult): boolean {
@@ -139,9 +139,9 @@ function relatedByAnchor(anchor: SearchResult, candidate: SearchResult): boolean
     return false;
   }
 
-  const anchorTokens = new Set(words(\`\${anchor.title} \${anchor.snippet}\`));
+  const anchorTokens = new Set(words(`${anchor.title} ${anchor.snippet}`));
   const candidateTokens = words(
-    \`\${candidate.title} \${candidate.snippet}\`,
+    `${candidate.title} ${candidate.snippet}`,
   );
   const overlap = candidateTokens.filter((token) => anchorTokens.has(token));
   return overlap.length >= 3;
@@ -184,8 +184,8 @@ export function buildIdentityCandidates(
       const sources = contextual.slice(0, 10).map((entry) => entry.result);
       const best = contextual[0]!;
       candidates.push({
-        id: stableId(\`context:\${best.result.url}\`),
-        label: \`\${input.name} — context match\`,
+        id: stableId(`context:${best.result.url}`),
+        label: `${input.name} — context match`,
         summary:
           best.result.snippet ||
           "Multiple sources match the context you provided.",

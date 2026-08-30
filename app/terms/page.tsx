@@ -61,7 +61,20 @@ export default function TermsPage() {
           Before You Trust endorses the claim or the publisher.
         </p>
 
-        <h2>6. Your submissions</h2>
+        <h2>6. Photo search and report delivery</h2>
+        <p>
+          An uploaded photo may be sent transiently to a third-party image
+          matching provider to locate public web pages associated with that
+          image. A visual match is only a lead and must not be treated as
+          proof of identity.
+        </p>
+        <p>
+          If you request a report by email, you authorize use of the delivery
+          address for transactional delivery and delivery/support monitoring.
+          The address is not permission for marketing without separate consent.
+        </p>
+
+        <h2>7. Your submissions</h2>
         <p>
           You remain responsible for material you submit through the story form.
           Do not submit material you have no right to share, unnecessary
@@ -76,7 +89,7 @@ export default function TermsPage() {
           use by contacting the operator.
         </p>
 
-        <h2>7. Donations</h2>
+        <h2>8. Donations</h2>
         <p>
           A “Buy me a coffee” contribution is voluntary support for the project,
           not a purchase of a search result, guarantee, subscription, ownership
@@ -84,13 +97,13 @@ export default function TermsPage() {
           the external donation platform under its own terms.
         </p>
 
-        <h2>8. Availability</h2>
+        <h2>9. Availability</h2>
         <p>
           The service may change, suspend providers, impose rate limits or
           remove features for security, cost, legal or reliability reasons.
         </p>
 
-        <h2>9. Limitation of responsibility</h2>
+        <h2>10. Limitation of responsibility</h2>
         <p>
           To the maximum extent permitted by applicable law, the service is
           provided without warranties of completeness, fitness for a particular
@@ -98,14 +111,14 @@ export default function TermsPage() {
           legally be excluded remain unaffected.
         </p>
 
-        <h2>10. Law and disputes</h2>
+        <h2>11. Law and disputes</h2>
         <p>
           Swiss law is intended to govern these terms where legally permissible,
           subject to mandatory consumer and data-protection rules that apply to
           you. No clause overrides a mandatory jurisdiction or statutory right.
         </p>
 
-        <h2>11. Changes</h2>
+        <h2>12. Changes</h2>
         <p>
           These terms may be updated as the MVP changes. Material changes should
           be reflected here before the corresponding feature is enabled in

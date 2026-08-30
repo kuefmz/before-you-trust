@@ -22,6 +22,16 @@ describe("query generation", () => {
     expect(queries.some((query) => query.includes("site:example.org"))).toBe(true);
   });
 
+  it("searches major social platforms in the identity stage", () => {
+    const social = buildIdentityQueries({
+      ...base,
+      socialProfiles: ["@janeunique", "https://instagram.com/janeunique"],
+    });
+    expect(social.some((query) => query.kind === "social")).toBe(true);
+    expect(social.some((query) => query.text.includes("instagram.com"))).toBe(true);
+    expect(social.some((query) => query.text.includes("tiktok.com"))).toBe(true);
+  });
+
   it("adds official and concern-oriented queries only after confirmation", () => {
     const deep = buildDeepQueries({
       ...base,

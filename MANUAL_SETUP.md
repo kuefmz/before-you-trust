@@ -30,11 +30,13 @@ Its value should be a JSON object:
   "SEARCH_PROVIDER": "auto",
   "TAVILY_API_KEY": "replace-me",
   "BRAVE_SEARCH_API_KEY": "replace-me-or-remove",
+  "GOOGLE_VISION_API_KEY": "replace-me-or-remove",
   "BREVO_API_KEY": "replace-me",
   "BREVO_FROM_EMAIL": "verified-sender@your-domain",
   "BREVO_FROM_NAME": "Before You Trust",
   "OWNER_NOTIFICATION_EMAIL": "your-private-inbox@example.com",
   "REPEAT_ALERT_EMAIL_TO": "your-private-inbox@example.com",
+  "REPORT_REQUEST_NOTIFICATION_EMAIL": "your-private-inbox@example.com",
   "SEARCH_SIGNAL_TABLE": "before-you-trust-search-signals",
   "SEARCH_FINGERPRINT_SECRET": "at-least-32-random-characters",
   "SEARCH_SIGNAL_TTL_DAYS": "30",
@@ -103,6 +105,22 @@ Confirm that:
 - deep search starts only after confirmation,
 - every finding has an original source URL.
 
+## 2A. Configure optional photo web matching
+
+The photo feature uses Google Cloud Vision **Web Detection**. It is optional;
+normal name/social searching works without it.
+
+1. Create or choose a Google Cloud project.
+2. Enable the Cloud Vision API.
+3. Create a server-side API key and restrict it to the Vision API.
+4. Put `GOOGLE_VISION_API_KEY` in the encrypted SSM runtime JSON, not in a
+   `NEXT_PUBLIC_*` variable.
+5. Test with a non-sensitive image and confirm `/api/image-search` returns
+   public matching pages.
+
+The app accepts JPG, PNG and WebP files up to 5 MB. It sends the image
+transiently to Vision and does not store it in an application database or S3.
+
 ## 3. Configure Brevo for Share Your Story + alerts
 
 Brevo requires a registered/verified sender for transactional email.
@@ -115,6 +133,7 @@ BREVO_FROM_EMAIL
 BREVO_FROM_NAME
 OWNER_NOTIFICATION_EMAIL
 REPEAT_ALERT_EMAIL_TO
+REPORT_REQUEST_NOTIFICATION_EMAIL
 ```
 
 The app sends **plain-text** story submissions to you. An optional visitor email is used as `Reply-To`; the visitor is not added to a marketing list.
@@ -127,6 +146,14 @@ Recommended Brevo/account settings:
 - enable account MFA.
 
 Test the form from `/share-your-story` and verify both success/failure UI.
+
+### Report-by-email test
+
+Generate a Trust Brief, request delivery to a test inbox, and verify:
+- the visitor receives the report and source links,
+- the operator receives only the delivery email + source count,
+- the operator notification does not include the searched name/report body,
+- the email is not added to a Brevo marketing contact list.
 
 ## 4. Configure Buy Me a Coffee
 
@@ -257,10 +284,12 @@ The app can emit, only after consent:
 - `share_story_viewed`
 - `story_submitted`
 - `support_click`
+- `report_email_requested`
+- `report_email_sent`
 
 Allowed parameters are coarse product metrics such as result counts, candidate counts, confidence bucket and source type.
 
-**Never add searched name, claim text, story text, email, profile URL or result URL to GA4.**
+**Never add searched name, claim text, story text, delivery email, profile URL or result URL to GA4.**
 
 ### Verify
 
@@ -314,7 +343,7 @@ The banner is for optional analytics only; rejecting it does not block the essen
 ## 11. Security and operations
 
 Set up:
-- AWS WAF/rate-based protection for `/api/search` and `/api/story` before meaningful public traffic (the in-app limiter is best-effort per server instance),
+- AWS WAF/rate-based protection for `/api/search`, `/api/image-search`, `/api/report-email` and `/api/story` before meaningful public traffic (the in-app limiter is best-effort per server instance),
 - AWS Budget alert at a very low threshold,
 - CloudWatch error alarms for the Amplify/server runtime,
 - DynamoDB cost anomaly/billing alert,
@@ -337,6 +366,9 @@ Before pointing the domain at production:
 - [ ] `RUNTIME_SECRETS_PARAMETER` points to the encrypted SSM JSON
 - [ ] SSR Compute role has only SSM GetParameter + DynamoDB UpdateItem (and KMS decrypt only if needed)
 - [ ] search provider works
+- [ ] social-profile queries return expected results
+- [ ] optional Google Vision photo matching works (if enabled)
+- [ ] report-by-email arrives and operator notification omits the searched subject
 - [ ] story email arrives
 - [ ] story submission is not stored in a DB
 - [ ] DynamoDB stores fingerprint only

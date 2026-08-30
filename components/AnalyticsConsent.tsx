@@ -13,8 +13,8 @@ function dataLayer(): unknown[] {
   return target.dataLayer;
 }
 
-function gtagCommand(..._args: unknown[]) {
-  // eslint-disable-next-line prefer-rest-params -- Google's gtag command queue expects the native Arguments object.
+function gtagCommand() {
+  // eslint-disable-next-line prefer-rest-params -- Google's gtag queue expects the native Arguments object.
   dataLayer().push(arguments);
 }
 

@@ -42,6 +42,27 @@ describe("validateSearchRequest", () => {
     expect(result.ok).toBe(false);
   });
 
+  it("accepts social profile clues and handles", () => {
+    const result = validateSearchRequest({
+      name: "Jane Unique-Surname",
+      socialProfiles: ["@jane", "https://instagram.com/jane"],
+      mode: "identity",
+      lawfulUseAccepted: true,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.socialProfiles).toHaveLength(2);
+  });
+
+  it("rejects malformed social handles", () => {
+    const result = validateSearchRequest({
+      name: "Jane Unique-Surname",
+      socialProfiles: ["bad handle with spaces"],
+      mode: "identity",
+      lawfulUseAccepted: true,
+    });
+    expect(result.ok).toBe(false);
+  });
+
   it("requires identity confirmation for deep search", () => {
     const result = validateSearchRequest({
       name: "Jane Unique-Surname",

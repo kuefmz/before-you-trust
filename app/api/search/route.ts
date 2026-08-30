@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { checkRateLimit } from "@/lib/rate-limit";
+import { recordSearchOccurrence } from "@/lib/search-monitor";
 import {
   executeSearch,
   SearchConfigurationError,
@@ -30,7 +31,7 @@ function clientKey(request: Request): string {
 
 function rateLimitHeaders(result: ReturnType<typeof checkRateLimit>): HeadersInit {
   return {
-    "X-RateLimit-Limit": "20",
+    "X-RateLimit-Limit": String(result.limit),
     "X-RateLimit-Remaining": String(result.remaining),
     "X-RateLimit-Reset": String(Math.ceil(result.resetAt / 1000)),
   };
@@ -101,6 +102,14 @@ export async function POST(request: Request) {
   const validation = validateSearchRequest(payload);
   if (!validation.ok) {
     return errorResponse(400, "INVALID_REQUEST", validation.error, rateHeaders);
+  }
+
+  // Privacy-preserving repeat detection. The raw name is never written to the
+  // signal table. Monitoring failure must not block the search itself.
+  try {
+    await recordSearchOccurrence(validation.data.name);
+  } catch {
+    console.error("Repeat-search monitoring is unavailable.");
   }
 
   try {

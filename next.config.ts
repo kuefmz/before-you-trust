@@ -1,14 +1,37 @@
 import type { NextConfig } from "next";
 
 const isDevelopment = process.env.NODE_ENV !== "production";
+const analyticsEnabled = Boolean(process.env.NEXT_PUBLIC_GTM_ID?.trim());
+
+const scriptSources = [
+  "'self'",
+  "'unsafe-inline'",
+  ...(isDevelopment ? ["'unsafe-eval'"] : []),
+  ...(analyticsEnabled ? ["https://www.googletagmanager.com"] : []),
+];
+
+const connectSources = [
+  "'self'",
+  ...(analyticsEnabled
+    ? ["https://www.google-analytics.com", "https://*.google-analytics.com"]
+    : []),
+];
+
+const imageSources = [
+  "'self'",
+  "data:",
+  ...(analyticsEnabled
+    ? ["https://www.google-analytics.com", "https://*.google-analytics.com"]
+    : []),
+];
 
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""}`,
+  `script-src ${scriptSources.join(" ")}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data:",
+  `img-src ${imageSources.join(" ")}`,
   "font-src 'self'",
-  "connect-src 'self'",
+  `connect-src ${connectSources.join(" ")}`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

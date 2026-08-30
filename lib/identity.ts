@@ -182,20 +182,31 @@ function identityKey(url: string): string | null {
   }
 }
 
-function relatedByAnchor(anchor: SearchResult, candidate: SearchResult): boolean {
+function relatedByAnchor(
+  anchor: SearchResult,
+  candidate: SearchResult,
+  inputName: string,
+): boolean {
   if (anchor.url === candidate.url) return true;
 
   const anchorKey = identityKey(anchor.url);
   const candidateKey = identityKey(candidate.url);
   if (anchorKey && candidateKey && anchorKey === candidateKey) return true;
 
-  const anchorTokens = new Set(words(`${anchor.title} ${anchor.snippet}`));
-  const candidateTokens = words(`${candidate.title} ${candidate.snippet}`);
-  const overlap = candidateTokens.filter((token) => anchorTokens.has(token));
+  const nameTokens = new Set(words(inputName));
+  const anchorTokens = new Set(
+    words(`${anchor.title} ${anchor.snippet}`).filter(
+      (token) => !nameTokens.has(token),
+    ),
+  );
+  const contextualOverlap = words(`${candidate.title} ${candidate.snippet}`)
+    .filter((token) => !nameTokens.has(token))
+    .filter((token) => anchorTokens.has(token));
 
-  // Cross-site results are grouped only with substantial contextual overlap.
-  // This prevents two namesakes on the same platform from being silently merged.
-  return overlap.length >= 5;
+  // Cross-site results are grouped only when they share at least two signals
+  // beyond the searched name (for example location + employer). This keeps
+  // namesakes separate even when the full name is distinctive or long.
+  return new Set(contextualOverlap).size >= 2;
 }
 
 export function buildIdentityCandidates(
@@ -232,7 +243,7 @@ export function buildIdentityCandidates(
       .filter(
         (entry) =>
           !consumed.has(entry.result.url) &&
-          relatedByAnchor(seed.result, entry.result),
+          relatedByAnchor(seed.result, entry.result, input.name),
       )
       .slice(0, 6)
       .map((entry) => entry.result);

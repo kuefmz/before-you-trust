@@ -23,6 +23,40 @@ function hostname(value?: string): string | undefined {
   }
 }
 
+function buildSocialQueries(input: SearchInput, name: string): SearchQuery[] {
+  const queries: SearchQuery[] = [
+    {
+      text: `${name} (site:instagram.com OR site:tiktok.com OR site:facebook.com OR site:x.com)`,
+      kind: "social",
+    },
+    {
+      text: `${name} (site:linkedin.com OR site:github.com OR site:youtube.com)`,
+      kind: "social",
+    },
+  ];
+
+  if (input.username) {
+    queries.push({
+      text: `${name} ${quote(input.username)} (site:instagram.com OR site:tiktok.com OR site:facebook.com OR site:x.com OR site:linkedin.com OR site:github.com)`,
+      kind: "social",
+    });
+  }
+
+  for (const profile of input.socialProfiles ?? []) {
+    if (/^https?:\/\//i.test(profile)) {
+      const host = hostname(profile);
+      if (host) queries.push({ text: `${name} site:${host}`, kind: "social" });
+    } else {
+      queries.push({
+        text: `${name} ${quote(profile)} (site:instagram.com OR site:tiktok.com OR site:facebook.com OR site:x.com OR site:youtube.com)`,
+        kind: "social",
+      });
+    }
+  }
+
+  return queries;
+}
+
 export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
   const name = quote(input.name);
   const queries: SearchQuery[] = [{ text: name, kind: "identity" }];
@@ -41,13 +75,6 @@ export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
     });
   }
 
-  if (input.username) {
-    queries.push({
-      text: `${name} ${quote(input.username)}`,
-      kind: "identity",
-    });
-  }
-
   const profileHost = hostname(input.profileUrl);
   if (profileHost) {
     queries.push({
@@ -57,19 +84,19 @@ export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
   }
 
   queries.push(
-    { text: `${name} LinkedIn`, kind: "professional" },
-    { text: `${name} GitHub`, kind: "professional" },
+    ...buildSocialQueries(input, name),
     { text: `${name} (interview OR conference OR biography)`, kind: "general" },
     { text: `${name} filetype:pdf`, kind: "general" },
   );
 
-  return unique(queries).slice(0, 9);
+  return unique(queries).slice(0, 13);
 }
 
 export function buildDeepQueries(input: SearchInput): SearchQuery[] {
   const name = quote(input.name);
   const queries: SearchQuery[] = [
     { text: name, kind: "identity" },
+    ...buildSocialQueries(input, name),
     {
       text: `${name} (interview OR profile OR biography OR conference)`,
       kind: "general",
@@ -123,5 +150,5 @@ export function buildDeepQueries(input: SearchInput): SearchQuery[] {
     }
   }
 
-  return unique(queries).slice(0, 11);
+  return unique(queries).slice(0, 15);
 }

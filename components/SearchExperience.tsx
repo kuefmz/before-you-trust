@@ -268,19 +268,53 @@ export function SearchExperience() {
       has_company: Boolean(form.company),
       has_username: Boolean(form.username),
       has_profile_url: Boolean(form.profileUrl),
+      has_social_profiles: Boolean(form.socialProfiles.trim()),
+      has_photo: Boolean(photo),
       has_claim: Boolean(form.claim),
     });
 
     setBusy(true);
+    setPhotoWarning(null);
     try {
-      const response = await callSearch(toInput(form, "identity"));
-      const nextCandidates = buildIdentityCandidates(response.results, form);
-      setIdentityResponse(response);
+      const searchInput = toInput(form, "identity");
+      const response = await callSearch(searchInput);
+      let image: ImageSearchResponse | null = null;
+
+      if (photo) {
+        try {
+          image = await callImageSearch(photo);
+          setImageResponse(image);
+        } catch (imageError) {
+          setImageResponse(null);
+          setPhotoWarning(
+            imageError instanceof Error
+              ? imageError.message
+              : "Photo web matching was unavailable.",
+          );
+        }
+      } else {
+        setImageResponse(null);
+      }
+
+      const combinedResults = mergeSearchResults([
+        ...response.results,
+        ...(image?.matches ?? []),
+      ]);
+      const mergedResponse: SearchResponse = {
+        ...response,
+        results: combinedResults,
+        providers: [...new Set([
+          ...response.providers,
+          ...(image ? [image.provider] : []),
+        ])],
+      };
+      const nextCandidates = buildIdentityCandidates(combinedResults, searchInput);
+      setIdentityResponse(mergedResponse);
       setCandidates(nextCandidates);
       setStage("candidates");
       trackEvent("search_completed", {
         mode: "identity",
-        result_count: response.results.length,
+        result_count: combinedResults.length,
         candidate_count: nextCandidates.length,
       });
       if (nextCandidates.length === 0) {
@@ -333,9 +367,14 @@ export function SearchExperience() {
     setStage("search");
     setIdentityResponse(null);
     setDeepResponse(null);
+    setImageResponse(null);
     setCandidates([]);
     setConfirmed(null);
     setError(null);
+    setPhoto(null);
+    setPhotoWarning(null);
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoPreview(null);
   }
 
   if (stage === "report") {
@@ -348,6 +387,7 @@ export function SearchExperience() {
 
     return (
       <section aria-labelledby="trust-brief-title" className="experience-panel">
+        <JourneyProgress step={3} />
         <div className="panel-heading panel-heading--split">
           <div>
             <span className="eyebrow">Evidence-first report</span>
@@ -411,6 +451,11 @@ export function SearchExperience() {
           ))}
         </div>
 
+        <EmailReportForm
+          reportLabel={confirmed?.label ?? form.name}
+          results={reportResults}
+        />
+
         {(deepResponse?.warnings.length ?? 0) > 0 ? (
           <details className="technical-note">
             <summary>Search-provider notes</summary>
@@ -428,6 +473,7 @@ export function SearchExperience() {
   if (stage === "candidates") {
     return (
       <section aria-labelledby="candidate-title" className="experience-panel">
+        <JourneyProgress step={2} />
         <div className="panel-heading">
           <span className="eyebrow">Identity confirmation</span>
           <h2 id="candidate-title">Is this the person?</h2>
@@ -481,6 +527,7 @@ export function SearchExperience() {
 
   return (
     <section aria-labelledby="search-title" className="experience-panel">
+      <JourneyProgress step={1} />
       <div className="panel-heading">
         <span className="eyebrow">Start with identity, not assumptions</span>
         <h2 id="search-title">Who are you thinking of trusting?</h2>

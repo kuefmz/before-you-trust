@@ -3,13 +3,18 @@
 ## Principle
 Keep the MVP as one repository and one deployment.
 
-## Stack
-- Next.js (App Router)
+## Implemented stack
+- Next.js 15.5.24 (App Router)
+- React 19
 - TypeScript
-- Tailwind CSS
-- AWS Amplify
-- Search provider: benchmark Tavily vs Brave Search
-- Optional LLM later, only if necessary for source summarization/claim extraction
+- CSS variables + plain CSS to minimize runtime/build dependencies
+- AWS Amplify Hosting
+- Tavily and Brave Search provider adapters
+- Vitest + Testing Library + Playwright
+- No database
+- No authentication
+
+> The original plan suggested Tailwind. The implementation intentionally uses plain CSS instead: the design does not require a utility framework, and removing that dependency reduces build/toolchain surface while keeping the codebase easier to deploy and audit.
 
 ## High-level flow
 
@@ -20,76 +25,57 @@ Browser
   v
 /api/search  (server-side)
   |
-  +--> query builder
-  +--> search provider
-  +--> normalize results
-  +--> return sourced result objects
+  +--> validation + rate limiting
+  +--> neutral/deep query builder
+  +--> provider adapter (Tavily -> Brave fallback)
+  +--> timeout + concurrency control
+  +--> normalize/dedupe/classify
+  +--> sourced JSON response
   |
   v
 Browser
-  +--> dedupe
-  +--> candidate identities
+  +--> explainable candidate identity matching
   +--> user confirms identity
-  +--> request deeper search
-  +--> render Trust Brief
+  +--> deep search
+  +--> evidence-first Trust Brief
 ```
 
-## Why not pure GitHub Pages?
-The interface can be static, but search APIs generally require secret keys and public websites commonly block browser-origin scraping/CORS. A tiny serverless route avoids exposing secrets while keeping the application simple.
-
-## No database initially
-Do not persist search subjects or reports in the MVP. Keep report state in the browser session. Add persistence only if a concrete feature requires it.
-
-## Suggested project structure
-```text
-before-you-trust/
-  app/
-    page.tsx
-    report/page.tsx
-    privacy/page.tsx
-    how-it-works/page.tsx
-    api/search/route.ts
-  components/
-  lib/
-    queries.ts
-    normalize.ts
-    identity.ts
-    sources.ts
-    statuses.ts
-  types/
-  public/
-  docs/
-```
+## Privacy model
+Report state is maintained in the active browser session. The application has no database of searched people. The API uses `Cache-Control: no-store` and the UI never puts a searched person's name in the URL.
 
 ## Runtime responsibilities
 
 ### Browser
-- Search and candidate-selection UI
-- Report rendering
-- Client-side session state
-- Duplicate/result grouping where practical
-- User confirmation of the correct identity
+- Search UI
+- Candidate selection
+- Explainable identity signals
+- Session-only report state
+- Trust Brief rendering
 
-### Serverless API
-- Protect search-provider credentials
-- Validate and normalize search input
-- Build neutral query variants
-- Call search providers
-- Normalize responses into a provider-independent result shape
-- Apply rate limiting and basic abuse controls
+### Server-side route
+- Keep provider API keys secret
+- Validate request shape and size
+- Enforce responsible-use acknowledgement
+- Best-effort connection rate limiting
+- Build bounded query sets
+- Execute searches with concurrency and timeout limits
+- Normalize and deduplicate public results
+- Return source provenance
 
 ### Search providers
-- Tavily and/or Brave Search during benchmarking
-- Providers are replaceable behind a small adapter interface
+Search providers are replaceable adapters. `SEARCH_PROVIDER=auto` prefers Tavily when configured and falls back to Brave if a query fails.
 
 ## Architecture constraints
 - No separate backend repository.
 - No long-running server.
 - No database in MVP.
-- No authentication in MVP.
-- No Docker required for normal development.
-- No storage of searched names in analytics.
-- No secret values exposed through `NEXT_PUBLIC_*`.
+- No user account system.
+- No Docker required.
+- No searched names in application analytics.
+- No secret values exposed via `NEXT_PUBLIC_*`.
 
-## Deployment model
-A single AWS Amplify app builds the Next.js repository. Server components and API routes execute server-side; static UI is served through the same deployment. The dev branch can be connected to an Amplify preview environment while main remains production-ready only.
+## Rate-limit note
+The built-in rate limiter is a defensive best-effort control and is intentionally dependency-free. Because Amplify serverless compute can run multiple instances, production scale should add an infrastructure-level control such as AWS WAF/rate-based rules rather than treating in-memory state as a global quota.
+
+## Deployment
+A single Amplify app builds the Next.js repository. The `dev` branch should be connected first as the preview environment; `main` remains release-ready only.

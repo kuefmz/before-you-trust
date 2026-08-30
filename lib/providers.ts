@@ -1,3 +1,5 @@
+import { getRuntimeSetting } from "@/lib/runtime-config";
+
 export interface ProviderSearchResult {
   title: string;
   url: string;
@@ -156,10 +158,10 @@ function mockProvider(): SearchProvider {
   };
 }
 
-function configuredProviders(): SearchProvider[] {
-  const selection = (process.env.SEARCH_PROVIDER ?? "auto").toLowerCase();
-  const tavilyKey = process.env.TAVILY_API_KEY?.trim();
-  const braveKey = process.env.BRAVE_SEARCH_API_KEY?.trim();
+async function configuredProviders(): Promise<SearchProvider[]> {
+  const selection = (
+    (await getRuntimeSetting("SEARCH_PROVIDER")) ?? "auto"
+  ).toLowerCase();
 
   if (selection === "mock") {
     if (process.env.E2E_MOCK_SEARCH !== "true") {
@@ -168,6 +170,19 @@ function configuredProviders(): SearchProvider[] {
       );
     }
     return [mockProvider()];
+  }
+
+  let tavilyKey: string | undefined;
+  let braveKey: string | undefined;
+  try {
+    [tavilyKey, braveKey] = await Promise.all([
+      getRuntimeSetting("TAVILY_API_KEY"),
+      getRuntimeSetting("BRAVE_SEARCH_API_KEY"),
+    ]);
+  } catch {
+    throw new SearchConfigurationError(
+      "Secure search-provider configuration could not be loaded.",
+    );
   }
 
   if (selection === "tavily") {
@@ -198,7 +213,7 @@ function configuredProviders(): SearchProvider[] {
 
   if (providers.length === 0) {
     throw new SearchConfigurationError(
-      "No search provider is configured. Add TAVILY_API_KEY or BRAVE_SEARCH_API_KEY.",
+      "No search provider is configured. Add Tavily or Brave credentials.",
     );
   }
 
@@ -213,7 +228,7 @@ export async function searchQuery(
   results: ProviderSearchResult[];
   warnings: string[];
 }> {
-  const providers = configuredProviders();
+  const providers = await configuredProviders();
   const warnings: string[] = [];
 
   for (const provider of providers) {
@@ -230,5 +245,7 @@ export async function searchQuery(
     }
   }
 
-  throw new Error(warnings.join(" ") || "All configured search providers failed.");
+  throw new Error(
+    warnings.join(" ") || "All configured search providers failed.",
+  );
 }

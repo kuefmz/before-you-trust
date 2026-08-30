@@ -6,6 +6,7 @@ import {
 } from "@aws-sdk/client-dynamodb";
 
 import { sendTransactionalEmail } from "@/lib/email";
+import { getRuntimeSetting } from "@/lib/runtime-config";
 
 export interface SearchSignalResult {
   enabled: boolean;
@@ -17,7 +18,10 @@ let dynamoClient: DynamoDBClient | undefined;
 
 function client(): DynamoDBClient {
   dynamoClient ??= new DynamoDBClient({
-    region: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || "eu-central-1",
+    region:
+      process.env.AWS_REGION ||
+      process.env.AWS_DEFAULT_REGION ||
+      "eu-central-1",
   });
   return dynamoClient;
 }
@@ -41,14 +45,25 @@ export function shouldSendRepeatAlert(count: number, threshold: number): boolean
   return Number.isInteger(multiplier) && (multiplier & (multiplier - 1)) === 0;
 }
 
-function boundedInt(value: string | undefined, fallback: number, min: number, max: number) {
+function boundedInt(
+  value: string | undefined,
+  fallback: number,
+  min: number,
+  max: number,
+) {
   const parsed = Number.parseInt(value ?? "", 10);
-  return Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
+  return Number.isFinite(parsed)
+    ? Math.min(max, Math.max(min, parsed))
+    : fallback;
 }
 
-export async function recordSearchOccurrence(name: string): Promise<SearchSignalResult> {
-  const tableName = process.env.SEARCH_SIGNAL_TABLE?.trim();
-  const secret = process.env.SEARCH_FINGERPRINT_SECRET?.trim();
+export async function recordSearchOccurrence(
+  name: string,
+): Promise<SearchSignalResult> {
+  const [tableName, secret] = await Promise.all([
+    getRuntimeSetting("SEARCH_SIGNAL_TABLE"),
+    getRuntimeSetting("SEARCH_FINGERPRINT_SECRET"),
+  ]);
 
   if (!tableName || !secret) return { enabled: false };
 
@@ -59,7 +74,12 @@ export async function recordSearchOccurrence(name: string): Promise<SearchSignal
   const subjectKey = fingerprintSearchName(name, secret);
   const now = new Date();
   const nowIso = now.toISOString();
-  const ttlDays = boundedInt(process.env.SEARCH_SIGNAL_TTL_DAYS, 30, 1, 365);
+  const ttlDays = boundedInt(
+    await getRuntimeSetting("SEARCH_SIGNAL_TTL_DAYS"),
+    30,
+    1,
+    365,
+  );
   const expiresAt = Math.floor(now.getTime() / 1000) + ttlDays * 86_400;
 
   const response = await client().send(
@@ -82,7 +102,7 @@ export async function recordSearchOccurrence(name: string): Promise<SearchSignal
 
   const count = Number.parseInt(response.Attributes?.count?.N ?? "1", 10);
   const threshold = boundedInt(
-    process.env.REPEAT_SEARCH_ALERT_THRESHOLD,
+    await getRuntimeSetting("REPEAT_SEARCH_ALERT_THRESHOLD"),
     3,
     2,
     100,
@@ -93,14 +113,15 @@ export async function recordSearchOccurrence(name: string): Promise<SearchSignal
   }
 
   const recipient =
-    process.env.REPEAT_ALERT_EMAIL_TO?.trim() ||
-    process.env.OWNER_NOTIFICATION_EMAIL?.trim();
+    (await getRuntimeSetting("REPEAT_ALERT_EMAIL_TO")) ||
+    (await getRuntimeSetting("OWNER_NOTIFICATION_EMAIL"));
 
   if (!recipient) {
     return { enabled: true, count, alerted: false };
   }
 
-  const includeName = process.env.REPEAT_ALERT_INCLUDE_NAME === "true";
+  const includeName =
+    (await getRuntimeSetting("REPEAT_ALERT_INCLUDE_NAME")) === "true";
   const subjectDescription = includeName
     ? `Searched name: ${name}`
     : `Pseudonymous subject key: ${subjectKey.slice(0, 16)}…`;

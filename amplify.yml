@@ -8,6 +8,10 @@ frontend:
         - npm ci
     build:
       commands:
+        # Public values are safe to expose to Next.js at build time.
+        - env | grep -e '^NEXT_PUBLIC_' >> .env.production || true
+        # This is only an SSM parameter name, never the secret value itself.
+        - env | grep -e '^RUNTIME_SECRETS_PARAMETER=' >> .env.production || true
         - npm run build
   artifacts:
     baseDirectory: .next

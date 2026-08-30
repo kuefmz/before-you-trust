@@ -5,6 +5,7 @@ import {
   sendTransactionalEmail,
 } from "@/lib/email";
 import { checkStoryRateLimit } from "@/lib/rate-limit";
+import { getRuntimeSetting } from "@/lib/runtime-config";
 import { validateStorySubmission } from "@/lib/story-validation";
 
 export const runtime = "nodejs";
@@ -71,7 +72,18 @@ export async function POST(request: Request) {
     });
   }
 
-  const to = process.env.OWNER_NOTIFICATION_EMAIL?.trim();
+  let to: string | undefined;
+  try {
+    to = await getRuntimeSetting("OWNER_NOTIFICATION_EMAIL");
+  } catch {
+    return response(503, {
+      error: {
+        code: "STORY_EMAIL_NOT_CONFIGURED",
+        message: "Story submissions are not configured yet.",
+      },
+    });
+  }
+
   if (!to) {
     return response(503, {
       error: {
@@ -100,7 +112,9 @@ export async function POST(request: Request) {
         `Topic: ${topicLabel}`,
         `Name provided: ${item.name || "No"}`,
         `Reply email provided: ${item.email || "No"}`,
-        `Permission to publish an anonymized excerpt: ${item.permissionToPublish ? "Yes" : "No"}`,
+        `Permission to publish an anonymized excerpt: ${
+          item.permissionToPublish ? "Yes" : "No"
+        }`,
         "",
         "Message:",
         item.message,

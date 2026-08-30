@@ -1,3 +1,5 @@
+import { getRuntimeSetting } from "@/lib/runtime-config";
+
 export class EmailConfigurationError extends Error {
   constructor(message: string) {
     super(message);
@@ -28,9 +30,22 @@ export async function sendTransactionalEmail(
     return { messageId: "mock-message-id" };
   }
 
-  const apiKey = process.env.BREVO_API_KEY?.trim();
-  const fromEmail = process.env.BREVO_FROM_EMAIL?.trim();
-  const fromName = process.env.BREVO_FROM_NAME?.trim() || "Before You Trust";
+  let apiKey: string | undefined;
+  let fromEmail: string | undefined;
+  let fromName: string | undefined;
+  try {
+    [apiKey, fromEmail, fromName] = await Promise.all([
+      getRuntimeSetting("BREVO_API_KEY"),
+      getRuntimeSetting("BREVO_FROM_EMAIL"),
+      getRuntimeSetting("BREVO_FROM_NAME"),
+    ]);
+  } catch {
+    throw new EmailConfigurationError(
+      "Transactional email configuration could not be loaded.",
+    );
+  }
+
+  fromName ||= "Before You Trust";
 
   if (!apiKey || !isEmail(fromEmail)) {
     throw new EmailConfigurationError(

@@ -27,27 +27,27 @@ function cleanText(
 ): string | undefined {
   if (value === undefined || value === null || value === "") {
     if (required) {
-      throw new Error(\`\${field} is required.\`);
+      throw new Error(`${field} is required.`);
     }
     return undefined;
   }
 
   if (typeof value !== "string") {
-    throw new Error(\`\${field} must be text.\`);
+    throw new Error(`${field} must be text.`);
   }
 
   const cleaned = value.replace(/\s+/g, " ").trim();
 
   if (required && cleaned.length < 2) {
-    throw new Error(\`\${field} must contain at least 2 characters.\`);
+    throw new Error(`${field} must contain at least 2 characters.`);
   }
 
   if (cleaned.length > maxLength) {
-    throw new Error(\`\${field} is too long.\`);
+    throw new Error(`${field} is too long.`);
   }
 
   if (CONTROL_CHARACTERS.test(cleaned)) {
-    throw new Error(\`\${field} contains unsupported characters.\`);
+    throw new Error(`${field} contains unsupported characters.`);
   }
 
   return cleaned || undefined;

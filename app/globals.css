@@ -1383,3 +1383,11 @@ select:focus-visible {
     justify-content: center;
   }
 }
+
+.match-rank {
+  color: var(--blue);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

@@ -54,6 +54,23 @@ describe("identity candidate building", () => {
     expect(candidates[0]?.sources.length).toBeGreaterThanOrEqual(2);
   });
 
+  it("uses a known social handle as an explainable matching signal", () => {
+    const candidates = buildIdentityCandidates(
+      [
+        result({
+          title: "Jane Unique-Surname on Instagram",
+          url: "https://instagram.com/janeunique",
+          snippet: "Zurich profile for @janeunique",
+          sourceType: "social",
+        }),
+      ],
+      { name: "Jane Unique-Surname", socialProfiles: ["@janeunique"] },
+    );
+    expect(candidates[0]?.supportingSignals).toContain(
+      "Known social profile or handle matches",
+    );
+  });
+
   it("does not require a candidate when there are no results", () => {
     expect(
       buildIdentityCandidates([], { name: "Jane Unique-Surname" }),

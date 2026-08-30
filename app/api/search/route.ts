@@ -106,10 +106,12 @@ export async function POST(request: Request) {
 
   // Privacy-preserving repeat detection. The raw name is never written to the
   // signal table. Monitoring failure must not block the search itself.
-  try {
-    await recordSearchOccurrence(validation.data.name);
-  } catch {
-    console.error("Repeat-search monitoring is unavailable.");
+  if (validation.data.mode === "identity") {
+    try {
+      await recordSearchOccurrence(validation.data.name);
+    } catch {
+      console.error("Repeat-search monitoring is unavailable.");
+    }
   }
 
   try {

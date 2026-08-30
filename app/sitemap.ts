@@ -1,12 +1,11 @@
 import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://example.invalid").replace(
-    /\/+$/,
-    "",
-  );
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (!configured) return [];
 
-  return [
+  const base = configured.replace(/\/+$/, "");
+  const paths = [
     "",
     "/how-it-works",
     "/about",
@@ -14,9 +13,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/privacy",
     "/terms",
     "/acceptable-use",
-  ].map((path) => ({
+  ];
+
+  return paths.map((path) => ({
     url: `${base}${path || "/"}`,
-    changeFrequency: path === "" ? "weekly" : "monthly",
+    changeFrequency: path === "" ? ("weekly" as const) : ("monthly" as const),
     priority: path === "" ? 1 : path === "/about" ? 0.8 : 0.6,
   }));
 }

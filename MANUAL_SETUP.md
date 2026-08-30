@@ -258,6 +258,7 @@ The banner is for optional analytics only; rejecting it does not block the essen
 ## 11. Security and operations
 
 Set up:
+- AWS WAF/rate-based protection for `/api/search` and `/api/story` before meaningful public traffic (the in-app limiter is best-effort per server instance),
 - AWS Budget alert at a very low threshold,
 - CloudWatch error alarms for the Amplify/server runtime,
 - DynamoDB cost anomaly/billing alert,

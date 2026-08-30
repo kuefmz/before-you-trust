@@ -6,7 +6,9 @@ export type AnalyticsEventName =
   | "source_opened"
   | "share_story_viewed"
   | "story_submitted"
-  | "support_click";
+  | "support_click"
+  | "report_email_requested"
+  | "report_email_sent";
 
 const CONSENT_KEY = "byt.analytics-consent";
 

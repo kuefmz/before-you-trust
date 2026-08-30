@@ -2,13 +2,17 @@
 
 import { useMemo, useState } from "react";
 
+import { EmailReportForm } from "@/components/EmailReportForm";
+import { JourneyProgress } from "@/components/JourneyProgress";
+
 import { buildIdentityCandidates } from "@/lib/identity";
 import { trackEvent } from "@/lib/client-analytics";
-import { dedupeResults } from "@/lib/normalize";
+import { dedupeResults, mergeSearchResults } from "@/lib/normalize";
 import { buildReportSections, claimAssessment } from "@/lib/report";
 import type {
   ConfirmedIdentity,
   IdentityCandidate,
+  ImageSearchResponse,
   SearchContext,
   SearchInput,
   SearchResponse,
@@ -23,6 +27,7 @@ interface FormState {
   company: string;
   username: string;
   profileUrl: string;
+  socialProfiles: string;
   claim: string;
   context: SearchContext | "";
 }
@@ -33,6 +38,7 @@ const initialForm: FormState = {
   company: "",
   username: "",
   profileUrl: "",
+  socialProfiles: "",
   claim: "",
   context: "",
 };
@@ -68,6 +74,36 @@ async function callSearch(body: SearchInput): Promise<SearchResponse> {
   return payload as SearchResponse;
 }
 
+function parseSocialProfiles(value: string): string[] | undefined {
+  const items = value
+    .split(/[\n,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 8);
+  return items.length ? [...new Set(items)] : undefined;
+}
+
+async function callImageSearch(photo: File): Promise<ImageSearchResponse> {
+  const formData = new FormData();
+  formData.append("photo", photo);
+  const response = await fetch("/api/image-search", {
+    method: "POST",
+    cache: "no-store",
+    body: formData,
+  });
+  const payload = (await response.json()) as
+    | ImageSearchResponse
+    | { error?: { message?: string } };
+  if (!response.ok) {
+    throw new Error(
+      "error" in payload && payload.error?.message
+        ? payload.error.message
+        : "Photo web matching failed.",
+    );
+  }
+  return payload as ImageSearchResponse;
+}
+
 function toInput(
   form: FormState,
   mode: "identity" | "deep",
@@ -79,6 +115,7 @@ function toInput(
     company: form.company || undefined,
     username: form.username || undefined,
     profileUrl: form.profileUrl || undefined,
+    socialProfiles: parseSocialProfiles(form.socialProfiles),
     claim: form.claim || undefined,
     context: form.context || undefined,
     mode,
@@ -172,6 +209,10 @@ export function SearchExperience() {
     null,
   );
   const [deepResponse, setDeepResponse] = useState<SearchResponse | null>(null);
+  const [imageResponse, setImageResponse] = useState<ImageSearchResponse | null>(null);
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoWarning, setPhotoWarning] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<IdentityCandidate[]>([]);
   const [confirmed, setConfirmed] = useState<IdentityCandidate | null>(null);
   const [busy, setBusy] = useState(false);
@@ -182,6 +223,7 @@ export function SearchExperience() {
     const contributions = [
       ...(identityResponse?.results ?? []),
       ...(deepResponse?.results ?? []),
+      ...(imageResponse?.matches ?? []),
     ].flatMap((result) =>
       result.queries.map((query, index) => ({
         title: result.title,
@@ -195,7 +237,7 @@ export function SearchExperience() {
       })),
     );
     return dedupeResults(contributions, 80);
-  }, [identityResponse, deepResponse]);
+  }, [identityResponse, deepResponse, imageResponse]);
 
   const reportSections = useMemo(
     () => buildReportSections(reportResults),

@@ -231,7 +231,7 @@ select:focus-visible {
 }
 
 .panel-heading--split {
-  align-items: start;
+  align-items: flex-start;
   display: flex;
   justify-content: space-between;
   max-width: none;
@@ -723,7 +723,7 @@ select:focus-visible {
 }
 
 .step-list section {
-  align-items: start;
+  align-items: flex-start;
   background: var(--white);
   border: 1px solid var(--line);
   border-radius: 18px;

@@ -28,6 +28,9 @@ export default defineConfig({
     env: {
       SEARCH_PROVIDER: "mock",
       E2E_MOCK_SEARCH: "true",
+      E2E_MOCK_EMAIL: "true",
+      OWNER_NOTIFICATION_EMAIL: "owner@example.test",
+      BREVO_FROM_EMAIL: "noreply@example.test",
     },
   },
 });

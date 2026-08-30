@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { buildIdentityCandidates } from "@/lib/identity";
+import { trackEvent } from "@/lib/client-analytics";
 import { dedupeResults } from "@/lib/normalize";
 import { buildReportSections, claimAssessment } from "@/lib/report";
 import type {
@@ -44,9 +45,7 @@ function hostname(url: string): string {
   }
 }
 
-async function callSearch(
-  body: SearchInput,
-): Promise<SearchResponse> {
+async function callSearch(body: SearchInput): Promise<SearchResponse> {
   const response = await fetch("/api/search", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -93,6 +92,9 @@ function ResultLink({ result }: { result: SearchResult }) {
     <a
       className="result-link"
       href={result.url}
+      onClick={() =>
+        trackEvent("source_opened", { source_type: result.sourceType })
+      }
       rel="noopener noreferrer"
       target="_blank"
     >
@@ -124,7 +126,10 @@ function CandidateCard({
         <span className={`confidence confidence--${candidate.confidence}`}>
           {candidate.confidence} confidence
         </span>
-        <span>{candidate.sources.length} source{candidate.sources.length === 1 ? "" : "s"}</span>
+        <span>
+          {candidate.sources.length} source
+          {candidate.sources.length === 1 ? "" : "s"}
+        </span>
       </div>
       <h3>{candidate.label}</h3>
       <p>{candidate.summary}</p>
@@ -185,7 +190,8 @@ export function SearchExperience() {
         publishedAt: result.publishedAt,
         provider: result.providers[0] ?? "unknown",
         query,
-        queryKind: result.queryKinds[index] ?? result.queryKinds[0] ?? "general",
+        queryKind:
+          result.queryKinds[index] ?? result.queryKinds[0] ?? "general",
       })),
     );
     return dedupeResults(contributions, 80);
@@ -214,6 +220,15 @@ export function SearchExperience() {
       return;
     }
 
+    trackEvent("search_started", {
+      mode: "identity",
+      has_location: Boolean(form.location),
+      has_company: Boolean(form.company),
+      has_username: Boolean(form.username),
+      has_profile_url: Boolean(form.profileUrl),
+      has_claim: Boolean(form.claim),
+    });
+
     setBusy(true);
     try {
       const response = await callSearch(toInput(form, "identity"));
@@ -221,6 +236,11 @@ export function SearchExperience() {
       setIdentityResponse(response);
       setCandidates(nextCandidates);
       setStage("candidates");
+      trackEvent("search_completed", {
+        mode: "identity",
+        result_count: response.results.length,
+        candidate_count: nextCandidates.length,
+      });
       if (nextCandidates.length === 0) {
         setError(
           "We found too little reliable identity information to suggest a match. Try adding a city, employer, username, or profile URL.",
@@ -237,6 +257,10 @@ export function SearchExperience() {
     setError(null);
     setBusy(true);
     setConfirmed(candidate);
+    trackEvent("identity_confirmed", {
+      confidence: candidate.confidence,
+      source_count: candidate.sources.length,
+    });
 
     const confirmedIdentity: ConfirmedIdentity = {
       label: candidate.label,
@@ -251,6 +275,9 @@ export function SearchExperience() {
       );
       setDeepResponse(response);
       setStage("report");
+      trackEvent("trust_brief_viewed", {
+        result_count: response.results.length,
+      });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Deep search failed.");
     } finally {
@@ -517,12 +544,17 @@ export function SearchExperience() {
           />
           <span>
             I will use this for a lawful, legitimate purpose and not to harass,
-            stalk, doxx, or target a minor.
+            stalk, doxx, target a minor, or make a regulated eligibility
+            decision about employment, housing, credit, insurance, or similar.
           </span>
         </label>
 
         {error ? (
-          <div aria-live="polite" className="error-banner field--wide" role="alert">
+          <div
+            aria-live="polite"
+            className="error-banner field--wide"
+            role="alert"
+          >
             {error}
           </div>
         ) : null}
@@ -536,7 +568,9 @@ export function SearchExperience() {
             {busy ? "Searching public sources…" : "Search the public web →"}
           </button>
           <span>
-            We do not store your search in a Before You Trust database.
+            Searched names are never sent to GA4. If repeat monitoring is
+            enabled, only a keyed fingerprint and count are retained.{" "}
+            <a href="/privacy">Privacy details</a>
           </span>
         </div>
       </form>

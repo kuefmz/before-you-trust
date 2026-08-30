@@ -14,15 +14,18 @@ Before You Trust is an evidence-first public-web research tool. It searches publ
 - Search timeouts, concurrency limits, result caps, URL normalization and de-duplication
 - Explainable candidate identity matching
 - Required user identity confirmation before deep research
-- Deep searches across professional, official, news, claim, and concern-oriented query families
 - Evidence-first Trust Brief with original source links
-- No user accounts or application database
-- No server-side report persistence
-- Responsible-use confirmation and privacy/acceptable-use pages
+- Professional About page with documented case studies and source links
+- Private Share Your Story / feedback / privacy-request form delivered via Brevo
+- Optional Buy Me a Coffee support link
+- Privacy-preserving repeat-search detection using HMAC fingerprint + DynamoDB TTL
+- Optional repeat-search email alerts without raw names by default
+- Optional GTM/GA4 tracking that is blocked until analytics consent
+- Search names and story content explicitly excluded from analytics events
+- Full Privacy Notice, Terms of Use, and Acceptable Use policy
 - Security headers and no-store API responses
-- Best-effort application rate limiting
-- Unit, API, component, and Playwright end-to-end tests
-- GitHub Actions quality gate
+- Unit, API, component, coverage and Playwright end-to-end tests
+- GitHub Actions quality/security gate and weekly scheduled audit
 - AWS Amplify deployment configuration
 
 ## Local setup
@@ -44,7 +47,23 @@ TAVILY_API_KEY=...
 BRAVE_SEARCH_API_KEY=...
 ```
 
-Never expose provider keys through `NEXT_PUBLIC_*`.
+Never expose private provider keys through `NEXT_PUBLIC_*`.
+
+## Manual production setup
+
+**Start here:** [MANUAL_SETUP.md](MANUAL_SETUP.md)
+
+It contains the exact checklist for:
+
+- AWS Amplify + domain
+- Tavily/Brave
+- Brevo story email delivery
+- DynamoDB repeat-search signals + TTL + IAM
+- Buy Me a Coffee
+- GTM + GA4 consent configuration
+- Google Search Console + sitemap
+- privacy/data-retention operations
+- CloudWatch/budget/security checks
 
 ## Quality gates
 
@@ -56,18 +75,8 @@ npm run build
 npm run test:e2e
 ```
 
-Or run the non-browser checks together:
-
-```bash
-npm run check
-```
-
-## Deployment
-
-The app targets AWS Amplify Hosting with Next.js 15.5.24 and Node.js 22. Add the provider key(s) as Amplify environment variables and connect the `dev` branch first.
-
 ## Important limitations
 
-Before You Trust is a public-web research assistant, not a comprehensive background-check service. Search coverage can be incomplete or wrong. “Nothing found” does not mean a person is safe, and an allegation does not prove wrongdoing.
+Before You Trust is a public-web research assistant, not a comprehensive background-check service or consumer reporting agency. Search coverage can be incomplete or wrong. “Nothing found” does not mean a person is safe, and an allegation does not prove wrongdoing. Do not use it for employment, housing, credit, insurance or other regulated eligibility decisions.
 
-See [the documentation index](docs/00-INDEX.md) for product, safety, architecture, search-quality, and launch guidance.
+See [the documentation index](docs/00-INDEX.md) for the broader product, safety, architecture, search-quality and launch guidance.

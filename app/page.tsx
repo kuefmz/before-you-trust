@@ -1,4 +1,9 @@
+import Link from "next/link";
+
 import { SearchExperience } from "@/components/SearchExperience";
+import { SupportLink } from "@/components/SupportLink";
+
+const supportUrl = process.env.NEXT_PUBLIC_BUY_ME_A_COFFEE_URL?.trim();
 
 export default function HomePage() {
   return (
@@ -18,7 +23,7 @@ export default function HomePage() {
             <div className="hero-points" aria-label="Product principles">
               <span>Sources, not mystery scores</span>
               <span>Identity confirmation first</span>
-              <span>Private by design</span>
+              <span>Privacy-first monitoring</span>
             </div>
           </div>
 
@@ -84,6 +89,31 @@ export default function HomePage() {
                 becomes a proven fact.
               </p>
             </article>
+          </div>
+        </div>
+      </section>
+
+      <section className="community-cta">
+        <div className="shell community-cta__inner">
+          <div>
+            <span className="eyebrow eyebrow--light">Built from real lessons</span>
+            <h2>Have a story that could help shape this?</h2>
+            <p>
+              Share what you wish you had known earlier, suggest a source we
+              should check, or tell me where the product is missing something.
+              Submissions are delivered privately by email.
+            </p>
+          </div>
+          <div className="community-cta__actions">
+            <Link className="button button--light" href="/share-your-story">
+              Share your story
+            </Link>
+            {supportUrl ? (
+              <SupportLink
+                className="button button--outline-light"
+                href={supportUrl}
+              />
+            ) : null}
           </div>
         </div>
       </section>

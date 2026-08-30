@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { AnalyticsConsent } from "@/components/AnalyticsConsent";
 import { BrandMark } from "@/components/BrandMark";
+import { PrivacyPreferencesButton } from "@/components/PrivacyPreferencesButton";
+import { SupportLink } from "@/components/SupportLink";
 
 import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+const verification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
+const supportUrl = process.env.NEXT_PUBLIC_BUY_ME_A_COFFEE_URL?.trim();
+const gtmId = process.env.NEXT_PUBLIC_GTM_ID?.trim();
 
 export const metadata: Metadata = {
   metadataBase: siteUrl ? new URL(siteUrl) : undefined,
@@ -16,6 +22,7 @@ export const metadata: Metadata = {
   description:
     "Search public sources, verify claims, separate identities, and review original evidence before you place meaningful trust in someone.",
   applicationName: "Before You Trust",
+  verification: verification ? { google: verification } : undefined,
   robots: {
     index: true,
     follow: true,
@@ -41,8 +48,9 @@ export default function RootLayout({
             </Link>
             <nav aria-label="Primary navigation">
               <Link href="/how-it-works">How it works</Link>
-              <Link href="/privacy">Privacy</Link>
-              <Link href="/acceptable-use">Use responsibly</Link>
+              <Link href="/about">About</Link>
+              <Link href="/share-your-story">Share your story</Link>
+              {supportUrl ? <SupportLink href={supportUrl} /> : null}
             </nav>
           </div>
         </header>
@@ -59,12 +67,17 @@ export default function RootLayout({
               <p>Information first. Decisions second.</p>
             </div>
             <div className="footer-links">
-              <Link href="/how-it-works">How it works</Link>
+              <Link href="/about">About</Link>
+              <Link href="/share-your-story">Share your story</Link>
               <Link href="/privacy">Privacy</Link>
+              <Link href="/terms">Terms</Link>
               <Link href="/acceptable-use">Acceptable use</Link>
+              {gtmId ? <PrivacyPreferencesButton /> : null}
             </div>
           </div>
         </footer>
+
+        <AnalyticsConsent gtmId={gtmId} />
       </body>
     </html>
   );

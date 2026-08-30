@@ -46,7 +46,7 @@ const NEWS_HOSTS = [
 
 function matchesHost(hostname: string, domains: string[]): boolean {
   return domains.some(
-    (domain) => hostname === domain || hostname.endsWith(\`.\${domain}\`),
+    (domain) => hostname === domain || hostname.endsWith(`.${domain}`),
   );
 }
 

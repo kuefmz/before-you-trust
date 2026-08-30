@@ -32,15 +32,11 @@ test("runs the complete lifecycle with the founder benchmark name", async ({
   await page.getByRole("button", { name: "Search the public web →" }).click();
 
   await expect(
-    page.getByRole("heading", { name: "Is this the person?" }),
+    page.getByRole("heading", { name: "Which person do you mean?" }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("heading", {
-      name: "Jenifer Tabita Ciuciu-Kiss — context match",
-      exact: true,
-    }),
-  ).toBeVisible();
+  await expect(page.getByText("Top match #1")).toBeVisible();
   await expect(page.getByText(/Photo web match:/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "None of these — refine search" })).toBeVisible();
   await page.screenshot({ path: "lifecycle-03-confirm-identity.png", fullPage: true });
 
   await page.getByRole("button", { name: "This is them" }).first().click();

@@ -9,19 +9,41 @@ beforeEach(() => {
   process.env.CI = "true";
 });
 
-function request(file?: File) {
-  const body = new FormData();
-  if (file) body.append("photo", file);
+function request(
+  options: { fileName?: string; mimeType?: string; content?: string } = {},
+) {
+  const boundary = "----before-you-trust-test-boundary";
+  const headers: Record<string, string> = {
+    "Content-Type": `multipart/form-data; boundary=${boundary}`,
+    "x-forwarded-for": "203.0.113.22",
+    "user-agent": "vitest",
+  };
+
+  let body = `--${boundary}--\r\n`;
+  if (options.fileName) {
+    body = [
+      `--${boundary}`,
+      `Content-Disposition: form-data; name="photo"; filename="${options.fileName}"`,
+      `Content-Type: ${options.mimeType ?? "image/png"}`,
+      "",
+      options.content ?? "abc",
+      `--${boundary}--`,
+      "",
+    ].join("\r\n");
+  }
+
   return new Request("http://localhost/api/image-search", {
     method: "POST",
-    headers: { "x-forwarded-for": "203.0.113.22", "user-agent": "vitest" },
+    headers,
     body,
   });
 }
 
 describe("POST /api/image-search", () => {
   it("returns public web-image matches for a supported photo", async () => {
-    const response = await POST(request(new File([new Uint8Array([1, 2, 3])], "person.png", { type: "image/png" })));
+    const response = await POST(
+      request({ fileName: "person.png", mimeType: "image/png" }),
+    );
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toContain("no-store");
     const payload = await response.json();
@@ -30,7 +52,9 @@ describe("POST /api/image-search", () => {
   });
 
   it("rejects unsupported image types", async () => {
-    const response = await POST(request(new File(["x"], "person.gif", { type: "image/gif" })));
+    const response = await POST(
+      request({ fileName: "person.gif", mimeType: "image/gif" }),
+    );
     expect(response.status).toBe(415);
   });
 

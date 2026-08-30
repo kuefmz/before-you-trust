@@ -41,7 +41,7 @@ function scoreResult(
   result: SearchResult,
   input: Pick<
     SearchInput,
-    "name" | "location" | "company" | "username" | "profileUrl"
+    "name" | "location" | "company" | "username" | "profileUrl" | "socialProfiles" | "socialProfiles"
   >,
 ): { score: number; signals: string[]; conflicts: string[] } {
   const text = haystack(result);
@@ -84,6 +84,33 @@ function scoreResult(
   if (input.username && text.includes(normalize(input.username))) {
     score += 4;
     signals.push("Username matches");
+  }
+
+  for (const social of input.socialProfiles ?? []) {
+    const normalizedSocial = normalize(social);
+    if (normalizedSocial && text.includes(normalizedSocial.replace(/^@/, ""))) {
+      score += 4;
+      signals.push("Known social profile or handle matches");
+      break;
+    }
+    if (/^https?:\/\//i.test(social)) {
+      try {
+        const expected = new URL(social);
+        const actual = new URL(result.url);
+        if (expected.hostname === actual.hostname) {
+          score += 2;
+          signals.push("Known social platform matches");
+          break;
+        }
+      } catch {
+        // Social profile URLs were validated server-side.
+      }
+    }
+  }
+
+  if (result.queryKinds.includes("image")) {
+    score += 2;
+    signals.push("Uploaded photo matched this public web page");
   }
 
   if (input.profileUrl) {
@@ -151,7 +178,7 @@ export function buildIdentityCandidates(
   results: SearchResult[],
   input: Pick<
     SearchInput,
-    "name" | "location" | "company" | "username" | "profileUrl"
+    "name" | "location" | "company" | "username" | "profileUrl" | "socialProfiles"
   >,
 ): IdentityCandidate[] {
   if (results.length === 0) return [];
@@ -175,7 +202,11 @@ export function buildIdentityCandidates(
   const consumed = new Set<string>();
 
   const hasExplicitContext = Boolean(
-    input.location || input.company || input.username || input.profileUrl,
+    input.location ||
+      input.company ||
+      input.username ||
+      input.profileUrl ||
+      (input.socialProfiles?.length ?? 0) > 0,
   );
 
   if (hasExplicitContext) {

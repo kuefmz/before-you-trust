@@ -151,16 +151,19 @@ function ResultLink({ result }: { result: SearchResult }) {
 
 function CandidateCard({
   candidate,
+  rank,
   onConfirm,
   busy,
 }: {
   candidate: IdentityCandidate;
+  rank: number;
   onConfirm: (candidate: IdentityCandidate) => void;
   busy: boolean;
 }) {
   return (
     <article className="candidate-card">
       <div className="candidate-card__top">
+        <span className="match-rank">Top match #{rank}</span>
         <span className={`confidence confidence--${candidate.confidence}`}>
           {candidate.confidence} confidence
         </span>
@@ -477,10 +480,11 @@ export function SearchExperience() {
         <JourneyProgress step={2} />
         <div className="panel-heading">
           <span className="eyebrow">Identity confirmation</span>
-          <h2 id="candidate-title">Is this the person?</h2>
+          <h2 id="candidate-title">Which person do you mean?</h2>
           <p>
-            We do not merge every matching name into one profile. Confirm the
-            right identity before deeper research begins.
+            {candidates.length === 1
+              ? "We found one likely identity. Please confirm it before we generate a report."
+              : `We found ${candidates.length} likely identity matches. Choose the correct person before we generate a report.`}
           </p>
         </div>
 
@@ -506,12 +510,13 @@ export function SearchExperience() {
         ) : null}
 
         <div className="candidate-grid">
-          {candidates.map((candidate) => (
+          {candidates.map((candidate, index) => (
             <CandidateCard
               busy={busy}
               candidate={candidate}
               key={candidate.id}
               onConfirm={confirmCandidate}
+              rank={index + 1}
             />
           ))}
         </div>
@@ -535,7 +540,7 @@ export function SearchExperience() {
           onClick={() => setStage("search")}
           type="button"
         >
-          ← Refine search
+          None of these — refine search
         </button>
       </section>
     );

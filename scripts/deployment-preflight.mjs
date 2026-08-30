@@ -1,0 +1,90 @@
+import { readFile } from "node:fs/promises";
+
+function fail(message) {
+  console.error(`DEPLOYMENT PREFLIGHT FAILED: ${message}`);
+  process.exitCode = 1;
+}
+
+function pass(message) {
+  console.log(`✓ ${message}`);
+}
+
+const [pkgRaw, amplify, envExample, gitignore, environmentDoc] = await Promise.all([
+  readFile("package.json", "utf8"),
+  readFile("amplify.yml", "utf8"),
+  readFile(".env.example", "utf8"),
+  readFile(".gitignore", "utf8"),
+  readFile("docs/13-ENVIRONMENT.md", "utf8"),
+]);
+
+const pkg = JSON.parse(pkgRaw);
+
+if (typeof pkg.engines?.node === "string" && pkg.engines.node.includes("22")) {
+  pass("package.json pins Node.js 22+");
+} else {
+  fail("package.json must require Node.js 22+");
+}
+
+for (const required of ["nvm install 22", "npm ci", "npm run build", "baseDirectory: .next"]) {
+  if (amplify.includes(required)) pass(`amplify.yml contains: ${required}`);
+  else fail(`amplify.yml is missing: ${required}`);
+}
+
+if (amplify.includes("^NEXT_PUBLIC_") && amplify.includes("^RUNTIME_SECRETS_PARAMETER=")) {
+  pass("Amplify build exports only public values plus the non-secret SSM parameter name");
+} else {
+  fail("Amplify environment export rules are not in the expected safe form");
+}
+
+const forbiddenAmplifySecrets = [
+  "TAVILY_API_KEY",
+  "BRAVE_SEARCH_API_KEY",
+  "GOOGLE_VISION_API_KEY",
+  "BREVO_API_KEY",
+  "SEARCH_FINGERPRINT_SECRET",
+];
+
+for (const key of forbiddenAmplifySecrets) {
+  if (amplify.includes(key)) fail(`${key} must not be written into amplify.yml`);
+}
+if (!forbiddenAmplifySecrets.some((key) => amplify.includes(key))) {
+  pass("No server-side secret names are hard-coded into amplify.yml");
+}
+
+const requiredEnvKeys = [
+  "RUNTIME_SECRETS_PARAMETER",
+  "SEARCH_PROVIDER",
+  "TAVILY_API_KEY",
+  "BRAVE_SEARCH_API_KEY",
+  "GOOGLE_VISION_API_KEY",
+  "BREVO_API_KEY",
+  "SEARCH_SIGNAL_TABLE",
+  "SEARCH_FINGERPRINT_SECRET",
+  "REPEAT_ALERT_INCLUDE_NAME=false",
+];
+
+for (const key of requiredEnvKeys) {
+  if (!envExample.includes(key)) fail(`.env.example is missing ${key}`);
+}
+if (requiredEnvKeys.every((key) => envExample.includes(key))) {
+  pass(".env.example documents the required runtime configuration");
+}
+
+if (
+  gitignore.includes(".env.local") &&
+  gitignore.includes(".env.*.local") &&
+  gitignore.includes("*.pem")
+) {
+  pass("Local secrets and PEM files are ignored");
+} else {
+  fail(".gitignore does not cover expected local secret files");
+}
+
+if (environmentDoc.includes("Add the selected search API key as an Amplify environment variable")) {
+  fail("docs/13-ENVIRONMENT.md still contains the obsolete direct-secret Amplify instruction");
+} else {
+  pass("Deployment documentation uses the encrypted SSM runtime-secret model");
+}
+
+if (process.exitCode) process.exit(process.exitCode);
+console.log("\nDeployment preflight passed.");

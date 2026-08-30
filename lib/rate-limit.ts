@@ -7,6 +7,10 @@ const SEARCH_WINDOW_MS = 10 * 60 * 1000;
 const SEARCH_MAX_REQUESTS = 20;
 const STORY_WINDOW_MS = 30 * 60 * 1000;
 const STORY_MAX_REQUESTS = 5;
+const IMAGE_WINDOW_MS = 10 * 60 * 1000;
+const IMAGE_MAX_REQUESTS = 8;
+const REPORT_EMAIL_WINDOW_MS = 30 * 60 * 1000;
+const REPORT_EMAIL_MAX_REQUESTS = 5;
 const buckets = new Map<string, RateLimitEntry>();
 
 export interface RateLimitResult {
@@ -64,6 +68,22 @@ export function checkRateLimit(key: string, now = Date.now()): RateLimitResult {
 
 export function checkStoryRateLimit(key: string, now = Date.now()): RateLimitResult {
   return consume(`story:${key}`, STORY_MAX_REQUESTS, STORY_WINDOW_MS, now);
+}
+
+export function checkImageRateLimit(key: string, now = Date.now()): RateLimitResult {
+  return consume(`image:${key}`, IMAGE_MAX_REQUESTS, IMAGE_WINDOW_MS, now);
+}
+
+export function checkReportEmailRateLimit(
+  key: string,
+  now = Date.now(),
+): RateLimitResult {
+  return consume(
+    `report-email:${key}`,
+    REPORT_EMAIL_MAX_REQUESTS,
+    REPORT_EMAIL_WINDOW_MS,
+    now,
+  );
 }
 
 export function resetRateLimitForTests(): void {

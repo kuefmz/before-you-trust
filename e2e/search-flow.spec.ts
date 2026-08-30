@@ -42,3 +42,29 @@ test("requires responsible-use confirmation", async ({ page }) => {
     page.locator(".error-banner[role='alert']"),
   ).toContainText("responsible and lawful use");
 });
+
+test("submits a story privately through the email route", async ({ page }) => {
+  await page.goto("/share-your-story");
+
+  await page
+    .getByLabel("Your message")
+    .fill(
+      "This is a detailed story about something I wish I had been able to verify earlier.",
+    );
+  await page.getByLabel("I confirm that I am 18 or older.").check();
+  await page
+    .getByLabel(/I understand that this message is emailed/i)
+    .check();
+  await page.getByRole("button", { name: "Send privately" }).click();
+
+  await expect(page.getByText(/delivered privately/i)).toBeVisible();
+});
+
+test("does not show analytics consent when GTM is not configured", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(
+    page.getByRole("dialog", { name: "Analytics preferences" }),
+  ).toHaveCount(0);
+});

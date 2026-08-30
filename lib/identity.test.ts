@@ -6,16 +6,17 @@ import type { SearchResult } from "@/types/search";
 function result(
   overrides: Partial<SearchResult> & Pick<SearchResult, "title" | "url">,
 ): SearchResult {
+  const { title, url, ...rest } = overrides;
   return {
-    title: overrides.title,
-    url: overrides.url,
-    snippet: overrides.snippet ?? "",
-    sourceType: overrides.sourceType ?? "web",
+    snippet: "",
+    sourceType: "web",
     publishedAt: null,
     providers: ["test"],
     queries: ['"Jane Unique-Surname"'],
     queryKinds: ["identity"],
-    ...overrides,
+    ...rest,
+    title,
+    url,
   };
 }
 

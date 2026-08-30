@@ -9,12 +9,23 @@ const originalEnvironment = {
   E2E_MOCK_SEARCH: process.env.E2E_MOCK_SEARCH,
 };
 
+function restoreEnvironment(
+  key: keyof typeof originalEnvironment,
+): void {
+  const value = originalEnvironment[key];
+  if (value === undefined) {
+    delete process.env[key];
+  } else {
+    process.env[key] = value;
+  }
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
-  process.env.SEARCH_PROVIDER = originalEnvironment.SEARCH_PROVIDER;
-  process.env.TAVILY_API_KEY = originalEnvironment.TAVILY_API_KEY;
-  process.env.BRAVE_SEARCH_API_KEY = originalEnvironment.BRAVE_SEARCH_API_KEY;
-  process.env.E2E_MOCK_SEARCH = originalEnvironment.E2E_MOCK_SEARCH;
+  restoreEnvironment("SEARCH_PROVIDER");
+  restoreEnvironment("TAVILY_API_KEY");
+  restoreEnvironment("BRAVE_SEARCH_API_KEY");
+  restoreEnvironment("E2E_MOCK_SEARCH");
 });
 
 describe("search providers", () => {

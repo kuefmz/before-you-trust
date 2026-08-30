@@ -152,3 +152,22 @@ export function dedupeResults(
 
   return [...merged.values()].slice(0, limit);
 }
+
+export function mergeSearchResults(
+  results: SearchResult[],
+  limit = 80,
+): SearchResult[] {
+  const contributions: ResultContribution[] = results.flatMap((result) => {
+    const queries = result.queries.length ? result.queries : ["public source"];
+    return queries.map((query, index) => ({
+      title: result.title,
+      url: result.url,
+      snippet: result.snippet,
+      publishedAt: result.publishedAt,
+      provider: result.providers[0] ?? "unknown",
+      query,
+      queryKind: result.queryKinds[index] ?? result.queryKinds[0] ?? "general",
+    }));
+  });
+  return dedupeResults(contributions, limit);
+}

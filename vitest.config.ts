@@ -1,8 +1,9 @@
+import react from "@vitejs/plugin-react";
+import { configDefaults, defineConfig } from "vitest/config";
 import { fileURLToPath } from "node:url";
 
-import { defineConfig } from "vitest/config";
-
 export default defineConfig({
+  plugins: [react()],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL(".", import.meta.url)),
@@ -11,6 +12,8 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./tests/setup.ts"],
+    include: ["**/*.test.{ts,tsx}"],
+    exclude: [...configDefaults.exclude, "e2e/**"],
     clearMocks: true,
     restoreMocks: true,
     coverage: {
@@ -21,13 +24,17 @@ export default defineConfig({
         "components/**/*.tsx",
         "app/api/**/*.ts",
       ],
-      exclude: ["**/*.test.ts", "**/*.test.tsx"],
+      exclude: [
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "e2e/**",
+      ],
       thresholds: {
         lines: 70,
         functions: 70,
         statements: 70,
-        branches: 65,
-      },
-    },
-  },
+        branches: 65
+      }
+    }
+  }
 });

@@ -41,7 +41,7 @@ function scoreResult(
   result: SearchResult,
   input: Pick<
     SearchInput,
-    "name" | "location" | "company" | "username" | "profileUrl" | "socialProfiles" | "socialProfiles"
+    "name" | "location" | "company" | "username" | "profileUrl" | "socialProfiles"
   >,
 ): { score: number; signals: string[]; conflicts: string[] } {
   const text = haystack(result);

@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {
+  checkImageRateLimit,
   checkRateLimit,
+  checkReportEmailRateLimit,
   resetRateLimitForTests,
 } from "@/lib/rate-limit";
 
@@ -23,6 +25,12 @@ describe("rate limiter", () => {
     }
     expect(result.allowed).toBe(false);
     expect(result.remaining).toBe(0);
+  });
+
+  it("separates image and report-email buckets from search traffic", () => {
+    expect(checkImageRateLimit("client", 1_000).remaining).toBe(7);
+    expect(checkReportEmailRateLimit("client", 1_000).remaining).toBe(4);
+    expect(checkRateLimit("client", 1_000).remaining).toBe(19);
   });
 
   it("resets after the time window", () => {

@@ -71,6 +71,29 @@ describe("identity candidate building", () => {
     );
   });
 
+  it("keeps two namesakes as separate selectable candidates", () => {
+    const candidates = buildIdentityCandidates(
+      [
+        result({
+          title: "Alex Morgan | LinkedIn",
+          url: "https://linkedin.com/in/alex-morgan-zurich",
+          snippet: "Engineer in Zurich at Alpha AG",
+          sourceType: "professional",
+        }),
+        result({
+          title: "Alex Morgan | LinkedIn",
+          url: "https://linkedin.com/in/alex-morgan-london",
+          snippet: "Designer in London at Beta Ltd",
+          sourceType: "professional",
+        }),
+      ],
+      { name: "Alex Morgan" },
+    );
+
+    expect(candidates).toHaveLength(2);
+    expect(candidates[0]?.id).not.toBe(candidates[1]?.id);
+  });
+
   it("does not require a candidate when there are no results", () => {
     expect(
       buildIdentityCandidates([], { name: "Jane Unique-Surname" }),

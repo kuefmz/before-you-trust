@@ -68,6 +68,35 @@ function cleanUrl(value: unknown): string | undefined {
   }
 }
 
+function cleanSocialProfiles(value: unknown): string[] | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (!Array.isArray(value)) throw new Error("Social profiles must be a list.");
+
+  const cleaned = value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .slice(0, 8);
+
+  for (const item of cleaned) {
+    if (item.length > 500 || CONTROL_CHARACTERS.test(item)) {
+      throw new Error("A social profile or handle is invalid.");
+    }
+    if (/^https?:\/\//i.test(item)) {
+      try {
+        const parsed = new URL(item);
+        if (!["http:", "https:"].includes(parsed.protocol)) throw new Error();
+      } catch {
+        throw new Error("Social profile must be a valid http(s) URL.");
+      }
+    } else if (!/^@?[\p{L}\p{N}._-]{2,80}$/u.test(item)) {
+      throw new Error("Social handles may contain letters, numbers, dots, underscores and hyphens.");
+    }
+  }
+
+  return cleaned.length ? [...new Set(cleaned)] : undefined;
+}
+
 function cleanMode(value: unknown): SearchMode {
   if (value === "identity" || value === "deep") return value;
   throw new Error("Search mode is invalid.");
@@ -141,8 +170,9 @@ export function validateSearchRequest(payload: unknown): ValidationResult {
       name: cleanText(record.name, "Full name", 120, true)!,
       location: cleanText(record.location, "Location", 160),
       company: cleanText(record.company, "Employer or organization", 180),
-      username: cleanText(record.username, "Username", 120),
+      username: cleanText(record.username, "Username or handle", 120),
       profileUrl: cleanUrl(record.profileUrl),
+      socialProfiles: cleanSocialProfiles(record.socialProfiles),
       claim: cleanText(record.claim, "Claim", 300),
       context: cleanContext(record.context),
       mode,

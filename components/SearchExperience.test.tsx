@@ -96,7 +96,7 @@ describe("SearchExperience", () => {
     );
 
     expect(
-      await screen.findByRole("heading", { name: "Is this the person?" }),
+      await screen.findByRole("heading", { name: "Which person do you mean?" }),
     ).toBeInTheDocument();
 
     await user.click(
@@ -109,6 +109,36 @@ describe("SearchExperience", () => {
     expect(
       screen.getByRole("heading", { name: "Needs closer review" }),
     ).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not start deep research until the only match is confirmed", async () => {
+    const user = userEvent.setup();
+    const oneMatch: SearchResponse = {
+      ...identityResponse,
+      results: [identityResponse.results[0]!],
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(oneMatch), { status: 200 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(deepResponse), { status: 200 }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<SearchExperience />);
+    await user.type(screen.getByLabelText("Full name *"), "Jane Unique-Surname");
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: "Search the public web →" }));
+
+    expect(await screen.findByText(/one likely identity/i)).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("heading", { name: "Trust Brief" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "This is them" }));
+    expect(await screen.findByRole("heading", { name: "Trust Brief" })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 

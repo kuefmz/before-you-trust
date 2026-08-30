@@ -13,8 +13,11 @@ Before You Trust is an evidence-first public-web research tool. It searches publ
 - Tavily and Brave Search provider adapters with automatic fallback
 - Search timeouts, concurrency limits, result caps, URL normalization and de-duplication
 - Explainable candidate identity matching
+- Social-media discovery across major public platforms and known handles/profile links
+- Optional transient Google Cloud Vision Web Detection for photo-based public-web matching
 - Required user identity confirmation before deep research
 - Evidence-first Trust Brief with original source links
+- Optional report-by-email delivery with explicit email-processing acknowledgement
 - Professional About page with documented case studies and source links
 - Private Share Your Story / feedback / privacy-request form delivered via Brevo
 - Optional Buy Me a Coffee support link
@@ -56,8 +59,8 @@ Never expose private provider keys through `NEXT_PUBLIC_*`. For production Ampli
 It contains the exact checklist for:
 
 - AWS Amplify + domain
-- Tavily/Brave
-- Brevo story email delivery
+- Tavily/Brave + optional Google Cloud Vision
+- Brevo story/report email delivery
 - DynamoDB repeat-search signals + TTL + IAM
 - Buy Me a Coffee
 - GTM + GA4 consent configuration

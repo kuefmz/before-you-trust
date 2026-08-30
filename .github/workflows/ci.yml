@@ -56,6 +56,15 @@ jobs:
       - name: End-to-end tests
         run: npm run test:e2e
 
+      - name: Upload homepage screenshot
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: homepage-screenshot
+          path: homepage-desktop.png
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v7

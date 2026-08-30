@@ -5,6 +5,11 @@ test("completes identity confirmation and builds a Trust Brief", async ({
 }) => {
   await page.goto("/");
 
+  await page.screenshot({
+    path: "homepage-desktop.png",
+    fullPage: true,
+  });
+
   await page.getByLabel("Full name *").fill("Jane Unique-Surname");
   await page.getByLabel("City or country").fill("Zurich, Switzerland");
   await page.getByLabel("Employer or organization").fill("Example AG");

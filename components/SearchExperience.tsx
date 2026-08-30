@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState } from "react";
 
 import { EmailReportForm } from "@/components/EmailReportForm";
@@ -652,7 +653,13 @@ export function SearchExperience() {
           />
           {photoPreview ? (
             <div className="photo-preview">
-              <img alt="Selected person preview" src={photoPreview} />
+              <Image
+                alt="Selected person preview"
+                height={92}
+                src={photoPreview}
+                unoptimized
+                width={92}
+              />
               <button
                 className="button button--ghost"
                 onClick={() => {

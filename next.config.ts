@@ -20,6 +20,7 @@ const connectSources = [
 const imageSources = [
   "'self'",
   "data:",
+  "blob:",
   ...(analyticsEnabled
     ? ["https://www.google-analytics.com", "https://*.google-analytics.com"]
     : []),

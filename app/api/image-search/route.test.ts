@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { resetRateLimitForTests } from "@/lib/rate-limit";
 import { POST } from "./route";
@@ -9,40 +9,35 @@ beforeEach(() => {
   process.env.CI = "true";
 });
 
-function request(
-  options: { fileName?: string; mimeType?: string; content?: string } = {},
-) {
-  const boundary = "----before-you-trust-test-boundary";
-  const headers: Record<string, string> = {
-    "Content-Type": `multipart/form-data; boundary=${boundary}`,
-    "x-forwarded-for": "203.0.113.22",
-    "user-agent": "vitest",
-  };
+function request(file?: { type: string; bytes: Uint8Array }): Request {
+  const fileLike = file
+    ? {
+        type: file.type,
+        size: file.bytes.byteLength,
+        arrayBuffer: vi.fn().mockResolvedValue(
+          file.bytes.buffer.slice(
+            file.bytes.byteOffset,
+            file.bytes.byteOffset + file.bytes.byteLength,
+          ),
+        ),
+      }
+    : null;
 
-  let body = `--${boundary}--\r\n`;
-  if (options.fileName) {
-    body = [
-      `--${boundary}`,
-      `Content-Disposition: form-data; name="photo"; filename="${options.fileName}"`,
-      `Content-Type: ${options.mimeType ?? "image/png"}`,
-      "",
-      options.content ?? "abc",
-      `--${boundary}--`,
-      "",
-    ].join("\r\n");
-  }
-
-  return new Request("http://localhost/api/image-search", {
-    method: "POST",
-    headers,
-    body,
-  });
+  return {
+    headers: new Headers({
+      "x-forwarded-for": "203.0.113.22",
+      "user-agent": "vitest",
+    }),
+    formData: vi.fn().mockResolvedValue({
+      get: (key: string) => (key === "photo" ? fileLike : null),
+    }),
+  } as unknown as Request;
 }
 
 describe("POST /api/image-search", () => {
   it("returns public web-image matches for a supported photo", async () => {
     const response = await POST(
-      request({ fileName: "person.png", mimeType: "image/png" }),
+      request({ type: "image/png", bytes: new Uint8Array([1, 2, 3]) }),
     );
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toContain("no-store");
@@ -53,7 +48,7 @@ describe("POST /api/image-search", () => {
 
   it("rejects unsupported image types", async () => {
     const response = await POST(
-      request({ fileName: "person.gif", mimeType: "image/gif" }),
+      request({ type: "image/gif", bytes: new Uint8Array([1]) }),
     );
     expect(response.status).toBe(415);
   });

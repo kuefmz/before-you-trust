@@ -55,7 +55,7 @@ export async function searchImageOnWeb(
 ): Promise<Omit<ImageSearchResponse, "requestId">> {
   if (
     process.env.E2E_MOCK_IMAGE_SEARCH === "true" &&
-    process.env.NODE_ENV !== "production"
+    process.env.CI === "true"
   ) {
     return mockResponse();
   }

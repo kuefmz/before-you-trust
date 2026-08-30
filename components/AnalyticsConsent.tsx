@@ -13,10 +13,12 @@ function dataLayer(): unknown[] {
   return target.dataLayer;
 }
 
-function gtagCommand() {
+type GtagCommand = (...args: unknown[]) => void;
+
+const gtagCommand: GtagCommand = function () {
   // eslint-disable-next-line prefer-rest-params -- Google's gtag queue expects the native Arguments object.
   dataLayer().push(arguments);
-}
+};
 
 function setDefaultConsent() {
   gtagCommand("consent", "default", {

@@ -15,7 +15,6 @@ afterEach(() => {
 describe("sendTransactionalEmail", () => {
   it("uses a gated mock only outside production", async () => {
     process.env.E2E_MOCK_EMAIL = "true";
-    process.env.NODE_ENV = "test";
 
     await expect(
       sendTransactionalEmail({

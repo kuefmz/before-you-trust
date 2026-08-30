@@ -7,7 +7,6 @@ import { POST } from "./route";
 beforeEach(() => {
   resetRateLimitForTests();
   process.env.E2E_MOCK_EMAIL = "true";
-  process.env.NODE_ENV = "test";
   process.env.OWNER_NOTIFICATION_EMAIL = "owner@example.test";
 });
 

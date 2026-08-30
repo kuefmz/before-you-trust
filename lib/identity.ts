@@ -155,23 +155,47 @@ function stableId(value: string): string {
   return `candidate-${(hash >>> 0).toString(16)}`;
 }
 
+function identityKey(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace(/^www\./, "").toLowerCase();
+    const segments = parsed.pathname.split("/").filter(Boolean);
+    if (segments.length === 0) return null;
+
+    if (host === "linkedin.com" && segments[0] === "in" && segments[1]) {
+      return `${host}/in/${segments[1].toLowerCase()}`;
+    }
+
+    if (
+      ["github.com", "instagram.com", "tiktok.com", "x.com", "twitter.com"].includes(host)
+    ) {
+      return `${host}/${segments[0]!.toLowerCase()}`;
+    }
+
+    if (host === "facebook.com" && segments[0]) {
+      return `${host}/${segments[0].toLowerCase()}`;
+    }
+
+    return `${host}/${segments.slice(0, 2).join("/").toLowerCase()}`;
+  } catch {
+    return null;
+  }
+}
+
 function relatedByAnchor(anchor: SearchResult, candidate: SearchResult): boolean {
   if (anchor.url === candidate.url) return true;
 
-  try {
-    const anchorHost = new URL(anchor.url).hostname.replace(/^www\./, "");
-    const candidateHost = new URL(candidate.url).hostname.replace(/^www\./, "");
-    if (anchorHost === candidateHost) return true;
-  } catch {
-    return false;
-  }
+  const anchorKey = identityKey(anchor.url);
+  const candidateKey = identityKey(candidate.url);
+  if (anchorKey && candidateKey && anchorKey === candidateKey) return true;
 
   const anchorTokens = new Set(words(`${anchor.title} ${anchor.snippet}`));
-  const candidateTokens = words(
-    `${candidate.title} ${candidate.snippet}`,
-  );
+  const candidateTokens = words(`${candidate.title} ${candidate.snippet}`);
   const overlap = candidateTokens.filter((token) => anchorTokens.has(token));
-  return overlap.length >= 3;
+
+  // Cross-site results are grouped only with substantial contextual overlap.
+  // This prevents two namesakes on the same platform from being silently merged.
+  return overlap.length >= 5;
 }
 
 export function buildIdentityCandidates(
@@ -200,36 +224,6 @@ export function buildIdentityCandidates(
   const seeds = (anchors.length > 0 ? anchors : scored).slice(0, 5);
   const candidates: IdentityCandidate[] = [];
   const consumed = new Set<string>();
-
-  const hasExplicitContext = Boolean(
-    input.location ||
-      input.company ||
-      input.username ||
-      input.profileUrl ||
-      (input.socialProfiles?.length ?? 0) > 0,
-  );
-
-  if (hasExplicitContext) {
-    const contextual = scored.filter((entry) => entry.score >= 6);
-    if (contextual.length >= 2) {
-      const sources = contextual.slice(0, 10).map((entry) => entry.result);
-      const best = contextual[0]!;
-      candidates.push({
-        id: stableId(`context:${best.result.url}`),
-        label: `${input.name} — context match`,
-        summary:
-          best.result.snippet ||
-          "Multiple sources match the context you provided.",
-        confidence: confidence(best.score + 1),
-        supportingSignals: [
-          ...new Set(contextual.flatMap((entry) => entry.signals)),
-        ].slice(0, 8),
-        conflictingSignals: [],
-        sources,
-      });
-      for (const source of sources) consumed.add(source.url);
-    }
-  }
 
   for (const seed of seeds) {
     if (consumed.has(seed.result.url)) continue;

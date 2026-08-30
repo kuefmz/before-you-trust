@@ -61,7 +61,35 @@ export default function PrivacyPage() {
           is to keep it disabled.
         </p>
 
-        <h2>4. Story and contact submissions</h2>
+        <h2>4. Optional photo search</h2>
+        <p>
+          If you upload a photo, Before You Trust sends it transiently to
+          Google Cloud Vision Web Detection to look for public webpages and
+          web images that match or resemble it. The application does not save
+          the uploaded photo in its own database or object storage.
+        </p>
+        <p>
+          Photo matching is a discovery aid, not facial recognition and not
+          proof that two images show the same person. Users must confirm
+          identity using the surrounding source context.
+        </p>
+
+        <h2>5. Report-by-email requests</h2>
+        <p>
+          If you request a Trust Brief by email, the delivery address and
+          report contents are sent to the configured transactional email
+          provider for delivery. The application does not store the delivery
+          address in its own database.
+        </p>
+        <p>
+          The project operator receives a separate notification containing the
+          delivery email and source count so delivery/support issues can be
+          monitored. That operator notification deliberately omits the
+          searched person’s name and report contents. A report-delivery email
+          is not permission to add you to marketing communications.
+        </p>
+
+        <h2>6. Story and contact submissions</h2>
         <p>
           The story form can contain personal data that you voluntarily submit,
           including an optional name or reply email. The application does not
@@ -75,7 +103,7 @@ export default function PrivacyPage() {
           story is not publicly licensed merely because you submitted it.
         </p>
 
-        <h2>5. Analytics and cookies</h2>
+        <h2>7. Analytics and cookies</h2>
         <p>
           Google Tag Manager is optional and is not loaded at all unless it is
           configured by the operator. When configured, analytics storage is
@@ -88,7 +116,8 @@ export default function PrivacyPage() {
           candidate identities are never intentionally sent to GA4. The
           analytics layer is limited to product events such as whether a search
           was started/completed, counts of returned items, story-form
-          submission and support-link clicks.
+          submission, report-email request/success events and support-link
+          clicks. Email addresses themselves are never intentionally sent to GA4.
         </p>
         <p>
           Your analytics preference is stored locally in your browser so the
@@ -96,7 +125,7 @@ export default function PrivacyPage() {
           for consent management.
         </p>
 
-        <h2>6. Technical logs</h2>
+        <h2>8. Technical logs</h2>
         <p>
           Hosting, CDN, security and search/email providers may process
           technical connection data such as IP address, timestamps and user
@@ -106,7 +135,7 @@ export default function PrivacyPage() {
           for reliability and security.
         </p>
 
-        <h2>7. Purposes and legal bases</h2>
+        <h2>9. Purposes and legal bases</h2>
         <p>
           The service is designed around purpose limitation and data
           minimization. Where the GDPR applies, processing necessary to provide
@@ -119,17 +148,18 @@ export default function PrivacyPage() {
           your request and with explicit acknowledgement of the email delivery.
         </p>
 
-        <h2>8. Service providers and international transfers</h2>
+        <h2>10. Service providers and international transfers</h2>
         <p>
           Depending on deployment, the service may use AWS Amplify/DynamoDB,
-          Tavily and/or Brave Search, Brevo, and—only after analytics
+          Tavily and/or Brave Search, Google Cloud Vision for optional photo
+          web matching, Brevo, and—only after analytics
           consent—Google Tag Manager/Google Analytics. Each provider has its own
           processing locations, contractual terms and privacy documentation.
           The operator should maintain appropriate data-processing agreements
           and transfer safeguards where required.
         </p>
 
-        <h2>9. Your rights</h2>
+        <h2>11. Your rights</h2>
         <p>
           Depending on applicable law, you may have rights to information,
           access, correction, deletion, restriction, objection, portability or
@@ -144,21 +174,21 @@ export default function PrivacyPage() {
           an EU/EEA supervisory authority.
         </p>
 
-        <h2>10. Children</h2>
+        <h2>12. Children</h2>
         <p>
           The people-search functionality must not be used to target minors.
           Story/concern submissions are for adults; privacy/data-rights requests
           remain available regardless of age.
         </p>
 
-        <h2>11. Automated decisions</h2>
+        <h2>13. Automated decisions</h2>
         <p>
           Before You Trust does not make legally significant automated
           decisions and does not assign a person-level “trustworthiness” or
           “danger” score.
         </p>
 
-        <h2>12. Changes</h2>
+        <h2>14. Changes</h2>
         <p>
           This notice will be updated when the data flow, vendors or retention
           practices materially change. Production configuration should always

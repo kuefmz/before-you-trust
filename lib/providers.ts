@@ -36,7 +36,7 @@ function tavilyProvider(apiKey: string): SearchProvider {
       });
 
       if (!response.ok) {
-        throw new Error(\`Tavily request failed with status \${response.status}.\`);
+        throw new Error(`Tavily request failed with status ${response.status}.`);
       }
 
       const payload = (await response.json()) as {
@@ -78,7 +78,7 @@ function braveProvider(apiKey: string): SearchProvider {
       });
 
       if (!response.ok) {
-        throw new Error(\`Brave request failed with status \${response.status}.\`);
+        throw new Error(`Brave request failed with status ${response.status}.`);
       }
 
       const payload = (await response.json()) as {
@@ -223,9 +223,9 @@ export async function searchQuery(
     } catch (error) {
       if (signal.aborted) throw error;
       warnings.push(
-        \`\${provider.name} failed for one query: \${
+        `${provider.name} failed for one query: ${
           error instanceof Error ? error.message : "unknown error"
-        }\`,
+        }`,
       );
     }
   }

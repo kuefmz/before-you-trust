@@ -1,7 +1,7 @@
 import type { SearchInput, SearchQuery } from "@/types/search";
 
 function quote(value: string): string {
-  return \`"\${value.replace(/["\\]/g, " ").replace(/\s+/g, " ").trim()}"\`;
+  return `"${value.replace(/["\\]/g, " ").replace(/\s+/g, " ").trim()}"`;
 }
 
 function unique(queries: SearchQuery[]): SearchQuery[] {
@@ -29,21 +29,21 @@ export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
 
   if (input.location) {
     queries.push({
-      text: \`\${name} \${quote(input.location)}\`,
+      text: `${name} ${quote(input.location)}`,
       kind: "identity",
     });
   }
 
   if (input.company) {
     queries.push({
-      text: \`\${name} \${quote(input.company)}\`,
+      text: `${name} ${quote(input.company)}`,
       kind: "professional",
     });
   }
 
   if (input.username) {
     queries.push({
-      text: \`\${name} \${quote(input.username)}\`,
+      text: `${name} ${quote(input.username)}`,
       kind: "identity",
     });
   }
@@ -51,16 +51,16 @@ export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
   const profileHost = hostname(input.profileUrl);
   if (profileHost) {
     queries.push({
-      text: \`\${name} site:\${profileHost}\`,
+      text: `${name} site:${profileHost}`,
       kind: "identity",
     });
   }
 
   queries.push(
-    { text: \`\${name} LinkedIn\`, kind: "professional" },
-    { text: \`\${name} GitHub\`, kind: "professional" },
-    { text: \`\${name} (interview OR conference OR biography)\`, kind: "general" },
-    { text: \`\${name} filetype:pdf\`, kind: "general" },
+    { text: `${name} LinkedIn`, kind: "professional" },
+    { text: `${name} GitHub`, kind: "professional" },
+    { text: `${name} (interview OR conference OR biography)`, kind: "general" },
+    { text: `${name} filetype:pdf`, kind: "general" },
   );
 
   return unique(queries).slice(0, 9);
@@ -71,44 +71,44 @@ export function buildDeepQueries(input: SearchInput): SearchQuery[] {
   const queries: SearchQuery[] = [
     { text: name, kind: "identity" },
     {
-      text: \`\${name} (interview OR profile OR biography OR conference)\`,
+      text: `${name} (interview OR profile OR biography OR conference)`,
       kind: "general",
     },
     {
-      text: \`\${name} (license OR registry OR registration OR credential)\`,
+      text: `${name} (license OR registry OR registration OR credential)`,
       kind: "official",
     },
     {
-      text: \`\${name} (court OR lawsuit OR regulator OR sanction)\`,
+      text: `${name} (court OR lawsuit OR regulator OR sanction)`,
       kind: "official",
     },
     {
-      text: \`\${name} (news OR investigation)\`,
+      text: `${name} (news OR investigation)`,
       kind: "news",
     },
     {
-      text: \`\${name} (complaint OR allegation OR fraud OR scam)\`,
+      text: `${name} (complaint OR allegation OR fraud OR scam)`,
       kind: "concern",
     },
   ];
 
   if (input.location) {
     queries.push({
-      text: \`\${name} \${quote(input.location)}\`,
+      text: `${name} ${quote(input.location)}`,
       kind: "identity",
     });
   }
 
   if (input.company) {
     queries.push({
-      text: \`\${name} \${quote(input.company)}\`,
+      text: `${name} ${quote(input.company)}`,
       kind: "professional",
     });
   }
 
   if (input.claim) {
     queries.push({
-      text: \`\${name} \${quote(input.claim)}\`,
+      text: `${name} ${quote(input.claim)}`,
       kind: "claim",
     });
   }
@@ -117,7 +117,7 @@ export function buildDeepQueries(input: SearchInput): SearchQuery[] {
     const host = hostname(url);
     if (host) {
       queries.push({
-        text: \`\${name} site:\${host}\`,
+        text: `${name} site:${host}`,
         kind: "identity",
       });
     }

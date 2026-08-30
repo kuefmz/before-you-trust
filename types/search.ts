@@ -10,6 +10,8 @@ export type SearchContext =
 
 export type QueryKind =
   | "identity"
+  | "social"
+  | "image"
   | "professional"
   | "official"
   | "news"
@@ -38,6 +40,7 @@ export interface SearchInput {
   company?: string;
   username?: string;
   profileUrl?: string;
+  socialProfiles?: string[];
   claim?: string;
   context?: SearchContext;
   mode: SearchMode;
@@ -67,6 +70,17 @@ export interface SearchResponse {
   providers: string[];
   queriesRun: number;
   results: SearchResult[];
+  warnings: string[];
+}
+
+export interface ImageSearchResponse {
+  requestId: string;
+  provider: string;
+  bestGuessLabels: string[];
+  exactImageMatches: number;
+  partialImageMatches: number;
+  visuallySimilarImages: number;
+  matches: SearchResult[];
   warnings: string[];
 }
 

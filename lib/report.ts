@@ -4,6 +4,7 @@ export interface ReportSection {
   id:
     | "identity"
     | "official"
+    | "social"
     | "professional"
     | "news"
     | "claim"
@@ -39,6 +40,18 @@ export function buildReportSections(results: SearchResult[]): ReportSection[] {
       results: results.filter(
         (result) =>
           result.sourceType === "official" || includesKind(result, "official"),
+      ),
+    },
+    {
+      id: "social",
+      title: "Social-media & photo matches",
+      description:
+        "Public social profiles and pages connected by name, handle, profile URL or an uploaded photo. Treat these as leads to confirm, not proof by themselves.",
+      results: results.filter(
+        (result) =>
+          result.sourceType === "social" ||
+          includesKind(result, "social") ||
+          includesKind(result, "image"),
       ),
     },
     {

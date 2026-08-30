@@ -25,7 +25,7 @@ export async function sendTransactionalEmail(
 ): Promise<{ messageId: string }> {
   if (
     process.env.E2E_MOCK_EMAIL === "true" &&
-    process.env.NODE_ENV !== "production"
+    (process.env.NODE_ENV !== "production" || process.env.CI === "true")
   ) {
     return { messageId: "mock-message-id" };
   }

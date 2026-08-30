@@ -4,7 +4,7 @@ const compat = new FlatCompat({
   baseDirectory: import.meta.dirname,
 });
 
-export default [
+const eslintConfig = [
   ...compat.config({
     extends: ["next/core-web-vitals", "next/typescript"],
   }),
@@ -18,3 +18,5 @@ export default [
     ],
   },
 ];
+
+export default eslintConfig;

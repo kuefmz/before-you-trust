@@ -46,18 +46,46 @@ export async function POST(request: Request) {
   }
 
   const file = formData.get("photo");
-  if (!(file instanceof File)) {
-    return response(400, { error: { code: "PHOTO_REQUIRED", message: "Please choose a photo." } });
+  const isUpload =
+    file !== null &&
+    typeof file === "object" &&
+    "arrayBuffer" in file &&
+    typeof file.arrayBuffer === "function" &&
+    "size" in file &&
+    typeof file.size === "number" &&
+    "type" in file &&
+    typeof file.type === "string";
+
+  if (!isUpload) {
+    return response(400, {
+      error: { code: "PHOTO_REQUIRED", message: "Please choose a photo." },
+    });
   }
-  if (!ALLOWED_TYPES.has(file.type)) {
-    return response(415, { error: { code: "UNSUPPORTED_IMAGE", message: "Use a JPG, PNG or WebP image." } });
+
+  const photo = file as File;
+
+  if (!ALLOWED_TYPES.has(photo.type)) {
+    return response(415, {
+      error: {
+        code: "UNSUPPORTED_IMAGE",
+        message: "Use a JPG, PNG or WebP image.",
+      },
+    });
   }
-  if (file.size <= 0 || file.size > MAX_IMAGE_BYTES) {
-    return response(413, { error: { code: "IMAGE_TOO_LARGE", message: "Photo must be 5 MB or smaller." } });
+
+  if (photo.size <= 0 || photo.size > MAX_IMAGE_BYTES) {
+    return response(413, {
+      error: {
+        code: "IMAGE_TOO_LARGE",
+        message: "Photo must be 5 MB or smaller.",
+      },
+    });
   }
 
   try {
-    const result = await searchImageOnWeb(new Uint8Array(await file.arrayBuffer()));
+    const result = await searchImageOnWeb(
+      new Uint8Array(await photo.arrayBuffer()),
+    );
     return response(200, { requestId: crypto.randomUUID(), ...result });
   } catch (error) {
     if (error instanceof ImageSearchConfigurationError) {

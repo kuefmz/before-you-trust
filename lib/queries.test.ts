@@ -17,7 +17,7 @@ describe("query generation", () => {
   it("keeps the identity stage neutral", () => {
     const queries = buildIdentityQueries(base).map((query) => query.text);
 
-    expect(queries.some((query) => query.includes("LinkedIn"))).toBe(true);
+    expect(queries.some((query) => query.toLowerCase().includes("linkedin.com"))).toBe(true);
     expect(queries.some((query) => /fraud|scam|lawsuit/i.test(query))).toBe(false);
     expect(queries.some((query) => query.includes("site:example.org"))).toBe(true);
   });

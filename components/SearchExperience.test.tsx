@@ -167,6 +167,49 @@ describe("SearchExperience", () => {
     );
   });
 
+  it("labels low-confidence candidates as possibilities", async () => {
+    const user = userEvent.setup();
+    const lowConfidenceResponse: SearchResponse = {
+      ...identityResponse,
+      results: [
+        {
+          ...identityResponse.results[0]!,
+          title: "Sasza Swiatek | LinkedIn",
+          url: "https://linkedin.com/in/sasza-swiatek",
+          snippet: "Public professional profile",
+          sourceType: "professional",
+        },
+      ],
+    };
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(lowConfidenceResponse), { status: 200 }),
+      ),
+    );
+
+    render(<SearchExperience />);
+    await user.type(screen.getByLabelText("Full name *"), "Sasza Swiatek");
+    await user.type(screen.getByLabelText("City or country"), "Zurich");
+    await user.type(
+      screen.getByLabelText("Employer or organization"),
+      "UBS",
+    );
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(
+      screen.getByRole("button", { name: "Search the public web →" }),
+    );
+
+    expect(
+      await screen.findByText(/low-confidence possibilit/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Low-confidence identity leads only/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Possible match #1/i)).toBeInTheDocument();
+  });
+
   it("does not start deep research until the only match is confirmed", async () => {
     const user = userEvent.setup();
     const oneMatch: SearchResponse = {

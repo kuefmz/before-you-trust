@@ -39,16 +39,73 @@ function safeCell(value) {
   return /^[=+\-@]/.test(text) ? "'" + text : text;
 }
 
-function doPost(e) {
+function cleanHeaderValue(value) {
+  return String(value || "").replace(/[\r\n]+/g, " ").trim();
+}
+
+function validReplyEmail(value) {
+  const email = String(value || "").trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : "";
+}
+
+function handleStorySubmission(body) {
+  const ownerEmail = getSetting("OWNER_EMAIL");
+  if (!ownerEmail) {
+    throw new Error("OWNER_EMAIL is not configured.");
+  }
+
+  const message = String(body.message || "").trim();
+  if (!message) {
+    throw new Error("Story message is required.");
+  }
+
+  const topicLabels = {
+    story: "Story",
+    concern: "Concern / feedback",
+    privacy: "Privacy / data request",
+    other: "Other"
+  };
+
+  const topic = String(body.topic || "other");
+  const topicLabel = topicLabels[topic] || "Other";
+  const submissionId = cleanHeaderValue(body.submissionId || Utilities.getUuid());
+  const name = cleanHeaderValue(body.name);
+  const replyEmail = validReplyEmail(body.email);
+  const permissionToPublish = body.permissionToPublish === true ? "Yes" : "No";
+
+  const mail = {
+    to: ownerEmail,
+    subject: "Before You Trust — " + topicLabel + " submission",
+    body: [
+      "Submission ID: " + submissionId,
+      "Topic: " + topicLabel,
+      "Name provided: " + (name || "No"),
+      "Reply email provided: " + (replyEmail || "No"),
+      "Permission to publish an anonymized excerpt: " + permissionToPublish,
+      "",
+      "Message:",
+      message.slice(0, 20000),
+      "",
+      "Privacy note: this submission is not stored in the application database or report Sheet. It is delivered directly to the configured owner mailbox through Google email services."
+    ].join("\n")
+  };
+
+  if (replyEmail) {
+    mail.replyTo = replyEmail;
+  }
+
+  MailApp.sendEmail(mail);
+
+  return jsonResponse({
+    ok: true,
+    submissionId: submissionId
+  });
+}
+
+function handleReportRequest(body) {
   let rowNumber = null;
 
   try {
-    const body = JSON.parse(
-      e.postData && e.postData.contents
-        ? e.postData.contents
-        : "{}"
-    );
-
     const userEmail = String(body.userEmail || "").trim();
 
     if (!userEmail) {
@@ -156,6 +213,27 @@ function doPost(e) {
     return jsonResponse({
       ok: false,
       error: "Report delivery failed."
+    });
+  }
+}
+
+function doPost(e) {
+  try {
+    const body = JSON.parse(
+      e.postData && e.postData.contents
+        ? e.postData.contents
+        : "{}"
+    );
+
+    if (body.kind === "story") {
+      return handleStorySubmission(body);
+    }
+
+    return handleReportRequest(body);
+  } catch (error) {
+    return jsonResponse({
+      ok: false,
+      error: "Delivery failed."
     });
   }
 }

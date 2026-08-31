@@ -23,7 +23,7 @@ export default function HomePage() {
             <div className="hero-points" aria-label="Product principles">
               <span>Sources, not mystery scores</span>
               <span>Identity confirmation first</span>
-              <span>Privacy-first monitoring</span>
+              <span>No search-history database</span>
             </div>
           </div>
 

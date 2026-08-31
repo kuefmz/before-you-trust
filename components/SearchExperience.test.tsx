@@ -174,9 +174,9 @@ describe("SearchExperience", () => {
       results: [
         {
           ...identityResponse.results[0]!,
-          title: "Sasza Swiatek | LinkedIn",
+          title: "Professional profile",
           url: "https://linkedin.com/in/sasza-swiatek",
-          snippet: "Public professional profile",
+          snippet: "Sasza Swiatek public professional profile",
           sourceType: "professional",
         },
       ],

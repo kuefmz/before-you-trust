@@ -3,13 +3,35 @@
 import { useState } from "react";
 
 import { trackEvent } from "@/lib/client-analytics";
-import type { SearchResult } from "@/types/search";
+import type {
+  ConfirmedIdentity,
+  SearchContext,
+  SearchResult,
+} from "@/types/search";
 
 export function EmailReportForm({
   reportLabel,
+  searchedName,
+  location,
+  company,
+  profileUrl,
+  socialProfiles,
+  claim,
+  context,
+  confirmedIdentity,
+  searchQueries,
   results,
 }: {
   reportLabel: string;
+  searchedName: string;
+  location?: string;
+  company?: string;
+  profileUrl?: string;
+  socialProfiles?: string[];
+  claim?: string;
+  context?: SearchContext;
+  confirmedIdentity?: ConfirmedIdentity;
+  searchQueries?: string[];
   results: SearchResult[];
 }) {
   const [email, setEmail] = useState("");
@@ -34,6 +56,15 @@ export function EmailReportForm({
         body: JSON.stringify({
           email,
           reportLabel,
+          searchedName,
+          location,
+          company,
+          profileUrl,
+          socialProfiles,
+          claim,
+          context,
+          confirmedIdentity,
+          searchQueries,
           consentAccepted: consent,
           website,
           results: results.map((result) => ({
@@ -51,7 +82,9 @@ export function EmailReportForm({
       };
 
       if (!response.ok) {
-        throw new Error(payload.error?.message || "The report could not be emailed.");
+        throw new Error(
+          payload.error?.message || "The report could not be emailed.",
+        );
       }
 
       trackEvent("report_email_sent", { source_count: results.length });
@@ -62,7 +95,10 @@ export function EmailReportForm({
     } catch (error) {
       setStatus({
         type: "error",
-        message: error instanceof Error ? error.message : "The report could not be emailed.",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The report could not be emailed.",
       });
     } finally {
       setBusy(false);
@@ -75,8 +111,9 @@ export function EmailReportForm({
         <span className="eyebrow">Take it with you</span>
         <h3>Email me this report</h3>
         <p>
-          We will send this Trust Brief and its source links to your email. The
-          app does not add your address to a marketing list.
+          We will send this filtered Trust Brief and its source links to your
+          email. The submitted report request is stored in the project&apos;s
+          private Google Sheet and is not added to a marketing list.
         </p>
       </div>
 
@@ -111,15 +148,19 @@ export function EmailReportForm({
             type="checkbox"
           />
           <span>
-            I understand my email is used to deliver this report and may be
-            visible to the project operator and Brevo for delivery/support.
-            It will not be used for marketing without separate consent.
+            I understand my email, search context, selected identity and final
+            filtered report are stored in the private Before You Trust Google
+            Sheet for report delivery, and the report is sent through Google
+            email services. They will not be used for marketing without
+            separate consent.
           </span>
         </label>
 
         {status ? (
           <div
-            className={status.type === "success" ? "success-banner" : "error-banner"}
+            className={
+              status.type === "success" ? "success-banner" : "error-banner"
+            }
             role="status"
           >
             {status.message}

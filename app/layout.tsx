@@ -5,10 +5,16 @@ import { AnalyticsConsent } from "@/components/AnalyticsConsent";
 import { BrandMark } from "@/components/BrandMark";
 import { PrivacyPreferencesButton } from "@/components/PrivacyPreferencesButton";
 import { SupportLink } from "@/components/SupportLink";
+import {
+  configuredSiteUrl,
+  indexingEnabled,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+} from "@/lib/seo";
 
 import "./globals.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+const siteUrl = configuredSiteUrl();
 const verification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
 const supportUrl =
   process.env.NEXT_PUBLIC_BUY_ME_A_COFFEE_URL?.trim() ||
@@ -21,21 +27,27 @@ const gtmId =
 export const metadata: Metadata = {
   metadataBase: siteUrl ? new URL(siteUrl) : undefined,
   title: {
-    default: "Before You Trust — Know what the internet already knows",
+    default: "Before You Trust — Verify Someone's Public Web Footprint",
     template: "%s | Before You Trust",
   },
-  description:
-    "Search public sources, verify claims, separate identities, and review original evidence before you place meaningful trust in someone.",
-  applicationName: "Before You Trust",
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
   verification: verification ? { google: verification } : undefined,
   robots: {
-    index: true,
-    follow: true,
+    index: indexingEnabled(),
+    follow: indexingEnabled(),
   },
   openGraph: {
-    title: "Before You Trust",
-    description: "Know what the internet already knows.",
+    title: "Before You Trust — Verify Someone's Public Web Footprint",
+    description: SITE_DESCRIPTION,
+    siteName: SITE_NAME,
     type: "website",
+    url: siteUrl,
+  },
+  twitter: {
+    card: "summary",
+    title: "Before You Trust — Verify Someone's Public Web Footprint",
+    description: SITE_DESCRIPTION,
   },
 };
 

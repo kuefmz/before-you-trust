@@ -232,6 +232,7 @@ export function SearchExperience() {
       confirmed
         ? {
             label: confirmed.label,
+            searchName: confirmed.searchName,
             confidence: confirmed.confidence,
             supportingSignals: confirmed.supportingSignals,
             urls: confirmed.sources.map((source) => source.url),
@@ -295,7 +296,7 @@ export function SearchExperience() {
       deepResponse?.results ?? [],
       confirmed.sources,
       {
-        name: form.name,
+        name: confirmed.searchName || form.name,
         location: form.location || undefined,
         company: form.company || undefined,
         profileUrl: form.profileUrl || undefined,
@@ -444,6 +445,7 @@ export function SearchExperience() {
 
     const confirmedIdentity: ConfirmedIdentity = {
       label: candidate.label,
+      searchName: candidate.searchName,
       confidence: candidate.confidence,
       supportingSignals: candidate.supportingSignals,
       urls: candidate.sources.map((source) => source.url),

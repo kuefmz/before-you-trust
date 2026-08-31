@@ -44,6 +44,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Netflix exact-identity benchmark
+        run: npm run benchmark:identity
+
       - name: Unit and component tests with coverage
         run: npm run test:coverage
 

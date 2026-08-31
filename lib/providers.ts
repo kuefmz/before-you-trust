@@ -12,6 +12,23 @@ interface SearchProvider {
   search(query: string, signal: AbortSignal): Promise<ProviderSearchResult[]>;
 }
 
+interface YacyItem {
+  title?: string;
+  link?: string;
+  description?: string;
+  pubDate?: string | null;
+}
+
+interface YacyChannel {
+  items?: YacyItem[];
+  item?: YacyItem | YacyItem[];
+}
+
+interface YacyPayload {
+  channels?: YacyChannel | YacyChannel[];
+  channel?: YacyChannel;
+}
+
 export class SearchConfigurationError extends Error {
   constructor(message: string) {
     super(message);
@@ -19,88 +36,92 @@ export class SearchConfigurationError extends Error {
   }
 }
 
-function tavilyProvider(apiKey: string): SearchProvider {
-  return {
-    name: "tavily",
-    async search(query, signal) {
-      const response = await fetch("https://api.tavily.com/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          api_key: apiKey,
-          query,
-          search_depth: "basic",
-          include_answer: false,
-          include_raw_content: false,
-          max_results: 6,
-        }),
-        signal,
-      });
+function plainText(value: string | undefined): string {
+  if (!value) return "";
 
-      if (!response.ok) {
-        throw new Error(`Tavily request failed with status ${response.status}.`);
-      }
-
-      const payload = (await response.json()) as {
-        results?: Array<{
-          title?: string;
-          url?: string;
-          content?: string;
-          published_date?: string | null;
-        }>;
-      };
-
-      return (payload.results ?? [])
-        .filter((item) => item.url)
-        .map((item) => ({
-          title: item.title ?? item.url ?? "Untitled result",
-          url: item.url!,
-          snippet: item.content ?? "",
-          publishedAt: item.published_date ?? null,
-        }));
-    },
-  };
+  return value
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-function braveProvider(apiKey: string): SearchProvider {
+function yacyItems(payload: YacyPayload): YacyItem[] {
+  const rawChannels = payload.channels ?? payload.channel ?? [];
+  const channels = Array.isArray(rawChannels) ? rawChannels : [rawChannels];
+
+  return channels.flatMap((channel) => {
+    if (Array.isArray(channel.items)) return channel.items;
+    if (Array.isArray(channel.item)) return channel.item;
+    if (channel.item) return [channel.item];
+    return [];
+  });
+}
+
+function yacyProvider(config: {
+  baseUrl: string;
+  resource: "local" | "global";
+  username?: string;
+  password?: string;
+}): SearchProvider {
+  let endpoint: URL;
+  try {
+    const base = config.baseUrl.endsWith("/") ? config.baseUrl : `${config.baseUrl}/`;
+    endpoint = new URL("yacysearch.json", base);
+  } catch {
+    throw new SearchConfigurationError("YACY_BASE_URL must be a valid http(s) URL.");
+  }
+
+  if (!["http:", "https:"].includes(endpoint.protocol)) {
+    throw new SearchConfigurationError("YACY_BASE_URL must use http or https.");
+  }
+
   return {
-    name: "brave",
+    name: "yacy",
     async search(query, signal) {
-      const url = new URL("https://api.search.brave.com/res/v1/web/search");
-      url.searchParams.set("q", query);
-      url.searchParams.set("count", "6");
-      url.searchParams.set("safesearch", "moderate");
+      const url = new URL(endpoint);
+      url.searchParams.set("query", query);
+      url.searchParams.set("resource", config.resource);
+      url.searchParams.set("contentdom", "text");
+      url.searchParams.set("maximumRecords", "6");
+      url.searchParams.set("verify", "false");
+      url.searchParams.set("nav", "none");
+
+      const headers: Record<string, string> = {
+        Accept: "application/json",
+      };
+
+      if (config.username && config.password) {
+        headers.Authorization = `Basic ${Buffer.from(
+          `${config.username}:${config.password}`,
+          "utf8",
+        ).toString("base64")}`;
+      }
 
       const response = await fetch(url, {
-        headers: {
-          Accept: "application/json",
-          "X-Subscription-Token": apiKey,
-        },
+        method: "GET",
+        headers,
         signal,
       });
 
       if (!response.ok) {
-        throw new Error(`Brave request failed with status ${response.status}.`);
+        throw new Error(`YaCy request failed with status ${response.status}.`);
       }
 
-      const payload = (await response.json()) as {
-        web?: {
-          results?: Array<{
-            title?: string;
-            url?: string;
-            description?: string;
-            page_age?: string | null;
-          }>;
-        };
-      };
+      const payload = (await response.json()) as YacyPayload;
 
-      return (payload.web?.results ?? [])
-        .filter((item) => item.url)
+      return yacyItems(payload)
+        .filter((item) => item.link)
         .map((item) => ({
-          title: item.title ?? item.url ?? "Untitled result",
-          url: item.url!,
-          snippet: item.description ?? "",
-          publishedAt: item.page_age ?? null,
+          title: plainText(item.title) || item.link || "Untitled result",
+          url: item.link!,
+          snippet: plainText(item.description),
+          publishedAt: item.pubDate ?? null,
         }));
     },
   };
@@ -127,7 +148,7 @@ function mockProvider(): SearchProvider {
         }];
       }
 
-      if (lower.includes("complaint") || lower.includes("allegation")) {
+      if (lower.includes("complaint") || lower.includes("allegation") || lower.includes("fraud")) {
         return [{
           title: `Example news mention — ${subject}`,
           url: `https://news.example.org/${slug}`,
@@ -135,7 +156,12 @@ function mockProvider(): SearchProvider {
         }];
       }
 
-      if (lower.includes("instagram.com") || lower.includes("tiktok.com") || lower.includes("facebook.com") || lower.includes("x.com")) {
+      if (
+        lower.includes("instagram.com") ||
+        lower.includes("tiktok.com") ||
+        lower.includes("facebook.com") ||
+        lower.includes("x.com")
+      ) {
         return [{
           title: `${subject} — public social profile`,
           url: `https://www.instagram.com/${slug}/`,
@@ -165,9 +191,29 @@ function mockProvider(): SearchProvider {
 }
 
 async function configuredProviders(): Promise<SearchProvider[]> {
-  const selection = (
-    (await getRuntimeSetting("SEARCH_PROVIDER")) ?? "auto"
-  ).toLowerCase();
+  let selection: string;
+  let baseUrl: string;
+  let resource: string;
+  let username: string | undefined;
+  let password: string | undefined;
+
+  try {
+    [selection, baseUrl, resource, username, password] = await Promise.all([
+      getRuntimeSetting("SEARCH_PROVIDER").then((value) => value ?? "yacy"),
+      getRuntimeSetting("YACY_BASE_URL").then(
+        (value) => value ?? "http://localhost:8090",
+      ),
+      getRuntimeSetting("YACY_RESOURCE").then((value) => value ?? "global"),
+      getRuntimeSetting("YACY_USERNAME"),
+      getRuntimeSetting("YACY_PASSWORD"),
+    ]);
+  } catch {
+    throw new SearchConfigurationError(
+      "Search configuration could not be loaded.",
+    );
+  }
+
+  selection = selection.toLowerCase();
 
   if (selection === "mock") {
     if (process.env.E2E_MOCK_SEARCH !== "true") {
@@ -178,52 +224,33 @@ async function configuredProviders(): Promise<SearchProvider[]> {
     return [mockProvider()];
   }
 
-  let tavilyKey: string | undefined;
-  let braveKey: string | undefined;
-  try {
-    [tavilyKey, braveKey] = await Promise.all([
-      getRuntimeSetting("TAVILY_API_KEY"),
-      getRuntimeSetting("BRAVE_SEARCH_API_KEY"),
-    ]);
-  } catch {
+  if (selection !== "yacy") {
     throw new SearchConfigurationError(
-      "Secure search-provider configuration could not be loaded.",
+      "SEARCH_PROVIDER must be yacy (or mock in automated tests).",
     );
   }
 
-  if (selection === "tavily") {
-    if (!tavilyKey) {
-      throw new SearchConfigurationError("TAVILY_API_KEY is not configured.");
-    }
-    return [tavilyProvider(tavilyKey)];
-  }
-
-  if (selection === "brave") {
-    if (!braveKey) {
-      throw new SearchConfigurationError(
-        "BRAVE_SEARCH_API_KEY is not configured.",
-      );
-    }
-    return [braveProvider(braveKey)];
-  }
-
-  if (selection !== "auto") {
+  const normalizedResource = resource.toLowerCase();
+  if (normalizedResource !== "local" && normalizedResource !== "global") {
     throw new SearchConfigurationError(
-      "SEARCH_PROVIDER must be auto, tavily, or brave.",
+      "YACY_RESOURCE must be local or global.",
     );
   }
 
-  const providers: SearchProvider[] = [];
-  if (tavilyKey) providers.push(tavilyProvider(tavilyKey));
-  if (braveKey) providers.push(braveProvider(braveKey));
-
-  if (providers.length === 0) {
+  if (Boolean(username) !== Boolean(password)) {
     throw new SearchConfigurationError(
-      "No search provider is configured. Add Tavily or Brave credentials.",
+      "Configure both YACY_USERNAME and YACY_PASSWORD, or neither.",
     );
   }
 
-  return providers;
+  return [
+    yacyProvider({
+      baseUrl,
+      resource: normalizedResource,
+      username,
+      password,
+    }),
+  ];
 }
 
 export async function searchQuery(

@@ -1,3 +1,4 @@
+import { exactNameSearchVariant } from "@/lib/exact-name";
 import type { SearchInput, SearchQuery } from "@/types/search";
 
 function clean(value: string): string {
@@ -73,9 +74,14 @@ function buildSocialQueries(input: SearchInput, name: string): SearchQuery[] {
 
 export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
   const name = quote(input.name);
+  const equivalentName = quote(exactNameSearchVariant(input.name));
   const queries: SearchQuery[] = [
     { text: name, kind: "identity" },
   ];
+
+  if (equivalentName.toLowerCase() !== name.toLowerCase()) {
+    queries.push({ text: equivalentName, kind: "identity" });
+  }
 
   if (input.location) {
     queries.push({
@@ -119,9 +125,14 @@ export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
 export function buildDeepQueries(input: SearchInput): SearchQuery[] {
   const researchName = input.confirmedIdentity?.searchName?.trim() || input.name;
   const name = quote(researchName);
+  const equivalentName = quote(exactNameSearchVariant(researchName));
   const queries: SearchQuery[] = [
     { text: name, kind: "identity" },
   ];
+
+  if (equivalentName.toLowerCase() !== name.toLowerCase()) {
+    queries.push({ text: equivalentName, kind: "identity" });
+  }
 
   if (input.location) {
     queries.push({

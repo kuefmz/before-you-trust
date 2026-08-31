@@ -287,7 +287,7 @@ Only then can a successful `main` CI run trigger the production deployment.
 ### `AWS_REGION`
 
 ```text
-eu-central-1
+eu-north-1
 ```
 
 Use another region only if the Amplify app is in a different region.
@@ -300,12 +300,15 @@ YOUR_AMPLIFY_APP_ID
 
 ### `AWS_ROLE_TO_ASSUME`
 
+Store this as a repository **Secret**:
+
 ```text
 arn:aws:iam::AWS_ACCOUNT_ID:role/BeforeYouTrustGitHubAmplifyDeploy
 ```
 
-These values are identifiers/flags, not passwords, so repository **Variables**
-are appropriate.
+Use repository **Variables** for `AWS_REGION`, `AMPLIFY_APP_ID`, and
+`PRODUCTION_DEPLOY_ENABLED`. Use a repository **Secret** for
+`AWS_ROLE_TO_ASSUME`.
 
 No `AWS_ACCESS_KEY_ID` or `AWS_SECRET_ACCESS_KEY` should be added.
 

@@ -24,7 +24,7 @@ Before You Trust is an evidence-first public-web research tool. It searches publ
 - No DynamoDB/search-history persistence
 - Search/report request bodies excluded from application logs and analytics
 - Optional Brevo email only for the separate Share Your Story/contact flow
-- Optional GTM/GA4 tracking blocked until analytics consent
+- GA4 tracking (G-MVDVBJJFQB) blocked until analytics consent; optional GTM remains supported
 - Privacy Notice, Terms of Use, Acceptable Use and About pages
 - Unit/API/component/Playwright tests and GitHub Actions quality gates
 

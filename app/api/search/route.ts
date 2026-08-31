@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
 import { checkRateLimit } from "@/lib/rate-limit";
-import { recordSearchOccurrence } from "@/lib/search-monitor";
 import {
   executeSearch,
   SearchConfigurationError,
@@ -102,16 +101,6 @@ export async function POST(request: Request) {
   const validation = validateSearchRequest(payload);
   if (!validation.ok) {
     return errorResponse(400, "INVALID_REQUEST", validation.error, rateHeaders);
-  }
-
-  // Privacy-preserving repeat detection. The raw name is never written to the
-  // signal table. Monitoring failure must not block the search itself.
-  if (validation.data.mode === "identity") {
-    try {
-      await recordSearchOccurrence(validation.data.name);
-    } catch {
-      console.error("Repeat-search monitoring is unavailable.");
-    }
   }
 
   try {

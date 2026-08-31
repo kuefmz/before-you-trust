@@ -633,6 +633,7 @@ export function SearchExperience() {
         ref={panelRef}
       >
         <JourneyProgress
+          highlightManualSearch={candidates.length === 0}
           manualSearchOpen={manualSearchOpen}
           onStartNewSearch={reset}
           onToggleManualSearch={() => setManualSearchOpen((open) => !open)}

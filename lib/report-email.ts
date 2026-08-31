@@ -80,6 +80,8 @@ function cleanConfirmedIdentity(value: unknown): ConfirmedIdentity | undefined {
   const label = cleanOptionalText(record.label, 240);
   if (!label) return undefined;
 
+  const searchName = cleanOptionalText(record.searchName, 160);
+
   const confidence =
     record.confidence === "high" ||
     record.confidence === "medium" ||
@@ -98,7 +100,7 @@ function cleanConfirmedIdentity(value: unknown): ConfirmedIdentity | undefined {
     }
   });
 
-  return { label, confidence, supportingSignals, urls };
+  return { label, searchName, confidence, supportingSignals, urls };
 }
 
 export function validateReportEmailRequest(payload: unknown): ValidationResult {

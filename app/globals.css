@@ -1274,6 +1274,12 @@ select:focus-visible {
   white-space: nowrap;
 }
 
+.button--manual-highlight {
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.16),
+    0 10px 24px rgba(37, 99, 235, 0.24);
+}
+
 .journey-toolbar .journey-progress {
   margin: 0;
 }

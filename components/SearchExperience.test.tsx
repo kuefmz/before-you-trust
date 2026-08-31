@@ -210,6 +210,41 @@ describe("SearchExperience", () => {
     expect(screen.getByText(/Possible match #1/i)).toBeInTheDocument();
   });
 
+  it("warns when broad SearXNG discovery did not contribute", async () => {
+    const user = userEvent.setup();
+    const yacyOnlyResponse: SearchResponse = {
+      ...identityResponse,
+      providers: ["yacy"],
+      results: [
+        {
+          ...identityResponse.results[0]!,
+          title: "LinkedIn",
+          url: "https://www.linkedin.com/in/sasza-swiatek",
+          snippet: "Sasza Swiatek public profile",
+          sourceType: "professional",
+        },
+      ],
+    };
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(yacyOnlyResponse), { status: 200 }),
+      ),
+    );
+
+    render(<SearchExperience />);
+    await user.type(screen.getByLabelText("Full name *"), "Sasza Swiatek");
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(
+      screen.getByRole("button", { name: "Search the public web →" }),
+    );
+
+    expect(
+      await screen.findByText(/Broad web discovery is currently unavailable/i),
+    ).toBeInTheDocument();
+  });
+
   it("does not start deep research until the only match is confirmed", async () => {
     const user = userEvent.setup();
     const oneMatch: SearchResponse = {

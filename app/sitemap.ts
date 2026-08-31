@@ -1,23 +1,27 @@
 import type { MetadataRoute } from "next";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (!configured) return [];
+import { canonicalUrl, indexingEnabled } from "@/lib/seo";
 
-  const base = configured.replace(/\/+$/, "");
-  const paths = [
-    "",
-    "/how-it-works",
-    "/about",
-    "/share-your-story",
-    "/privacy",
-    "/terms",
-    "/acceptable-use",
+export default function sitemap(): MetadataRoute.Sitemap {
+  if (!indexingEnabled()) return [];
+
+  const pages = [
+    { path: "/", changeFrequency: "weekly" as const, priority: 1 },
+    { path: "/how-it-works", changeFrequency: "monthly" as const, priority: 0.9 },
+    { path: "/about", changeFrequency: "monthly" as const, priority: 0.9 },
+    { path: "/privacy", changeFrequency: "monthly" as const, priority: 0.5 },
+    { path: "/terms", changeFrequency: "monthly" as const, priority: 0.5 },
+    { path: "/acceptable-use", changeFrequency: "monthly" as const, priority: 0.5 },
   ];
 
-  return paths.map((path) => ({
-    url: `${base}${path || "/"}`,
-    changeFrequency: path === "" ? ("weekly" as const) : ("monthly" as const),
-    priority: path === "" ? 1 : path === "/about" ? 0.8 : 0.6,
-  }));
+  return pages.flatMap((page) => {
+    const url = canonicalUrl(page.path);
+    return url
+      ? [{
+          url,
+          changeFrequency: page.changeFrequency,
+          priority: page.priority,
+        }]
+      : [];
+  });
 }

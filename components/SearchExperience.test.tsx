@@ -45,7 +45,7 @@ const deepResponse: SearchResponse = {
     {
       title: "Example public registry",
       url: "https://justice.gov/example-jane",
-      snippet: "Official-source fixture",
+      snippet: "Jane Unique-Surname in Zurich at Example AG. Official-source fixture",
       sourceType: "official",
       publishedAt: null,
       providers: ["mock"],
@@ -55,7 +55,7 @@ const deepResponse: SearchResponse = {
     {
       title: "Example news result",
       url: "https://www.reuters.com/example-jane",
-      snippet: "News-source fixture",
+      snippet: "Jane Unique-Surname in Zurich at Example AG. News-source fixture",
       sourceType: "news",
       publishedAt: null,
       providers: ["mock"],

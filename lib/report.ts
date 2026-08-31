@@ -1,3 +1,7 @@
+import {
+  containsExactFullName,
+  urlPathContainsExactFullName,
+} from "@/lib/exact-name";
 import { normalizeUrl } from "@/lib/normalize";
 import type { SearchInput, SearchResult } from "@/types/search";
 
@@ -40,30 +44,6 @@ function resultText(result: SearchResult): string {
   return normalizeText(`${result.title} ${result.snippet} ${result.url}`);
 }
 
-function nameParts(value: string): string[] {
-  return normalizeText(value)
-    .normalize("NFKD")
-    .replace(/\p{M}+/gu, "")
-    .split(/[\s._/-]+/)
-    .filter((part) => part.length > 1);
-}
-
-function containsExactFullName(value: string, name: string): boolean {
-  const haystack = nameParts(value);
-  const needle = nameParts(name);
-  if (needle.length < 2 || haystack.length < needle.length) return false;
-
-  for (let index = 0; index <= haystack.length - needle.length; index += 1) {
-    if (
-      needle.every((part, offset) => haystack[index + offset] === part)
-    ) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 function profileUrlContainsExactName(
   result: SearchResult,
   name: string,
@@ -75,14 +55,7 @@ function profileUrlContainsExactName(
     return false;
   }
 
-  try {
-    return containsExactFullName(
-      decodeURIComponent(new URL(result.url).pathname.replace(/\+/g, " ")),
-      name,
-    );
-  } catch {
-    return false;
-  }
+  return urlPathContainsExactFullName(result.url, name);
 }
 
 

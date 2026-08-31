@@ -66,6 +66,55 @@ These are intentionally separate from the application deployment:
 
 ---
 
+# 0.5 One-time repair: make `main` follow the real `dev` history
+
+At the time this runbook was written, the repository's `main` branch contains
+only an unrelated one-line initial README commit, while `dev` contains the
+actual application. GitHub therefore reports **nothing to compare** because the
+branches have no common ancestor.
+
+Do this once before creating the production Amplify branch.
+
+First make sure the latest deployment workflow is on `dev` and set the GitHub
+Actions repository variable:
+
+```text
+PRODUCTION_DEPLOY_ENABLED=false
+```
+
+Then from a local clone:
+
+```bash
+git fetch origin
+
+# Preserve the old one-line main commit just in case.
+git branch main-before-production origin/main
+git push origin main-before-production
+
+# Make local main point to the reviewed dev history.
+git checkout dev
+git pull origin dev
+git checkout -B main
+
+# Replace the unrelated remote main with this real history.
+git push --force-with-lease origin main
+```
+
+If GitHub blocks the force push because of a branch rule, temporarily allow
+force pushes for `main`, perform the one-time command above, then immediately
+disable force pushes again.
+
+Afterward verify:
+
+```bash
+git fetch origin
+git rev-parse origin/main
+git rev-parse origin/dev
+```
+
+For the first sync they should be the same SHA. From that point onward, use
+normal PRs/merges from `dev` to `main`; do not force-push `main` again.
+
 # 1. Prepare AWS Amplify
 
 If an Amplify app already exists for this repository, reuse it.

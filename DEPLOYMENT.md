@@ -1,4 +1,6 @@
-# Deploy Before You Trust — current dev setup
+# Deploy Before You Trust
+
+For the complete one-time AWS/GitHub/search/Google setup and the automatic `main` release workflow, use **`docs/15-PRODUCTION-DEPLOYMENT.md`**.
 
 ## Before deployment
 
@@ -57,7 +59,7 @@ policy that advertises that sitemap.
 
 1. Homepage loads.
 2. SearXNG broad discovery works.
-3. YaCy fallback works.
+3. YaCy also contributes independently when it has matching results.
 4. Search without responsible-use confirmation is blocked.
 5. A new search starts from clean state.
 6. Multiple candidate identities remain separate.

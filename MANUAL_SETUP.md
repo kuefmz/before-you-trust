@@ -11,11 +11,11 @@ This is the operator checklist for the parts that **must not** be hard-coded int
 5. Set only public/non-secret values in normal Amplify environment variables.
 6. Create the encrypted runtime configuration described in the next section and set only its **parameter name** as `RUNTIME_SECRETS_PARAMETER`.
 7. Attach the least-privilege Amplify SSR Compute role described below.
-8. Only connect `main` to the production domain after CI is green and the real-provider tests below pass.
+8. Only connect `main` to the production domain after CI is green and the real YaCy search tests below pass.
 
 ## 1A. Production secrets: encrypted SSM + Amplify SSR Compute role
 
-Do **not** put Tavily/Brave API keys, the Brevo API key, or the HMAC fingerprint secret into ordinary Amplify environment variables. AWS explicitly recommends that credentials/secrets are not stored there.
+Do **not** put the YaCy password, Brevo API key, Google Vision key, or HMAC fingerprint secret into ordinary Amplify environment variables. AWS explicitly recommends that credentials/secrets are not stored there.
 
 Create one AWS Systems Manager Parameter Store **SecureString**, for example:
 
@@ -27,9 +27,8 @@ Its value should be a JSON object:
 
 ```json
 {
-  "SEARCH_PROVIDER": "auto",
-  "TAVILY_API_KEY": "replace-me",
-  "BRAVE_SEARCH_API_KEY": "replace-me-or-remove",
+  "YACY_USERNAME": "replace-me-or-remove",
+  "YACY_PASSWORD": "replace-me-or-remove",
   "GOOGLE_VISION_API_KEY": "replace-me-or-remove",
   "BREVO_API_KEY": "replace-me",
   "BREVO_FROM_EMAIL": "verified-sender@your-domain",
@@ -81,16 +80,55 @@ If you encrypt the SSM SecureString with a customer-managed KMS key, also grant 
 
 For a public repository, attach the role only to the branches that need it rather than broadly to automatic preview branches.
 
-## 2. Configure public-web search
+## 2. Configure public-web search with YaCy
 
-Create at least one provider account:
+Before You Trust now uses a self-hosted **YaCy Search Server**. No Tavily, Brave, Google Search API, or other paid search API key is required.
 
-- Tavily
-- Brave Search API
+### Local YaCy
 
-For local development, put keys in `.env.local`. For Amplify production, put them in the encrypted SSM JSON from section 1A. Do **not** add the secret values as normal Amplify variables.
+The official Docker image can be started with:
 
-Set `SEARCH_PROVIDER` to `auto`, `tavily`, or `brave`. In `auto`, Tavily is attempted first when configured and Brave can act as fallback.
+```bash
+docker run -d \
+  --name yacy_search_server \
+  -p 8090:8090 \
+  -p 8443:8443 \
+  -v yacy_search_server_data:/opt/yacy_search_server/DATA \
+  --restart unless-stopped \
+  yacy/yacy_search_server:latest
+```
+
+Then use:
+
+```text
+SEARCH_PROVIDER=yacy
+YACY_BASE_URL=http://localhost:8090
+YACY_RESOURCE=global
+```
+
+### Production YaCy
+
+Run YaCy on a stable host reachable from the Amplify SSR runtime. Set these as normal, non-secret Amplify variables:
+
+```text
+SEARCH_PROVIDER=yacy
+YACY_BASE_URL=https://YOUR-YACY-HOST
+YACY_RESOURCE=global
+```
+
+The committed `amplify.yml` copies those non-secret values into the server build configuration.
+
+- `YACY_RESOURCE=local`: query only the configured node's own index.
+- `YACY_RESOURCE=global`: also ask YaCy peers for results. This generally broadens coverage, but the search terms can be distributed to peers and the Privacy Notice must describe that accurately.
+
+YaCy's unauthenticated search API is sufficient for this app's bounded result count. If you protect the endpoint with Basic Auth, configure both:
+
+```text
+YACY_USERNAME=...
+YACY_PASSWORD=...
+```
+
+Keep the password in the encrypted SSM runtime JSON. Do not expose the YaCy administration UI with default credentials; change the default admin password and preferably expose only the search endpoint through your reverse proxy/tunnel.
 
 ### Manual smoke test
 
@@ -103,7 +141,8 @@ Confirm that:
 - the identity stage contains no negative/accusatory query family,
 - namesakes are kept separate,
 - deep search starts only after confirmation,
-- every finding has an original source URL.
+- every finding has an original source URL,
+- a stopped/unreachable YaCy node produces a controlled error.
 
 ## 2A. Configure optional photo web matching
 
@@ -324,7 +363,7 @@ Prefer a **Domain property** so all HTTPS/host variants are covered.
 Before meaningful public scale:
 - have a Swiss/EU privacy lawyer review Privacy, Terms and Acceptable Use,
 - verify the actual vendors configured match the Privacy Notice,
-- sign/accept relevant DPAs with AWS, Brevo, search providers and Google where needed,
+- document the privacy role of your YaCy deployment/peer mode and sign/accept relevant DPAs with AWS, Brevo and Google where needed,
 - document your GDPR/Swiss FADP roles and international-transfer safeguards,
 - maintain a simple vendor/processing register,
 - keep story emails only as long as needed (a practical default is to review/delete inactive submissions after 12 months),
@@ -351,7 +390,7 @@ Set up:
 - GitHub branch protection on `main`,
 - required CI status before merge to `main`,
 - Dependabot or GitHub dependency alerts,
-- periodic provider-key rotation.
+- periodic rotation of any YaCy Basic Auth, Brevo, Vision and other server credentials.
 
 Do not log request bodies in CloudWatch.
 

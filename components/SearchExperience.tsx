@@ -8,7 +8,7 @@ import { JourneyProgress } from "@/components/JourneyProgress";
 
 import { buildIdentityCandidates } from "@/lib/identity";
 import { trackEvent } from "@/lib/client-analytics";
-import { dedupeResults, mergeSearchResults } from "@/lib/normalize";
+import { mergeSearchResults } from "@/lib/normalize";
 import { buildReportSections, claimAssessment, filterResultsForConfirmedIdentity } from "@/lib/report";
 import type {
   ConfirmedIdentity,

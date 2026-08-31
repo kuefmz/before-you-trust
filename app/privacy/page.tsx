@@ -1,6 +1,11 @@
-export const metadata = {
-  title: "Privacy",
-};
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "Privacy Notice",
+  description: "How Before You Trust processes public-web searches, analytics consent, optional photos, report email delivery, and privacy requests.",
+  path: "/privacy",
+  index: true,
+});
 
 const privacyEmail = process.env.NEXT_PUBLIC_PRIVACY_EMAIL?.trim();
 

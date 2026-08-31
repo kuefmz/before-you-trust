@@ -6,22 +6,28 @@ import {
   indexingEnabled,
 } from "@/lib/seo";
 
+const PRIVATE_PATHS = ["/api/", "/report"];
+
 export default function robots(): MetadataRoute.Robots {
   const base = configuredSiteUrl();
   const canIndex = indexingEnabled();
 
+  if (!canIndex) {
+    return {
+      rules: {
+        userAgent: "*",
+        disallow: "/",
+      },
+    };
+  }
+
   return {
-    rules: canIndex
-      ? {
-          userAgent: "*",
-          allow: "/",
-          disallow: ["/api/", "/report"],
-        }
-      : {
-          userAgent: "*",
-          disallow: "/",
-        },
-    sitemap: canIndex ? canonicalUrl("/sitemap.xml") : undefined,
-    host: canIndex ? base : undefined,
+    rules: {
+      userAgent: "*",
+      allow: "/",
+      disallow: PRIVATE_PATHS,
+    },
+    sitemap: canonicalUrl("/sitemap.xml"),
+    host: base,
   };
 }

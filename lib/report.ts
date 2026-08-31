@@ -169,7 +169,10 @@ export function filterResultsForConfirmedIdentity(
     // harming results must be tied to both the searched name and a confirmed
     // identity signal whenever such a signal is available.
     if (sensitive) {
-      return hasStrongContext ? contextMatches : exactNameInTitle;
+      // A same-name sensitive hit is not enough. Without corroborating
+      // identity context we prefer to omit it entirely rather than risk
+      // attaching a damaging result to the wrong person.
+      return hasStrongContext && contextMatches;
     }
 
     return hasStrongContext ? contextMatches : exactNameInTitle;

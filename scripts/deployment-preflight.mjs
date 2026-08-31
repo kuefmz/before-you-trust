@@ -30,15 +30,19 @@ for (const required of ["nvm install 22", "npm ci", "npm run build", "baseDirect
   else fail(`amplify.yml is missing: ${required}`);
 }
 
-if (amplify.includes("^NEXT_PUBLIC_") && amplify.includes("^RUNTIME_SECRETS_PARAMETER=")) {
-  pass("Amplify build exports only public values plus the non-secret SSM parameter name");
+if (
+  amplify.includes("^NEXT_PUBLIC_") &&
+  amplify.includes("YACY_BASE_URL") &&
+  amplify.includes("YACY_RESOURCE") &&
+  amplify.includes("^RUNTIME_SECRETS_PARAMETER=")
+) {
+  pass("Amplify exports only public/non-secret search config plus the SSM parameter name");
 } else {
   fail("Amplify environment export rules are not in the expected safe form");
 }
 
 const forbiddenAmplifySecrets = [
-  "TAVILY_API_KEY",
-  "BRAVE_SEARCH_API_KEY",
+  "YACY_PASSWORD",
   "GOOGLE_VISION_API_KEY",
   "BREVO_API_KEY",
   "SEARCH_FINGERPRINT_SECRET",
@@ -53,9 +57,11 @@ if (!forbiddenAmplifySecrets.some((key) => amplify.includes(key))) {
 
 const requiredEnvKeys = [
   "RUNTIME_SECRETS_PARAMETER",
-  "SEARCH_PROVIDER",
-  "TAVILY_API_KEY",
-  "BRAVE_SEARCH_API_KEY",
+  "SEARCH_PROVIDER=yacy",
+  "YACY_BASE_URL",
+  "YACY_RESOURCE",
+  "YACY_USERNAME",
+  "YACY_PASSWORD",
   "GOOGLE_VISION_API_KEY",
   "BREVO_API_KEY",
   "SEARCH_SIGNAL_TABLE",
@@ -67,7 +73,7 @@ for (const key of requiredEnvKeys) {
   if (!envExample.includes(key)) fail(`.env.example is missing ${key}`);
 }
 if (requiredEnvKeys.every((key) => envExample.includes(key))) {
-  pass(".env.example documents the required runtime configuration");
+  pass(".env.example documents the required and optional runtime configuration");
 }
 
 if (
@@ -83,7 +89,7 @@ if (
 if (environmentDoc.includes("Add the selected search API key as an Amplify environment variable")) {
   fail("docs/13-ENVIRONMENT.md still contains the obsolete direct-secret Amplify instruction");
 } else {
-  pass("Deployment documentation uses the encrypted SSM runtime-secret model");
+  pass("Deployment documentation avoids obsolete direct-secret search instructions");
 }
 
 if (process.exitCode) process.exit(process.exitCode);

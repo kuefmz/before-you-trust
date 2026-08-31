@@ -23,7 +23,7 @@ SEARCH_PROVIDER=auto
 SEARXNG_BASE_URL=https://YOUR-SEARXNG-HOST
 YACY_BASE_URL=https://YOUR-YACY-HOST
 YACY_RESOURCE=global
-REPORT_APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycbxe1s2hTRDF3m37UDcEHCj8Feb5iEDwjM82ZXizQ1sOgdZvJdNvkLbJsYi3FCJHA7Ml/exec
+REPORT_APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycbwZ0drdWpB_b4VL4jnsp5t1adsxzZPcZaeWM5prbcSt3RaiGrIdzJLZ1lW7MH9GjUef/exec
 ```
 
 The current report Apps Script endpoint does not require a shared secret.

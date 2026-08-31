@@ -10,34 +10,29 @@ Before You Trust is an evidence-first public-web research tool. It searches publ
 
 - Branded responsive landing/search experience
 - Identity-first neutral search stage
-- Self-hosted YaCy search adapter with no per-search API key or quota
+- Self-hosted YaCy search adapter with no paid per-search API
 - YaCy `local` and `global` resource modes
-- Optional Basic Auth for a protected YaCy node
-- Search timeouts, concurrency limits, result caps, URL normalization and de-duplication
+- Search timeouts, bounded concurrency, result caps and URL normalization
 - Explainable candidate identity matching
-- Social-media discovery across major public platforms and known handles/profile links
-- Optional transient Google Cloud Vision Web Detection for photo-based public-web matching
-- Required user identity confirmation before deep research
-- Evidence-first Trust Brief with original source links
-- Optional report-by-email delivery with explicit email-processing acknowledgement
-- Professional About page with documented case studies and source links
-- Private Share Your Story / feedback / privacy-request form delivered via Brevo
-- Optional Buy Me a Coffee support link
-- Privacy-preserving repeat-search detection using HMAC fingerprint + DynamoDB TTL
-- Optional repeat-search email alerts without raw names by default
-- Optional GTM/GA4 tracking that is blocked until analytics consent
-- Search names and story content explicitly excluded from analytics events
-- Full Privacy Notice, Terms of Use, and Acceptable Use policy
-- Security headers and no-store API responses
-- Unit, API, component, coverage and Playwright end-to-end tests
-- GitHub Actions quality/security gate and weekly scheduled audit
-- AWS Amplify deployment configuration with runtime SSM secret loading for optional sensitive integrations
+- Explicit **This is them** selection before deep research
+- Deep-search reports anchored only to the selected candidate
+- Conservative identity-quality filtering, especially for news/official/concern results
+- Low-confidence wrong-person results excluded from the final Trust Brief
+- Social-profile discovery through known handles/profile URLs
+- Optional transient Google Cloud Vision Web Detection for photo-based matching
+- Google Sheet + Apps Script report storage and Gmail delivery when the user explicitly requests email
+- No DynamoDB/search-history persistence
+- Search/report request bodies excluded from application logs and analytics
+- Optional Brevo email only for the separate Share Your Story/contact flow
+- Optional GTM/GA4 tracking blocked until analytics consent
+- Privacy Notice, Terms of Use, Acceptable Use and About pages
+- Unit/API/component/Playwright tests and GitHub Actions quality gates
 
 ## Local setup
 
 Requires Node.js 22 and a running YaCy node.
 
-Start YaCy with Docker:
+Start YaCy:
 
 ```bash
 docker run -d \
@@ -49,7 +44,7 @@ docker run -d \
   yacy/yacy_search_server:latest
 ```
 
-Then start Before You Trust:
+Then:
 
 ```bash
 cp .env.example .env.local
@@ -57,7 +52,7 @@ npm ci
 npm run dev
 ```
 
-The defaults already point to:
+Default search configuration:
 
 ```text
 SEARCH_PROVIDER=yacy
@@ -65,42 +60,26 @@ YACY_BASE_URL=http://localhost:8090
 YACY_RESOURCE=global
 ```
 
-Use `YACY_RESOURCE=local` if you want queries restricted to your own YaCy index. `global` asks YaCy peers too and usually gives broader coverage.
-
-No Tavily, Brave, Google Search API, or other paid search API key is required.
-
-## Production search
-
-Run YaCy on a host reachable by the Amplify SSR runtime and set:
+For report-by-email testing, also set the same secret you configured as the Apps Script Script Property `API_SECRET`:
 
 ```text
-SEARCH_PROVIDER=yacy
-YACY_BASE_URL=https://YOUR-YACY-HOST
-YACY_RESOURCE=global
+REPORT_APPS_SCRIPT_SECRET=YOUR_PRIVATE_SECRET
 ```
 
-`YACY_BASE_URL` and `YACY_RESOURCE` are not secrets. If the YaCy search endpoint requires Basic Auth, keep `YACY_USERNAME` and `YACY_PASSWORD` server-side; the app supports them without any additional SDK.
+The Apps Script endpoint is already configured in `.env.example` and in the server-side route.
 
-## Manual production setup
+## Persistent data model
 
-**Start here:** [MANUAL_SETUP.md](MANUAL_SETUP.md)
+Ordinary searches are transient and are not written to an application database.
 
-It contains the exact checklist for:
+Only when the user explicitly requests report delivery, the application sends the **final filtered report** and its request context to the private Google Sheet through Apps Script. The email copy naturally also exists in Gmail/the recipient mailbox.
 
-- AWS Amplify + domain
-- self-hosted YaCy
-- optional Google Cloud Vision
-- Brevo story/report email delivery
-- DynamoDB repeat-search signals + TTL + IAM
-- Buy Me a Coffee
-- GTM + GA4 consent configuration
-- Google Search Console + sitemap
-- privacy/data-retention operations
-- CloudWatch/budget/security checks
+Rejected low-confidence search results and uploaded photos are not intentionally stored in the report Sheet.
 
 ## Quality gates
 
 ```bash
+npm run deploy:preflight
 npm run lint
 npm run typecheck
 npm run test:coverage
@@ -112,4 +91,4 @@ npm run test:e2e
 
 Before You Trust is a public-web research assistant, not a comprehensive background-check service or consumer reporting agency. Search coverage can be incomplete or wrong. “Nothing found” does not mean a person is safe, and an allegation does not prove wrongdoing. Do not use it for employment, housing, credit, insurance or other regulated eligibility decisions.
 
-See [the documentation index](docs/00-INDEX.md) for the broader product, safety, architecture, search-quality and launch guidance.
+See [MANUAL_SETUP.md](MANUAL_SETUP.md) and [the documentation index](docs/00-INDEX.md).

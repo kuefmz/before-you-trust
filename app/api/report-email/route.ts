@@ -10,7 +10,10 @@ import { getRuntimeSetting } from "@/lib/runtime-config";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MAX_BODY_BYTES = 75_000;
+// The validated request can contain up to 70 filtered sources. With titles,
+ // URLs and snippets, 75 KB was too small for legitimate Trust Briefs and
+ // caused delivery to fail before Apps Script was contacted.
+const MAX_BODY_BYTES = 300_000;
 const DEFAULT_REPORT_APPS_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbxe1s2hTRDF3m37UDcEHCj8Feb5iEDwjM82ZXizQ1sOgdZvJdNvkLbJsYi3FCJHA7Ml/exec";
 
@@ -69,29 +72,34 @@ export async function POST(request: Request) {
     return response(200, { ok: true });
   }
 
-  let endpoint: string;
+  // REPORT_APPS_SCRIPT_URL is intentionally non-secret. Prefer the local/runtime
+  // environment value, but do not make delivery depend on optional SSM access.
+  // The default is the deployed Before You Trust Apps Script web app.
+  let endpoint =
+    process.env.REPORT_APPS_SCRIPT_URL?.trim() ||
+    DEFAULT_REPORT_APPS_SCRIPT_URL;
+
   try {
-    endpoint =
-      (await getRuntimeSetting("REPORT_APPS_SCRIPT_URL")) ??
-      DEFAULT_REPORT_APPS_SCRIPT_URL;
+    const runtimeEndpoint = await getRuntimeSetting("REPORT_APPS_SCRIPT_URL");
+    if (runtimeEndpoint) endpoint = runtimeEndpoint;
   } catch {
-    return response(503, {
-      error: {
-        code: "REPORT_EMAIL_NOT_CONFIGURED",
-        message: "Report delivery configuration could not be loaded.",
-      },
-    });
+    // Ignore optional runtime-secret loading failures for this public endpoint.
   }
 
   let upstream: Response;
   try {
     upstream = await fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Accept: "application/json, text/plain;q=0.9",
+        // Apps Script's doPost reads e.postData.contents either way. text/plain
+        // avoids unnecessary content-type handling while preserving JSON bytes.
+        "Content-Type": "text/plain;charset=utf-8",
+      },
       body: JSON.stringify(buildAppsScriptPayload(validation.data)),
       cache: "no-store",
       redirect: "follow",
-      signal: AbortSignal.timeout(20_000),
+      signal: AbortSignal.timeout(30_000),
     });
   } catch {
     return response(502, {
@@ -102,24 +110,33 @@ export async function POST(request: Request) {
     });
   }
 
+  const upstreamText = await upstream.text();
   let upstreamPayload: { ok?: boolean; error?: string } = {};
   try {
-    upstreamPayload = (await upstream.json()) as {
+    upstreamPayload = JSON.parse(upstreamText) as {
       ok?: boolean;
       error?: string;
     };
   } catch {
-    // Treat a non-JSON response as an upstream failure.
+    // Google may return an HTML sign-in/access page when the web-app deployment
+    // is not available to anonymous callers. Surface that explicitly.
   }
 
   if (!upstream.ok || upstreamPayload.ok !== true) {
+    const looksLikeGoogleAccessPage =
+      /<html|accounts\.google\.com|sign in|authorization required/i.test(
+        upstreamText,
+      );
+
     return response(502, {
       error: {
-        code: "REPORT_EMAIL_FAILED",
-        message:
-          upstreamPayload.error === "Unauthorized"
-            ? "Report delivery is not configured correctly."
-            : "The report could not be emailed. Please try again.",
+        code: looksLikeGoogleAccessPage
+          ? "REPORT_APPS_SCRIPT_ACCESS"
+          : "REPORT_EMAIL_FAILED",
+        message: looksLikeGoogleAccessPage
+          ? "The Google Apps Script web app is not accessible to the report service. Redeploy it as a Web app that executes as you and allows access to Anyone."
+          : upstreamPayload.error ||
+            `The report service returned an unexpected response (HTTP ${upstream.status}).`,
       },
     });
   }

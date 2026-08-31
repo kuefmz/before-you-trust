@@ -34,8 +34,22 @@ function words(value?: string): string[] {
     .filter((word) => word.length > 2 && !STOP_WORDS.has(word));
 }
 
-function haystack(result: SearchResult): string {
-  return normalize(`${result.title} ${result.snippet} ${result.url}`);
+function contentText(result: SearchResult): string {
+  return normalize(`${result.title} ${result.snippet}`);
+}
+
+function urlText(result: SearchResult): string {
+  return normalize(result.url);
+}
+
+interface ResultScore {
+  score: number;
+  signals: string[];
+  conflicts: string[];
+  nameEvidence: boolean;
+  exactNameInTitle: boolean;
+  contextEvidence: boolean;
+  profileEvidence: boolean;
 }
 
 function scoreResult(
@@ -44,23 +58,31 @@ function scoreResult(
     SearchInput,
     "name" | "location" | "company" | "profileUrl" | "socialProfiles"
   >,
-): { score: number; signals: string[]; conflicts: string[] } {
-  const text = haystack(result);
+): ResultScore {
+  const text = contentText(result);
+  const url = urlText(result);
   const title = normalize(result.title);
   const name = normalize(input.name);
   const nameWords = words(input.name);
   let score = 0;
+  let nameEvidence = false;
+  let exactNameInTitle = false;
+  let contextEvidence = false;
+  let profileEvidence = false;
   const signals: string[] = [];
   const conflicts: string[] = [];
 
-  if (title.includes(name)) {
+  if (name && title.includes(name)) {
     score += 5;
+    nameEvidence = true;
+    exactNameInTitle = true;
     signals.push("Full name appears in the result title");
   } else {
     const matches = nameWords.filter((word) => text.includes(word)).length;
-    if (matches === nameWords.length && matches > 0) {
+    if (matches === nameWords.length && matches >= 2) {
       score += 3;
-      signals.push("Name terms appear in the result");
+      nameEvidence = true;
+      signals.push("All name terms appear in the page title or snippet");
     }
   }
 
@@ -69,6 +91,7 @@ function scoreResult(
     const matched = locationWords.filter((word) => text.includes(word));
     if (matched.length > 0) {
       score += 2;
+      contextEvidence = true;
       signals.push("Location context matches");
     }
   }
@@ -78,24 +101,39 @@ function scoreResult(
     const matched = companyWords.filter((word) => text.includes(word));
     if (matched.length > 0) {
       score += 3;
+      contextEvidence = true;
       signals.push("Employer or organization context matches");
     }
   }
 
   for (const social of input.socialProfiles ?? []) {
     const normalizedSocial = normalize(social);
-    if (normalizedSocial && text.includes(normalizedSocial.replace(/^@/, ""))) {
+    if (
+      normalizedSocial &&
+      `${text} ${url}`.includes(normalizedSocial.replace(/^@/, ""))
+    ) {
       score += 4;
+      contextEvidence = true;
+      profileEvidence = true;
       signals.push("Known social profile or handle matches");
       break;
     }
+
     if (/^https?:\/\//i.test(social)) {
       try {
         const expected = new URL(social);
         const actual = new URL(result.url);
-        if (expected.hostname === actual.hostname) {
-          score += 2;
-          signals.push("Known social platform matches");
+        const expectedPath = expected.pathname.replace(/\/+$/, "");
+        if (
+          expected.hostname === actual.hostname &&
+          expectedPath !== "/" &&
+          (actual.pathname === expectedPath ||
+            actual.pathname.startsWith(`${expectedPath}/`))
+        ) {
+          score += 5;
+          contextEvidence = true;
+          profileEvidence = true;
+          signals.push("Known social profile URL matches");
           break;
         }
       } catch {
@@ -105,7 +143,8 @@ function scoreResult(
   }
 
   if (result.queryKinds.includes("image")) {
-    score += 2;
+    score += 3;
+    contextEvidence = true;
     signals.push("Uploaded photo matched this public web page");
   }
 
@@ -113,11 +152,16 @@ function scoreResult(
     try {
       const expected = new URL(input.profileUrl);
       const actual = new URL(result.url);
+      const expectedPath = expected.pathname.replace(/\/+$/, "");
       if (
         expected.hostname === actual.hostname &&
-        actual.pathname.includes(expected.pathname.replace(/\/+$/, ""))
+        expectedPath !== "/" &&
+        (actual.pathname === expectedPath ||
+          actual.pathname.startsWith(`${expectedPath}/`))
       ) {
-        score += 5;
+        score += 6;
+        contextEvidence = true;
+        profileEvidence = true;
         signals.push("Provided profile URL matches");
       }
     } catch {
@@ -126,14 +170,22 @@ function scoreResult(
   }
 
   if (
-    result.sourceType === "professional" ||
-    result.sourceType === "social"
+    nameEvidence &&
+    (result.sourceType === "professional" || result.sourceType === "social")
   ) {
     score += 1;
     signals.push("Result is an identity-bearing profile source");
   }
 
-  return { score, signals: [...new Set(signals)], conflicts };
+  return {
+    score,
+    signals: [...new Set(signals)],
+    conflicts,
+    nameEvidence,
+    exactNameInTitle,
+    contextEvidence,
+    profileEvidence,
+  };
 }
 
 function confidence(score: number): "high" | "medium" | "low" {
@@ -163,7 +215,14 @@ function identityKey(url: string): string | null {
     }
 
     if (
-      ["github.com", "instagram.com", "tiktok.com", "x.com", "twitter.com"].includes(host)
+      [
+        "github.com",
+        "instagram.com",
+        "tiktok.com",
+        "x.com",
+        "twitter.com",
+        "youtube.com",
+      ].includes(host)
     ) {
       return `${host}/${segments[0]!.toLowerCase()}`;
     }
@@ -199,9 +258,6 @@ function relatedByAnchor(
     .filter((token) => !nameTokens.has(token))
     .filter((token) => anchorTokens.has(token));
 
-  // Cross-site results are grouped only when they share at least two signals
-  // beyond the searched name (for example location + employer). This keeps
-  // namesakes separate even when the full name is distinctive or long.
   return new Set(contextualOverlap).size >= 2;
 }
 
@@ -214,6 +270,13 @@ export function buildIdentityCandidates(
 ): IdentityCandidate[] {
   if (results.length === 0) return [];
 
+  const hasProvidedContext = Boolean(
+    input.location ||
+      input.company ||
+      input.profileUrl ||
+      (input.socialProfiles?.length ?? 0) > 0,
+  );
+
   const scored = results
     .map((result) => ({
       result,
@@ -221,21 +284,34 @@ export function buildIdentityCandidates(
     }))
     .sort((a, b) => b.score - a.score);
 
-  const anchors = scored.filter(
-    (entry) =>
-      entry.score >= 5 ||
-      entry.result.sourceType === "professional" ||
-      entry.result.sourceType === "social",
-  );
+  const eligible = scored.filter((entry) => {
+    if (!entry.nameEvidence && !entry.profileEvidence) return false;
+    if (entry.profileEvidence || entry.contextEvidence) return true;
 
-  const seeds = (anchors.length > 0 ? anchors : scored).slice(0, 5);
+    const identityBearing =
+      entry.result.sourceType === "professional" ||
+      entry.result.sourceType === "social";
+
+    // A same-name LinkedIn/social profile is still useful as a namesake
+    // candidate even when its snippet lacks the supplied city/employer.
+    if (identityBearing && entry.exactNameInTitle) return true;
+
+    // Generic web pages need corroborating context when the user supplied any.
+    if (hasProvidedContext) return false;
+
+    return entry.exactNameInTitle && entry.score >= 5;
+  });
+
+  if (eligible.length === 0) return [];
+
+  const seeds = eligible.slice(0, 6);
   const candidates: IdentityCandidate[] = [];
   const consumed = new Set<string>();
 
   for (const seed of seeds) {
     if (consumed.has(seed.result.url)) continue;
 
-    const sources = scored
+    const sources = eligible
       .filter(
         (entry) =>
           !consumed.has(entry.result.url) &&

@@ -52,6 +52,45 @@ function hostname(url: string): string {
   }
 }
 
+async function parseApiResponse<T>(
+  response: Response,
+  fallbackMessage: string,
+): Promise<T> {
+  const raw = await response.text();
+  let payload: T | { error?: { message?: string } } | null = null;
+
+  if (raw.trim()) {
+    try {
+      payload = JSON.parse(raw) as T | { error?: { message?: string } };
+    } catch {
+      // Amplify/CloudFront can return a non-JSON or empty body for upstream
+      // failures. Surface a useful error instead of leaking JSON.parse errors.
+    }
+  }
+
+  if (!response.ok) {
+    const apiMessage =
+      payload &&
+      typeof payload === "object" &&
+      "error" in payload &&
+      payload.error?.message
+        ? payload.error.message
+        : undefined;
+
+    throw new Error(
+      apiMessage ?? `${fallbackMessage} (HTTP ${response.status || "unknown"}).`,
+    );
+  }
+
+  if (!payload) {
+    throw new Error(
+      `${fallbackMessage} The server returned an empty response. Please try again.`,
+    );
+  }
+
+  return payload as T;
+}
+
 async function callSearch(body: SearchInput): Promise<SearchResponse> {
   const response = await fetch("/api/search", {
     method: "POST",
@@ -60,19 +99,10 @@ async function callSearch(body: SearchInput): Promise<SearchResponse> {
     body: JSON.stringify(body),
   });
 
-  const payload = (await response.json()) as
-    | SearchResponse
-    | { error?: { message?: string } };
-
-  if (!response.ok) {
-    throw new Error(
-      "error" in payload && payload.error?.message
-        ? payload.error.message
-        : "Search failed. Please try again.",
-    );
-  }
-
-  return payload as SearchResponse;
+  return parseApiResponse<SearchResponse>(
+    response,
+    "Search could not be completed.",
+  );
 }
 
 function parseSocialProfiles(value: string): string[] | undefined {
@@ -92,17 +122,10 @@ async function callImageSearch(photo: File): Promise<ImageSearchResponse> {
     cache: "no-store",
     body: formData,
   });
-  const payload = (await response.json()) as
-    | ImageSearchResponse
-    | { error?: { message?: string } };
-  if (!response.ok) {
-    throw new Error(
-      "error" in payload && payload.error?.message
-        ? payload.error.message
-        : "Photo web matching failed.",
-    );
-  }
-  return payload as ImageSearchResponse;
+  return parseApiResponse<ImageSearchResponse>(
+    response,
+    "Photo web matching failed.",
+  );
 }
 
 function toInput(

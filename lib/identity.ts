@@ -400,8 +400,6 @@ function buildLowConfidenceCandidates(
   const consumed = new Set<string>();
 
   const possible = scored.filter((entry) => {
-    if (!entry.nameEvidence && !entry.profileEvidence) return false;
-
     // Never surface potentially damaging/interpretive material merely as an
     // identity guess. Low-confidence fallback is for neutral identity leads.
     if (
@@ -417,11 +415,18 @@ function buildLowConfidenceCandidates(
     const identityBearing =
       entry.result.sourceType === "professional" ||
       entry.result.sourceType === "social";
+    const cameFromIdentityQuery = entry.result.queryKinds.some((kind) =>
+      ["identity", "social", "professional"].includes(kind),
+    );
 
+    // If YaCy gives us a poor title/snippet, a neutral profile result returned
+    // from a name-specific identity/social query is still useful as an
+    // explicitly unverified lead for the user to inspect.
     return (
       entry.profileEvidence ||
       entry.exactNameInTitle ||
-      (identityBearing && entry.nameEvidence)
+      (identityBearing && entry.nameEvidence) ||
+      (identityBearing && cameFromIdentityQuery)
     );
   });
 
@@ -451,17 +456,20 @@ function buildLowConfidenceCandidates(
       id: stableId(`low:${seed.result.url}`),
       label: seed.exactNameInTitle
         ? seed.result.title || input.name
-        : `${input.name} — possible profile`,
+        : `${input.name} — unverified profile lead`,
       searchName: input.name,
       summary:
         seed.result.snippet ||
-        "The name matches, but there is not enough context to confirm this identity.",
+        "This neutral profile was returned by a name-specific search, but its identity could not be confirmed from the available metadata.",
       confidence: "low",
       supportingSignals: [
         ...seed.signals,
+        seed.nameEvidence
+          ? "Some name evidence is present"
+          : "Returned by a name-specific professional/social search; name is not confirmed in the available snippet",
         missingContext.length > 0
-          ? `Name matches, but ${missingContext.join(" and ")} context is not confirmed`
-          : "Name matches, but identity context is limited",
+          ? `${missingContext.join(" and ")} context is not confirmed`
+          : "Identity context is limited",
       ].filter((signal, index, all) => all.indexOf(signal) === index),
       conflictingSignals: seed.conflicts,
       sources: sources.length > 0 ? sources : [seed.result],

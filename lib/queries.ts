@@ -1,7 +1,11 @@
 import type { SearchInput, SearchQuery } from "@/types/search";
 
+function clean(value: string): string {
+  return value.replace(/["\\]/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function quote(value: string): string {
-  return `"${value.replace(/["\\]/g, " ").replace(/\s+/g, " ").trim()}"`;
+  return `"${clean(value)}"`;
 }
 
 function unique(queries: SearchQuery[]): SearchQuery[] {
@@ -68,7 +72,11 @@ function buildSocialQueries(input: SearchInput, name: string): SearchQuery[] {
 
 export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
   const name = quote(input.name);
-  const queries: SearchQuery[] = [{ text: name, kind: "identity" }];
+  const plainName = clean(input.name);
+  const queries: SearchQuery[] = [
+    { text: name, kind: "identity" },
+    { text: plainName, kind: "identity" },
+  ];
 
   if (input.location) {
     queries.push({
@@ -100,12 +108,24 @@ export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
     { text: `${name} filetype:pdf`, kind: "general" },
   );
 
-  return unique(queries).slice(0, 14);
+  return unique(queries).slice(0, 16);
 }
 
 export function buildDeepQueries(input: SearchInput): SearchQuery[] {
-  const name = quote(input.name);
-  const queries: SearchQuery[] = [{ text: name, kind: "identity" }];
+  const researchName = input.confirmedIdentity?.searchName?.trim() || input.name;
+  const name = quote(researchName);
+  const plainName = clean(researchName);
+  const queries: SearchQuery[] = [
+    { text: name, kind: "identity" },
+    { text: plainName, kind: "identity" },
+  ];
+
+  if (clean(input.name).toLowerCase() !== plainName.toLowerCase()) {
+    queries.push({
+      text: quote(input.name),
+      kind: "identity",
+    });
+  }
 
   if (input.location) {
     queries.push({
@@ -149,5 +169,5 @@ export function buildDeepQueries(input: SearchInput): SearchQuery[] {
     }
   }
 
-  return unique(queries).slice(0, 17);
+  return unique(queries).slice(0, 19);
 }

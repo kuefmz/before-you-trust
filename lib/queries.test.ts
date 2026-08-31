@@ -7,7 +7,6 @@ const base: SearchInput = {
   name: "Jane Unique-Surname",
   location: "Zurich, Switzerland",
   company: "Example AG",
-  username: "janeunique",
   profileUrl: "https://example.org/jane",
   mode: "identity",
   lawfulUseAccepted: true,

@@ -74,7 +74,17 @@ export default function PrivacyPage() {
           add the address to marketing communications.
         </p>
 
-        <h2>4. Optional photo search</h2>
+        <h2>4. Report retention</h2>
+        <p>
+          Ordinary searches are intended to be transient and are not stored in
+          an application search-history database. When you explicitly request
+          email delivery, the corresponding report row remains in the private
+          Google Sheet until it is deleted by the operator or in response to a
+          valid deletion request. A fixed automated deletion schedule is not
+          currently enforced by the application.
+        </p>
+
+        <h2>5. Optional photo search</h2>
         <p>
           If you upload a photo, Before You Trust sends it transiently to Google
           Cloud Vision Web Detection to look for public webpages and web images
@@ -87,7 +97,7 @@ export default function PrivacyPage() {
           context.
         </p>
 
-        <h2>5. Story and contact submissions</h2>
+        <h2>6. Story and contact submissions</h2>
         <p>
           The story form can contain personal data that you voluntarily submit,
           including an optional name or reply email. That form is handled
@@ -101,13 +111,13 @@ export default function PrivacyPage() {
           story is not publicly licensed merely because you submitted it.
         </p>
 
-        <h2>6. Analytics and cookies</h2>
+        <h2>7. Analytics and cookies</h2>
         <p>
-          Google Analytics 4 is configured for the site, and Google Tag Manager
-          may also be configured by the operator. Analytics storage is denied
-          by default and no Google analytics tag is loaded until you explicitly
-          choose “Allow analytics.” If you reject analytics, the site remains
-          fully functional.
+          Google Analytics 4 and Google Tag Manager are configured for the
+          production site. Analytics storage is denied by default and no Google
+          analytics tag is loaded until you explicitly choose “Allow
+          analytics.” If you reject analytics, the site remains fully
+          functional.
         </p>
         <p>
           Search names, free-text claims, story content, source URLs, candidate
@@ -121,7 +131,7 @@ export default function PrivacyPage() {
           consent management.
         </p>
 
-        <h2>7. Technical logs</h2>
+        <h2>8. Technical logs</h2>
         <p>
           Hosting, CDN, security and external providers may process technical
           connection data such as IP address, timestamps and user agent as part
@@ -131,7 +141,7 @@ export default function PrivacyPage() {
           reliability and security.
         </p>
 
-        <h2>8. Purposes and legal bases</h2>
+        <h2>9. Purposes and legal bases</h2>
         <p>
           The service is designed around purpose limitation and data
           minimization. Where the GDPR applies, processing necessary to provide a
@@ -141,7 +151,7 @@ export default function PrivacyPage() {
           related processing. Optional analytics relies on consent.
         </p>
 
-        <h2>9. Service providers and international transfers</h2>
+        <h2>10. Service providers and international transfers</h2>
         <p>
           Depending on deployment, the service may use AWS Amplify, a
           self-hosted SearXNG metasearch node and its enabled upstream search
@@ -154,7 +164,7 @@ export default function PrivacyPage() {
           contractual terms and privacy characteristics.
         </p>
 
-        <h2>10. Your rights</h2>
+        <h2>11. Your rights and correction requests</h2>
         <p>
           Depending on applicable law, you may have rights to information,
           access, correction, deletion, restriction, objection, portability or
@@ -169,22 +179,30 @@ export default function PrivacyPage() {
           Protection and Information Commissioner (FDPIC) or, where applicable,
           an EU/EEA supervisory authority.
         </p>
+        <p>
+          If you believe a result has been attributed to the wrong person or a
+          stored report contains an incorrect link, contact the operator with
+          the relevant source URL and enough information to identify the issue.
+          Before You Trust cannot rewrite a third-party source, but it can
+          investigate identity matching, filtering, and stored-report issues
+          within the service.
+        </p>
 
-        <h2>11. Children</h2>
+        <h2>12. Children</h2>
         <p>
           The people-search functionality must not be used to target minors.
           Story/concern submissions are for adults; privacy/data-rights requests
           remain available regardless of age.
         </p>
 
-        <h2>12. Automated decisions</h2>
+        <h2>13. Automated decisions</h2>
         <p>
           Before You Trust does not make legally significant automated
           decisions and does not assign a person-level “trustworthiness” or
           “danger” score.
         </p>
 
-        <h2>13. Changes</h2>
+        <h2>14. Changes</h2>
         <p>
           This notice will be updated when the data flow, vendors or retention
           practices materially change. Production configuration should always

@@ -164,7 +164,9 @@ function CandidateCard({
   return (
     <article className="candidate-card">
       <div className="candidate-card__top">
-        <span className="match-rank">Top match #{rank}</span>
+        <span className="match-rank">
+          {candidate.confidence === "low" ? "Possible match" : "Top match"} #{rank}
+        </span>
         <span className={`confidence confidence--${candidate.confidence}`}>
           {candidate.confidence} confidence
         </span>
@@ -252,6 +254,10 @@ export function SearchExperience() {
 
     return buildIdentityQueries(toInput(form, "identity"));
   }, [form, stage, confirmedIdentityForSearch]);
+
+  const onlyLowConfidenceCandidates =
+    candidates.length > 0 &&
+    candidates.every((candidate) => candidate.confidence === "low");
 
   const candidateSourceUrls = useMemo(
     () => new Set(candidates.flatMap((candidate) => candidate.sources.map((source) => source.url))),
@@ -640,10 +646,12 @@ export function SearchExperience() {
           <h2 id="candidate-title">Which person do you mean?</h2>
           <p>
             {candidates.length === 0
-              ? "We did not find a candidate with enough identity evidence to show safely. Add more context or use the manual Google searches above."
-              : candidates.length === 1
-                ? "We found one likely identity. Please confirm it before we generate a report."
-                : `We found ${candidates.length} likely identity matches. Choose the correct person before we generate a report.`}
+              ? "We did not find even a neutral name-matched candidate to show safely. Add more context or use the manual Google searches above."
+              : onlyLowConfidenceCandidates
+                ? `We did not find a strong identity match, but we found ${candidates.length} low-confidence possibilit${candidates.length === 1 ? "y" : "ies"}. Review the source carefully before confirming anyone.`
+                : candidates.length === 1
+                  ? "We found one likely identity. Please confirm it before we generate a report."
+                  : `We found ${candidates.length} likely identity matches. Choose the correct person before we generate a report.`}
           </p>
         </div>
 
@@ -671,11 +679,19 @@ export function SearchExperience() {
         {identityExcludedCount > 0 ? (
           <div className="quality-note" role="note">
             <strong>
-              {identityExcludedCount} low-confidence search result
+              {identityExcludedCount} additional low-confidence search result
               {identityExcludedCount === 1 ? " was" : "s were"} hidden.
             </strong>{" "}
-            They did not contain enough identity evidence to show as a possible
-            match.
+            Only the strongest neutral identity possibilities are shown.
+          </div>
+        ) : null}
+
+        {onlyLowConfidenceCandidates ? (
+          <div className="photo-warning" role="note">
+            <strong>Low-confidence identity leads only.</strong>{" "}
+            These cards are not findings about the person. They are possible
+            namesake/profile matches for you to inspect and explicitly confirm.
+            No deeper or sensitive research starts until you choose one.
           </div>
         ) : null}
 

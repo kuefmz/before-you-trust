@@ -56,6 +56,10 @@ Reference:
 ### 3. Report and contact delivery
 
 - [ ] Apps Script report endpoint is reachable from the deployed Next.js server.
+- [ ] Address direct-call abuse before public scale: the current Apps Script
+  endpoint does not require authentication, so callers who know the URL can
+  bypass the Next.js rate limiter unless Apps Script enforces its own
+  validation/abuse controls.
 - [ ] One report request creates exactly one row in the private Google Sheet.
 - [ ] The requested report reaches the user.
 - [ ] The owner copy arrives.

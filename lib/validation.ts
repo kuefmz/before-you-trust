@@ -170,7 +170,6 @@ export function validateSearchRequest(payload: unknown): ValidationResult {
       name: cleanText(record.name, "Full name", 120, true)!,
       location: cleanText(record.location, "Location", 160),
       company: cleanText(record.company, "Employer or organization", 180),
-      username: cleanText(record.username, "Username or handle", 120),
       profileUrl: cleanUrl(record.profileUrl),
       socialProfiles: cleanSocialProfiles(record.socialProfiles),
       claim: cleanText(record.claim, "Claim", 300),

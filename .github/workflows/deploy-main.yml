@@ -44,7 +44,28 @@ jobs:
             echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Confirm tested commit is still main HEAD
+        id: head
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ steps.release.outputs.sha }}
+        run: |
+          current_sha="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq '.sha')"
+
+          echo "CI-tested SHA: $RELEASE_SHA"
+          echo "Current main:   $current_sha"
+
+          if [[ "$current_sha" != "$RELEASE_SHA" ]]; then
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::A newer main commit exists. Skipping this older release; the newer commit will deploy after its own CI passes."
+            exit 0
+          fi
+
+          echo "deploy=true" >> "$GITHUB_OUTPUT"
+
       - name: Validate deployment configuration
+        if: steps.head.outputs.deploy == 'true'
         shell: bash
         run: |
           missing=0
@@ -68,6 +89,7 @@ jobs:
           echo "AWS region: $AWS_REGION"
 
       - name: Configure AWS credentials with GitHub OIDC
+        if: steps.head.outputs.deploy == 'true'
         uses: aws-actions/configure-aws-credentials@v6.2.3
         with:
           role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
@@ -75,31 +97,58 @@ jobs:
           role-session-name: before-you-trust-production
 
       - name: Start Amplify release
+        if: steps.head.outputs.deploy == 'true'
         id: amplify
         shell: bash
         env:
           RELEASE_SHA: ${{ steps.release.outputs.sha }}
         run: |
-          job_id="$(
-            aws amplify start-job               --app-id "$AMPLIFY_APP_ID"               --branch-name "$AMPLIFY_BRANCH"               --job-type RELEASE               --job-reason "GitHub Actions production release $RELEASE_SHA"               --commit-id "$RELEASE_SHA"               --commit-message "Deploy $RELEASE_SHA after CI passed"               --query 'jobSummary.jobId'               --output text
+          response="$(
+            aws amplify start-job \
+              --app-id "$AMPLIFY_APP_ID" \
+              --branch-name "$AMPLIFY_BRANCH" \
+              --job-type RELEASE \
+              --job-reason "GitHub Actions production release $RELEASE_SHA" \
+              --commit-id "$RELEASE_SHA" \
+              --commit-message "Deploy $RELEASE_SHA after CI passed" \
+              --output json
           )"
 
-          if [[ -z "$job_id" || "$job_id" == "None" ]]; then
+          job_id="$(jq -r '.jobSummary.jobId // empty' <<< "$response")"
+          amplify_sha="$(jq -r '.jobSummary.commitId // empty' <<< "$response")"
+
+          if [[ -z "$job_id" ]]; then
             echo "::error::Amplify did not return a deployment job id."
             exit 1
           fi
 
+          echo "Started Amplify job $job_id for commit $amplify_sha."
+
+          if [[ -n "$amplify_sha" && "$amplify_sha" != "$RELEASE_SHA" ]]; then
+            echo "::error::Amplify started the wrong commit ($amplify_sha instead of $RELEASE_SHA). Stopping the job."
+            aws amplify stop-job \
+              --app-id "$AMPLIFY_APP_ID" \
+              --branch-name "$AMPLIFY_BRANCH" \
+              --job-id "$job_id" >/dev/null
+            exit 1
+          fi
+
           echo "job_id=$job_id" >> "$GITHUB_OUTPUT"
-          echo "Started Amplify job $job_id."
 
       - name: Wait for Amplify deployment
+        if: steps.head.outputs.deploy == 'true'
         shell: bash
         env:
           JOB_ID: ${{ steps.amplify.outputs.job_id }}
         run: |
           for attempt in {1..120}; do
             status="$(
-              aws amplify get-job                 --app-id "$AMPLIFY_APP_ID"                 --branch-name "$AMPLIFY_BRANCH"                 --job-id "$JOB_ID"                 --query 'job.summary.status'                 --output text
+              aws amplify get-job \
+                --app-id "$AMPLIFY_APP_ID" \
+                --branch-name "$AMPLIFY_BRANCH" \
+                --job-id "$JOB_ID" \
+                --query 'job.summary.status' \
+                --output text
             )"
 
             echo "Amplify status: $status"

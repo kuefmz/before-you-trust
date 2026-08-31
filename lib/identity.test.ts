@@ -153,9 +153,9 @@ describe("identity candidate building", () => {
     const candidates = buildIdentityCandidates(
       [
         result({
-          title: "Sasza Swiatek | LinkedIn",
+          title: "Professional profile",
           url: "https://linkedin.com/in/sasza-swiatek",
-          snippet: "Public professional profile",
+          snippet: "Sasza Swiatek public professional profile",
           sourceType: "professional",
         }),
         result({

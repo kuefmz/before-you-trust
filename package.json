@@ -17,7 +17,8 @@
     "test:e2e": "playwright test",
     "check": "npm run deploy:preflight && npm run lint && npm run typecheck && npm run benchmark:identity && npm run test:coverage && npm run build",
     "deploy:preflight": "node scripts/deployment-preflight.mjs",
-    "benchmark:identity": "vitest run benchmarks/netflix-identity-benchmark.test.ts"
+    "benchmark:identity": "vitest run benchmarks/netflix-identity-benchmark.test.ts",
+    "benchmark:live": "node scripts/live-search-benchmark.mjs"
   },
   "dependencies": {
     "next": "15.5.24",

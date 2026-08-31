@@ -144,11 +144,14 @@ export default function PrivacyPage() {
         <h2>9. Purposes and legal bases</h2>
         <p>
           The service is designed around purpose limitation and data
-          minimization. Where the GDPR applies, processing necessary to provide a
-          requested search may rely on performance of the requested service
-          and/or legitimate interests. Saving and emailing a report occurs only
-          after the user explicitly requests delivery and acknowledges the
-          related processing. Optional analytics relies on consent.
+          minimization. Where the GDPR applies, processing of information
+          supplied by the user to provide the requested service may rely on
+          performance of that request. Processing of public information about
+          another person may, where appropriate, rely on legitimate interests
+          subject to the required balancing and safeguards. Saving and emailing
+          a report occurs only after the user explicitly requests delivery and
+          acknowledges the related processing. Optional analytics relies on
+          consent.
         </p>
 
         <h2>10. Service providers and international transfers</h2>

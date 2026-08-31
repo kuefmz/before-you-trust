@@ -122,16 +122,6 @@ export function buildDeepQueries(input: SearchInput): SearchQuery[] {
     });
   }
 
-  for (const url of input.confirmedIdentity?.urls ?? []) {
-    const host = hostname(url);
-    if (host) {
-      queries.push({
-        text: `${name} site:${host}`,
-        kind: "identity",
-      });
-    }
-  }
-
   queries.push(
     ...buildSocialQueries(input, name).slice(0, 3),
     { text: `${name} profile`, kind: "general" },
@@ -142,6 +132,16 @@ export function buildDeepQueries(input: SearchInput): SearchQuery[] {
     { text: `${name} complaint`, kind: "concern" },
     { text: `${name} fraud`, kind: "concern" },
   );
+
+  for (const url of input.confirmedIdentity?.urls ?? []) {
+    const host = hostname(url);
+    if (host) {
+      queries.push({
+        text: `${name} site:${host}`,
+        kind: "identity",
+      });
+    }
+  }
 
   return unique(queries).slice(0, 15);
 }

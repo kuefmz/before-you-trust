@@ -231,6 +231,7 @@ export function buildAppsScriptPayload(
   data: ReportEmailRequest,
 ): Record<string, unknown> {
   return {
+    kind: "report",
     requestId: crypto.randomUUID(),
     userEmail: data.email,
     searchedName: data.searchedName,

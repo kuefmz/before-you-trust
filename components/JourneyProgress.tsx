@@ -36,11 +36,7 @@ export function JourneyProgress({
         <div className="journey-toolbar__actions">
           {onStartNewSearch ? (
             <button
-              className={`button button--compact ${
-                highlightManualSearch
-                  ? "button--primary button--manual-highlight"
-                  : "button--ghost"
-              }`}
+              className="button button--ghost button--compact"
               onClick={onStartNewSearch}
               type="button"
             >
@@ -51,7 +47,11 @@ export function JourneyProgress({
             <button
               aria-controls="manual-search-panel"
               aria-expanded={manualSearchOpen}
-              className="button button--ghost button--compact"
+              className={`button button--compact ${
+                highlightManualSearch
+                  ? "button--primary button--manual-highlight"
+                  : "button--ghost"
+              }`}
               onClick={onToggleManualSearch}
               type="button"
             >

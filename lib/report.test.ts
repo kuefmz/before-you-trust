@@ -90,6 +90,30 @@ describe("Trust Brief grouping", () => {
     expect(filtered.excludedCount).toBe(1);
   });
 
+  it("excludes a similar-name result even when city and employer match", () => {
+    const similarName: SearchResult = {
+      ...base,
+      title: "Jane Unique-Surnames | UBS",
+      url: "https://example.org/jane-similar",
+      snippet: "Jane Unique-Surnames in Zurich at Example AG",
+      sourceType: "professional",
+      queryKinds: ["professional"],
+    };
+
+    const filtered = filterResultsForConfirmedIdentity(
+      [similarName],
+      [],
+      {
+        name: "Jane Unique-Surname",
+        location: "Zurich",
+        company: "Example AG",
+      },
+    );
+
+    expect(filtered.results).toEqual([]);
+    expect(filtered.excludedCount).toBe(1);
+  });
+
   it("always keeps the sources explicitly selected with the confirmed candidate", () => {
     const selected: SearchResult = {
       ...base,

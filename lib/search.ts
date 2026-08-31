@@ -1,3 +1,7 @@
+import {
+  containsExactFullName,
+  urlPathContainsExactFullName,
+} from "@/lib/exact-name";
 import { buildDeepQueries, buildIdentityQueries } from "@/lib/queries";
 import { dedupeResults, type ResultContribution } from "@/lib/normalize";
 import {
@@ -20,6 +24,43 @@ export class SearchExecutionError extends Error {
     super(message);
     this.name = "SearchExecutionError";
   }
+}
+
+function identityResultScore(
+  result: ReturnType<typeof dedupeResults>[number],
+  fullName: string,
+): number {
+  let score = 0;
+
+  if (containsExactFullName(result.title, fullName)) {
+    score += 100;
+  } else if (
+    containsExactFullName(`${result.title} ${result.snippet}`, fullName)
+  ) {
+    score += 90;
+  }
+
+  if (urlPathContainsExactFullName(result.url, fullName)) {
+    score += 80;
+  }
+
+  if (result.sourceType === "professional") score += 25;
+  if (result.sourceType === "social") score += 20;
+  if (result.queryKinds.includes("social")) score += 12;
+  if (result.queryKinds.includes("professional")) score += 12;
+  if (result.queryKinds.includes("identity")) score += 6;
+
+  return score;
+}
+
+function rankIdentityResults(
+  results: ReturnType<typeof dedupeResults>,
+  fullName: string,
+) {
+  return [...results].sort(
+    (a, b) =>
+      identityResultScore(b, fullName) - identityResultScore(a, fullName),
+  );
 }
 
 async function runWithConcurrency<T, R>(
@@ -138,11 +179,20 @@ export async function executeSearch(
     );
   }
 
+  const deduped = dedupeResults(
+    contributions,
+    input.mode === "identity" ? 160 : 90,
+  );
+  const results =
+    input.mode === "identity"
+      ? rankIdentityResults(deduped, input.name).slice(0, 70)
+      : deduped.slice(0, 60);
+
   return {
     mode: input.mode,
     providers,
     queriesRun: queries.length,
-    results: dedupeResults(contributions, input.mode === "identity" ? 45 : 60),
+    results,
     warnings,
   };
 }

@@ -12,6 +12,8 @@ services:
   searxng:
     image: searxng/searxng:latest
     container_name: before-you-trust-searxng
+    environment:
+      SEARXNG_SECRET: ${SEARXNG_SECRET:-before-you-trust-local-change-me}
     ports:
       - "8888:8080"
     volumes:

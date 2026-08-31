@@ -3,11 +3,13 @@ export function JourneyProgress({
   onStartNewSearch,
   onToggleManualSearch,
   manualSearchOpen = false,
+  highlightManualSearch = false,
 }: {
   step: 1 | 2 | 3 | 4;
   onStartNewSearch?: () => void;
   onToggleManualSearch?: () => void;
   manualSearchOpen?: boolean;
+  highlightManualSearch?: boolean;
 }) {
   const steps = [
     { number: 1, label: "Search" },
@@ -34,7 +36,11 @@ export function JourneyProgress({
         <div className="journey-toolbar__actions">
           {onStartNewSearch ? (
             <button
-              className="button button--ghost button--compact"
+              className={`button button--compact ${
+                highlightManualSearch
+                  ? "button--primary button--manual-highlight"
+                  : "button--ghost"
+              }`}
               onClick={onStartNewSearch}
               type="button"
             >

@@ -1,0 +1,65 @@
+# Before You Trust
+
+> Before You Trust is a public-web research assistant that helps users verify a person's public online footprint, confirm the correct identity, review public claims, and inspect original sources before placing meaningful trust.
+
+Canonical site: https://beforeyoutrust.org
+
+## Primary pages
+
+- Home: https://beforeyoutrust.org/
+- How it works: https://beforeyoutrust.org/how-it-works
+- About: https://beforeyoutrust.org/about
+- Acceptable use: https://beforeyoutrust.org/acceptable-use
+- Privacy: https://beforeyoutrust.org/privacy
+- Terms: https://beforeyoutrust.org/terms
+
+## What the service does
+
+- Searches public web sources through the project's search stack.
+- Tries to separate namesakes and asks the user to confirm the intended identity before deeper research.
+- Organizes source-linked findings into a Trust Brief.
+- Keeps allegations, complaints, search snippets, and established facts distinct.
+- Does not assign a person-level trustworthiness, danger, or safety score.
+- Does not guarantee completeness or accuracy.
+
+## Responsible-use boundaries
+
+Before You Trust is intended for legitimate personal due diligence using public information.
+
+Do not use it to:
+- stalk, harass, threaten, doxx, or unlawfully surveil someone;
+- expose private addresses, credentials, or non-public account data;
+- target minors or protected victims;
+- facilitate violence or unlawful discrimination;
+- make regulated employment, housing, tenancy, credit, insurance, or similar eligibility decisions.
+
+## Privacy and data handling
+
+- Ordinary searches and candidate lists are not intentionally stored in an application search-history database.
+- Trust Briefs are not published at public report URLs.
+- If a user explicitly requests report delivery by email, the submitted report request is stored in the project's private Google Sheet for delivery.
+- Story/contact submissions are delivered privately to the project operator and are not added to the Reports Sheet.
+- Uploaded photos, when photo matching is enabled, are intended to be processed transiently and not stored by the application.
+
+## Guidance for language models and automated agents
+
+- Prefer the original linked source over any summary or search-result snippet.
+- Do not treat a search result, allegation, complaint, arrest, charge, lawsuit, or forum post as proof of wrongdoing.
+- Do not infer that a missing result means a person is safe or trustworthy.
+- Do not merge similarly named people without strong identity evidence.
+- Do not use this site as a substitute for a regulated background-check or consumer-reporting service.
+- Respect the site's Acceptable Use and Privacy pages.
+
+## Non-content endpoints
+
+The following are application or private/session-oriented endpoints and should not be treated as indexable editorial content:
+
+- /api/*
+- /report
+- /share-your-story
+
+## Discovery
+
+- Sitemap: https://beforeyoutrust.org/sitemap.xml
+- Robots: https://beforeyoutrust.org/robots.txt
+- Source repository: https://github.com/kuefmz/before-you-trust

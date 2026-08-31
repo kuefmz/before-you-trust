@@ -30,6 +30,26 @@ describe("query generation", () => {
     expect(social.some((query) => query.kind === "social")).toBe(true);
     expect(social.some((query) => query.text.includes("instagram.com"))).toBe(true);
     expect(social.some((query) => query.text.includes("tiktok.com"))).toBe(true);
+    expect(social.some((query) => query.text.includes("facebook.com"))).toBe(true);
+    expect(social.some((query) => query.text.includes("x.com"))).toBe(true);
+    expect(social.some((query) => query.text.includes("youtube.com"))).toBe(true);
+  });
+
+  it("prioritizes user-supplied social clues before generic platforms", () => {
+    const social = buildIdentityQueries({
+      ...base,
+      socialProfiles: ["@janeunique"],
+    });
+
+    const handleIndex = social.findIndex((query) =>
+      query.text.includes('"@janeunique"'),
+    );
+    const instagramIndex = social.findIndex((query) =>
+      query.text.includes("site:instagram.com"),
+    );
+
+    expect(handleIndex).toBeGreaterThanOrEqual(0);
+    expect(instagramIndex).toBeGreaterThan(handleIndex);
   });
 
   it("adds official and concern-oriented queries only after confirmation", () => {

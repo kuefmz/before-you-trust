@@ -1,6 +1,11 @@
-export const metadata = {
-  title: "How it works",
-};
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "How Before You Trust Works",
+  description: "How Before You Trust searches public web sources, confirms an exact identity, separates namesakes, and builds a source-linked Trust Brief without a person-level score.",
+  path: "/how-it-works",
+  index: true,
+});
 
 export default function HowItWorksPage() {
   return (

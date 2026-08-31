@@ -40,6 +40,9 @@ const DEFAULT_SOCIAL_HOSTS = [
 
 function buildSocialQueries(input: SearchInput, name: string): SearchQuery[] {
   const queries: SearchQuery[] = [];
+  const contextTerms = [input.location, input.company]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .map(quote);
 
   // User-supplied clues are the strongest social/profile hints, so search them
   // before generic platform queries.
@@ -65,9 +68,16 @@ function buildSocialQueries(input: SearchInput, name: string): SearchQuery[] {
       text: `${name} site:${host}`,
       kind: "social",
     });
+
+    if (contextTerms.length > 0) {
+      queries.push({
+        text: `${name} ${contextTerms.join(" ")} site:${host}`,
+        kind: "social",
+      });
+    }
   }
 
-  return unique(queries).slice(0, 9);
+  return unique(queries).slice(0, 14);
 }
 
 export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
@@ -92,6 +102,13 @@ export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
     });
   }
 
+  if (input.location && input.company) {
+    queries.push({
+      text: `${name} ${quote(input.location)} ${quote(input.company)}`,
+      kind: "professional",
+    });
+  }
+
   const profileHost = hostname(input.profileUrl);
   if (profileHost) {
     queries.push({
@@ -108,7 +125,7 @@ export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
     { text: `${name} filetype:pdf`, kind: "general" },
   );
 
-  return unique(queries).slice(0, 16);
+  return unique(queries).slice(0, 22);
 }
 
 export function buildDeepQueries(input: SearchInput): SearchQuery[] {
@@ -169,5 +186,5 @@ export function buildDeepQueries(input: SearchInput): SearchQuery[] {
     }
   }
 
-  return unique(queries).slice(0, 19);
+  return unique(queries).slice(0, 24);
 }

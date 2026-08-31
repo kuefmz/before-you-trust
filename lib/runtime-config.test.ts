@@ -28,27 +28,27 @@ afterEach(() => {
 
 describe("runtime configuration", () => {
   it("prefers direct local environment values", async () => {
-    process.env.TAVILY_API_KEY = "local-key";
+    process.env.YACY_PASSWORD = "local-password";
     process.env.RUNTIME_SECRETS_PARAMETER = "/runtime";
     mocks.send.mockRejectedValue(new Error("should not be called"));
 
-    await expect(getRuntimeSetting("TAVILY_API_KEY")).resolves.toBe("local-key");
+    await expect(getRuntimeSetting("YACY_PASSWORD")).resolves.toBe("local-password");
     expect(mocks.send).not.toHaveBeenCalled();
   });
 
   it("loads and caches encrypted runtime JSON through SSM", async () => {
-    delete process.env.TAVILY_API_KEY;
+    delete process.env.YACY_PASSWORD;
     process.env.RUNTIME_SECRETS_PARAMETER = "/before-you-trust/dev/runtime";
     mocks.send.mockResolvedValue({
       Parameter: {
         Value: JSON.stringify({
-          TAVILY_API_KEY: "secure-key",
+          YACY_PASSWORD: "secure-password",
           SEARCH_FINGERPRINT_SECRET: "x".repeat(48),
         }),
       },
     });
 
-    await expect(getRuntimeSetting("TAVILY_API_KEY")).resolves.toBe("secure-key");
+    await expect(getRuntimeSetting("YACY_PASSWORD")).resolves.toBe("secure-password");
     await expect(getRuntimeSetting("SEARCH_FINGERPRINT_SECRET")).resolves.toBe(
       "x".repeat(48),
     );
@@ -62,7 +62,7 @@ describe("runtime configuration", () => {
 
   it("returns undefined when neither local nor SSM config exists", async () => {
     delete process.env.RUNTIME_SECRETS_PARAMETER;
-    delete process.env.BRAVE_SEARCH_API_KEY;
-    await expect(getRuntimeSetting("BRAVE_SEARCH_API_KEY")).resolves.toBeUndefined();
+    delete process.env.YACY_USERNAME;
+    await expect(getRuntimeSetting("YACY_USERNAME")).resolves.toBeUndefined();
   });
 });

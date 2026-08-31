@@ -96,7 +96,7 @@ export default function AboutPage() {
         <section className="about-story">
           <div>
             <span className="eyebrow">The motivation</span>
-            <h2>I kept noticing the same moment in documentaries.</h2>
+            <h2>What The Tinder Swindler teaches about online trust.</h2>
           </div>
           <div className="long-copy">
             <p>

@@ -7,8 +7,13 @@ import { analyticsConsentKey } from "@/lib/client-analytics";
 
 type ConsentState = "granted" | "denied" | null;
 
+type AnalyticsWindow = Window & {
+  dataLayer?: unknown[];
+  gtag?: (...args: unknown[]) => void;
+};
+
 function dataLayer(): unknown[] {
-  const target = window as Window & { dataLayer?: unknown[] };
+  const target = window as AnalyticsWindow;
   target.dataLayer ??= [];
   return target.dataLayer;
 }
@@ -30,15 +35,40 @@ function setDefaultConsent() {
   });
 }
 
-function loadGtm(gtmId: string) {
-  if (document.getElementById("byt-gtm-script")) return;
-
+function grantAnalyticsStorage() {
   gtagCommand("consent", "update", {
     analytics_storage: "granted",
     ad_storage: "denied",
     ad_user_data: "denied",
     ad_personalization: "denied",
   });
+}
+
+function loadGa4(ga4Id: string) {
+  if (document.getElementById("byt-ga4-script")) return;
+
+  grantAnalyticsStorage();
+
+  const target = window as AnalyticsWindow;
+  target.gtag = gtagCommand;
+
+  const script = document.createElement("script");
+  script.id = "byt-ga4-script";
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(ga4Id)}`;
+  document.head.appendChild(script);
+
+  gtagCommand("js", new Date());
+  gtagCommand("config", ga4Id, {
+    allow_google_signals: false,
+    allow_ad_personalization_signals: false,
+  });
+}
+
+function loadGtm(gtmId: string) {
+  if (document.getElementById("byt-gtm-script")) return;
+
+  grantAnalyticsStorage();
 
   dataLayer().push({
     "gtm.start": Date.now(),
@@ -61,18 +91,30 @@ function clearAnalyticsCookies() {
   }
 }
 
-export function AnalyticsConsent({ gtmId }: { gtmId?: string }) {
+function loadConfiguredAnalytics(ga4Id?: string, gtmId?: string) {
+  if (ga4Id) loadGa4(ga4Id);
+  if (gtmId) loadGtm(gtmId);
+}
+
+export function AnalyticsConsent({
+  ga4Id,
+  gtmId,
+}: {
+  ga4Id?: string;
+  gtmId?: string;
+}) {
   const [state, setState] = useState<ConsentState>(null);
   const [show, setShow] = useState(false);
+  const configured = Boolean(ga4Id || gtmId);
 
   useEffect(() => {
-    if (!gtmId) return;
+    if (!configured) return;
 
     setDefaultConsent();
     const saved = window.localStorage.getItem(analyticsConsentKey);
     if (saved === "granted") {
       setState("granted");
-      loadGtm(gtmId);
+      loadConfiguredAnalytics(ga4Id, gtmId);
     } else if (saved === "denied") {
       setState("denied");
     } else {
@@ -81,16 +123,17 @@ export function AnalyticsConsent({ gtmId }: { gtmId?: string }) {
 
     const open = () => setShow(true);
     window.addEventListener("byt:open-analytics-preferences", open);
-    return () => window.removeEventListener("byt:open-analytics-preferences", open);
-  }, [gtmId]);
+    return () =>
+      window.removeEventListener("byt:open-analytics-preferences", open);
+  }, [configured, ga4Id, gtmId]);
 
-  if (!gtmId || !show) return null;
+  if (!configured || !show) return null;
 
   function grant() {
     window.localStorage.setItem(analyticsConsentKey, "granted");
     setState("granted");
     setShow(false);
-    loadGtm(gtmId!);
+    loadConfiguredAnalytics(ga4Id, gtmId);
   }
 
   function reject() {
@@ -113,9 +156,9 @@ export function AnalyticsConsent({ gtmId }: { gtmId?: string }) {
       <div>
         <strong>Optional analytics</strong>
         <p>
-          We do not send searched names or story content to analytics. If you
-          allow analytics, Google Tag Manager may load GA4 and use analytics
-          storage. Rejecting does not affect the site.
+          We do not send searched names, report contents, source URLs or story
+          content to analytics. If you allow analytics, Google Analytics may
+          load and use analytics storage. Rejecting does not affect the site.
         </p>
         <Link href="/privacy">Privacy details</Link>
       </div>

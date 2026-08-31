@@ -1,6 +1,11 @@
-export const metadata = {
-  title: "Acceptable use",
-};
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "Acceptable Use",
+  description: "Rules for responsible use of Before You Trust, including prohibitions on stalking, doxxing, targeting minors, and regulated employment, housing, credit or insurance screening.",
+  path: "/acceptable-use",
+  index: true,
+});
 
 export default function AcceptableUsePage() {
   return (

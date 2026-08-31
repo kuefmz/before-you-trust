@@ -715,25 +715,11 @@ Then verify:
 
 ---
 
-# 7. Optional Share Your Story email
+# 7. Share Your Story email
 
-The report-email flow does **not** use Brevo.
+The Share Your Story form uses the same Google Apps Script web-app endpoint as report delivery. The Apps Script routes `kind: "story"` submissions directly to the `OWNER_EMAIL` configured in the Sheet `Settings` tab and does not append them to the `Reports` sheet.
 
-The separate Share Your Story form can use Brevo.
-
-If you keep that feature public, add these values to the encrypted SSM JSON:
-
-```json
-{
-  "BREVO_API_KEY": "...",
-  "BREVO_FROM_EMAIL": "...",
-  "BREVO_FROM_NAME": "Before You Trust",
-  "OWNER_NOTIFICATION_EMAIL": "..."
-}
-```
-
-If you do not configure the feature, smoke-test that the UI fails gracefully or
-remove/hide the public entry point before launch.
+No Brevo credentials or additional Amplify/SSM secrets are required. After updating `google-apps-script/Code.gs`, deploy a **New version** of the Apps Script web app so the live `/exec` endpoint includes story handling.
 
 ---
 

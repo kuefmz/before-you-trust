@@ -75,7 +75,7 @@ async function executeQuery(
   requestSignal: AbortSignal,
 ): Promise<{
   contributions: ResultContribution[];
-  provider?: string;
+  providers: string[];
   warnings: string[];
 }> {
   const timeout = withTimeout(requestSignal);
@@ -83,11 +83,14 @@ async function executeQuery(
   try {
     const response = await searchQuery(query.text, timeout.signal);
     return {
-      provider: response.provider,
+      providers: response.providers,
       warnings: response.warnings,
       contributions: response.results.map((result) => ({
-        ...result,
-        provider: response.provider,
+        title: result.title,
+        url: result.url,
+        snippet: result.snippet,
+        publishedAt: result.publishedAt,
+        provider: result.provider,
         query: query.text,
         queryKind: query.kind,
       })),
@@ -96,6 +99,7 @@ async function executeQuery(
     if (error instanceof SearchConfigurationError) throw error;
     return {
       contributions: [],
+      providers: [],
       warnings: [
         error instanceof Error ? error.message : "A search query failed.",
       ],
@@ -124,9 +128,7 @@ export async function executeSearch(
   const warnings = [...new Set(queryResults.flatMap((item) => item.warnings))];
   const providers = [
     ...new Set(
-      queryResults
-        .map((item) => item.provider)
-        .filter((provider): provider is string => Boolean(provider)),
+      queryResults.flatMap((item) => item.providers),
     ),
   ];
 

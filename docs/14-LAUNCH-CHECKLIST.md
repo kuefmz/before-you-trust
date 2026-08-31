@@ -21,14 +21,14 @@
 - [ ] API secrets server-side only.
 - [ ] Rate limiting enabled.
 - [ ] Error states handled.
-- [ ] Search provider quotas monitored.
+- [ ] YaCy node health, CPU/RAM/disk and crawl/index capacity monitored.
 - [ ] Mobile UI tested.
 
 ## Search quality
 - [ ] Controlled benchmark set completed.
 - [ ] Wrong-person rate reviewed.
 - [ ] Duplicate handling tested.
-- [ ] Provider fallback behavior tested.
+- [ ] YaCy unavailable/timeout behavior tested.
 - [ ] No fabricated source or citation paths.
 
 ## Brand

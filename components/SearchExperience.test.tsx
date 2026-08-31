@@ -112,6 +112,61 @@ describe("SearchExperience", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it("sends only the clicked candidate into deep search", async () => {
+    const user = userEvent.setup();
+    const namesakes: SearchResponse = {
+      ...identityResponse,
+      results: [
+        {
+          ...identityResponse.results[0]!,
+          title: "Alex Morgan | LinkedIn",
+          url: "https://linkedin.com/in/alex-morgan-zurich",
+          snippet: "Engineer in Zurich at Alpha AG",
+        },
+        {
+          ...identityResponse.results[0]!,
+          title: "Alex Morgan | LinkedIn",
+          url: "https://linkedin.com/in/alex-morgan-london",
+          snippet: "Designer in London at Beta Ltd",
+        },
+      ],
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(namesakes), { status: 200 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ ...deepResponse, results: [] }), {
+          status: 200,
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<SearchExperience />);
+    await user.type(screen.getByLabelText("Full name *"), "Alex Morgan");
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(
+      screen.getByRole("button", { name: "Search the public web →" }),
+    );
+
+    const buttons = await screen.findAllByRole("button", { name: "This is them" });
+    expect(buttons).toHaveLength(2);
+    await user.click(buttons[1]!);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const deepOptions = fetchMock.mock.calls[1]?.[1] as RequestInit;
+    const deepBody = JSON.parse(String(deepOptions.body)) as {
+      confirmedIdentity: { urls: string[] };
+    };
+    expect(deepBody.confirmedIdentity.urls).toContain(
+      "https://linkedin.com/in/alex-morgan-london",
+    );
+    expect(deepBody.confirmedIdentity.urls).not.toContain(
+      "https://linkedin.com/in/alex-morgan-zurich",
+    );
+  });
+
   it("does not start deep research until the only match is confirmed", async () => {
     const user = userEvent.setup();
     const oneMatch: SearchResponse = {

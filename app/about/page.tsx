@@ -1,16 +1,29 @@
 import Link from "next/link";
 
 import { SupportLink } from "@/components/SupportLink";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "About",
+export const metadata = pageMetadata({
+  title: "The Tinder Swindler & Why Before You Trust Exists",
   description:
-    "Why Before You Trust exists: making fragmented public information easier to find before trust becomes costly.",
-};
+    "Why Before You Trust exists, using The Tinder Swindler as a familiar example of why exact identity checks, public-source verification, and context matter before trust.",
+  path: "/about",
+});
 
-const supportUrl = process.env.NEXT_PUBLIC_BUY_ME_A_COFFEE_URL?.trim();
+const supportUrl =
+  process.env.NEXT_PUBLIC_BUY_ME_A_COFFEE_URL?.trim() ||
+  "https://buymeacoffee.com/jenifertabitaciuciukiss";
 
 const cases = [
+  {
+    title: "The Tinder Swindler / Shimon Hayut",
+    year: "Netflix documentary, 2022",
+    lesson:
+      "Netflix identifies the documentary’s subject as Shimon Hayut, also known as Simon Leviev. The story became a widely recognized example of how an impressive online identity, social proof, travel photos, status claims and personal trust can all feel convincing at the same time. The lesson for Before You Trust is not to label strangers as dangerous. It is to verify the exact identity, trace claims back to independent public sources, and keep uncertainty visible.",
+    source:
+      "https://www.netflix.com/tudum/articles/who-is-tinder-swindler-real-shimon-hayut",
+    sourceLabel: "Netflix Tudum",
+  },
   {
     title: "Dirty John / John Meehan",
     year: "2014–2017 reporting",
@@ -89,9 +102,19 @@ export default function AboutPage() {
             <p>
               Again and again, the devastating discovery came after the trust:
               a partner had a history nobody had checked, a charismatic leader
-              had a trail of disputes or reporting, a founder’s claims did not
-              withstand independent scrutiny, or multiple public clues existed
-              in places ordinary people would never know to search.
+              had a trail of disputes or reporting, a founder&apos;s claims did
+              not withstand independent scrutiny, or multiple public clues
+              existed in places ordinary people would never know to search.
+            </p>
+            <p>
+              One of the most recognizable recent examples is{" "}
+              <strong>The Tinder Swindler</strong>. Netflix&apos;s documentary
+              follows Shimon Hayut, also known as Simon Leviev, and shows how an
+              apparently credible online identity can be reinforced by social
+              media, status signals and repeated personal claims. The useful
+              lesson is not “trust nobody.” It is that identity and claims can
+              sometimes be checked against independent public evidence before a
+              relationship, investment or commitment becomes costly.
             </p>
             <p>
               That does not mean every tragedy was preventable, and it would be
@@ -113,11 +136,12 @@ export default function AboutPage() {
         <section className="case-section">
           <div className="section-heading">
             <span className="eyebrow">Cases that shaped the idea</span>
-            <h2>Different contexts. The same need for independent checks.</h2>
+            <h2>Familiar stories. The same need for independent checks.</h2>
             <p>
               These cases are included because they are well documented and
               illustrate different forms of misplaced trust. They do not imply
-              that Before You Trust would certainly have prevented the harm.
+              that Before You Trust would certainly have prevented the harm,
+              and a public source must always be read in context.
             </p>
           </div>
 
@@ -158,23 +182,26 @@ export default function AboutPage() {
               internet footprint is just a sparse internet footprint.
             </p>
             <p>
-              <strong>No raw-name analytics database.</strong> Repeat-search
-              monitoring is deliberately pseudonymized and time-limited.
+              <strong>No raw-name analytics or search-history database.</strong>{" "}
+              Ordinary searches are processed transiently and searched names are
+              not intentionally sent to analytics.
             </p>
           </div>
         </section>
 
         <section className="about-cta">
           <div>
-            <h2>Help make it better.</h2>
+            <h2>Verify the source, then decide.</h2>
             <p>
-              If you have lived through a situation where earlier information
-              might have changed what you did, I would genuinely like to learn
-              from it.
+              Try the public-web research flow, or share a story about where
+              earlier information would have changed what you did.
             </p>
           </div>
           <div className="community-cta__actions">
-            <Link className="button button--primary" href="/share-your-story">
+            <Link className="button button--primary" href="/">
+              Start a search
+            </Link>
+            <Link className="button button--ghost" href="/share-your-story">
               Share your story
             </Link>
             {supportUrl ? <SupportLink href={supportUrl} /> : null}

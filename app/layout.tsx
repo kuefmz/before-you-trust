@@ -10,7 +10,9 @@ import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 const verification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
-const supportUrl = process.env.NEXT_PUBLIC_BUY_ME_A_COFFEE_URL?.trim();
+const supportUrl =
+  process.env.NEXT_PUBLIC_BUY_ME_A_COFFEE_URL?.trim() ||
+  "https://buymeacoffee.com/jenifertabitaciuciukiss";
 const ga4Id =
   process.env.NEXT_PUBLIC_GA4_ID?.trim() || "G-MVDVBJJFQB";
 const gtmId = process.env.NEXT_PUBLIC_GTM_ID?.trim();

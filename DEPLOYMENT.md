@@ -20,24 +20,12 @@ YACY_RESOURCE=global
 REPORT_APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycbxe1s2hTRDF3m37UDcEHCj8Feb5iEDwjM82ZXizQ1sOgdZvJdNvkLbJsYi3FCJHA7Ml/exec
 ```
 
-For report delivery, the server also needs:
+The current report Apps Script endpoint does not require a shared secret.
 
-```text
-REPORT_APPS_SCRIPT_SECRET=<same value as Apps Script API_SECRET>
-```
-
-Store that in encrypted SSM rather than in public/build-time configuration:
+If other server-only secrets are used, store them in encrypted SSM rather than in public/build-time configuration:
 
 ```text
 RUNTIME_SECRETS_PARAMETER=/before-you-trust/dev/runtime
-```
-
-The runtime JSON can initially be as small as:
-
-```json
-{
-  "REPORT_APPS_SCRIPT_SECRET": "replace-with-the-private-secret"
-}
 ```
 
 If SSM is used, give the Amplify SSR Compute role `ssm:GetParameter` for only that parameter. DynamoDB is not used by the current search/report flow.

@@ -1,11 +1,12 @@
 import { StoryForm } from "@/components/StoryForm";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Share your story",
-  description:
-    "Privately share a story, concern, feedback, or privacy request with the Before You Trust project.",
-  robots: { index: true, follow: true },
-};
+export const metadata = pageMetadata({
+  title: "Share Your Story",
+  description: "Privately share feedback, a concern, a story, or a privacy request with the Before You Trust project.",
+  path: "/share-your-story",
+  index: false,
+});
 
 export default function ShareYourStoryPage() {
   return (

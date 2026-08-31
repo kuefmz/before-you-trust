@@ -28,7 +28,7 @@ The report workflow uses the private Google Sheet **Before You Trust - Reports**
 The configured Apps Script web-app endpoint is:
 
 ```text
-https://script.google.com/macros/s/AKfycbwZ0drdWpB_b4VL4jnsp5t1adsxzZPcZaeWM5prbcSt3RaiGrIdzJLZ1lW7MH9GjUef/exec
+https://script.google.com/macros/s/AKfycbzSiEe3FT7x3SY-vnMGHb1goDlB8SAqvleIxzvtMHYVXOdJFKSTo-UxkN2uFq0mWU8o/exec
 ```
 
 The current Apps Script web app does not require a shared API secret. The Next.js server posts the validated report request directly to the configured web-app URL.
@@ -104,7 +104,7 @@ SEARCH_PROVIDER=auto
 SEARXNG_BASE_URL=https://YOUR-SEARXNG-HOST
 YACY_BASE_URL=https://YOUR-YACY-HOST
 YACY_RESOURCE=global
-REPORT_APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycbwZ0drdWpB_b4VL4jnsp5t1adsxzZPcZaeWM5prbcSt3RaiGrIdzJLZ1lW7MH9GjUef/exec
+REPORT_APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycbzSiEe3FT7x3SY-vnMGHb1goDlB8SAqvleIxzvtMHYVXOdJFKSTo-UxkN2uFq0mWU8o/exec
 ```
 
 Protect the YaCy administration interface. If Basic Auth protects the search endpoint, keep `YACY_PASSWORD` server-side.

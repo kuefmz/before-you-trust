@@ -56,6 +56,72 @@ describe("POST /api/report-email", () => {
     expect(body.searchedName).toBe("Example Person");
   });
 
+  it("accepts a legitimate large Trust Brief instead of rejecting it at 75 KB", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true, requestId: "sheet-large" }), {
+        status: 200,
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const results = Array.from({ length: 70 }, (_, index) => ({
+      title: `Public profile ${index + 1}`,
+      url: `https://example.org/person/${index + 1}`,
+      snippet: "A".repeat(700),
+      sourceType: "professional",
+    }));
+
+    const response = await POST(request({
+      email: "reader@example.com",
+      reportLabel: "Example Person",
+      searchedName: "Example Person",
+      consentAccepted: true,
+      website: "",
+      results,
+    }));
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns a clear error when Apps Script responds with a Google access page", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          "<html><body>Sign in with Google</body></html>",
+          {
+            status: 200,
+            headers: { "Content-Type": "text/html" },
+          },
+        ),
+      ),
+    );
+
+    const response = await POST(request({
+      email: "reader@example.com",
+      reportLabel: "Example Person",
+      searchedName: "Example Person",
+      consentAccepted: true,
+      website: "",
+      results: [{
+        title: "Public profile",
+        url: "https://example.org/person",
+        snippet: "Public source",
+        sourceType: "professional",
+      }],
+    }));
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({
+      error: {
+        code: "REPORT_APPS_SCRIPT_ACCESS",
+        message:
+          "The Google Apps Script web app is not accessible to the report service. Redeploy it as a Web app that executes as you and allows access to Anyone.",
+      },
+    });
+  });
+
   it("rejects an invalid recipient", async () => {
     const response = await POST(request({
       email: "not-email",

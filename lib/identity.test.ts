@@ -122,6 +122,33 @@ describe("identity candidate building", () => {
     ]);
   });
 
+  it("recovers a related canonical identity when the searched name is approximate", () => {
+    const candidates = buildIdentityCandidates(
+      [
+        result({
+          title: "The Puppet Master: Hunting the Ultimate Conman",
+          url: "https://www.netflix.com/title/example",
+          snippet:
+            "The documentary tells the story of Robert Hendy-Freegard, also known as Robert Freegard.",
+          sourceType: "web",
+        }),
+        result({
+          title: "The Puppet Master",
+          url: "https://www.raw.example/the-puppet-master",
+          snippet:
+            "A documentary about conman Robert Hendy-Freegard and his victims.",
+          sourceType: "web",
+        }),
+      ],
+      { name: "Robert Conman" },
+    );
+
+    expect(candidates.length).toBeGreaterThan(0);
+    expect(candidates[0]?.searchName).toContain("Robert");
+    expect(candidates[0]?.searchName.toLowerCase()).toContain("freegard");
+    expect(candidates[0]?.supportingSignals.join(" ")).toMatch(/related name/i);
+  });
+
   it("does not require a candidate when there are no results", () => {
     expect(
       buildIdentityCandidates([], { name: "Jane Unique-Surname" }),

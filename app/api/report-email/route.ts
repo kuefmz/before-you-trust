@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  // caused delivery to fail before Apps Script was contacted.
 const MAX_BODY_BYTES = 300_000;
 const DEFAULT_REPORT_APPS_SCRIPT_URL =
-  "https://script.google.com/macros/s/AKfycbwZ0drdWpB_b4VL4jnsp5t1adsxzZPcZaeWM5prbcSt3RaiGrIdzJLZ1lW7MH9GjUef/exec";
+  "https://script.google.com/macros/s/AKfycbzSiEe3FT7x3SY-vnMGHb1goDlB8SAqvleIxzvtMHYVXOdJFKSTo-UxkN2uFq0mWU8o/exec";
 
 function clientKey(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");

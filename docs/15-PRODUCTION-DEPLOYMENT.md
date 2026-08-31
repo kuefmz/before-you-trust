@@ -218,6 +218,23 @@ Open:
 
 Create these **repository variables**:
 
+### `PRODUCTION_DEPLOY_ENABLED`
+
+Start with:
+
+```text
+false
+```
+
+Keep it `false` while you are fixing `main` and completing the one-time AWS
+setup. After the first staging/production smoke tests pass, change it to:
+
+```text
+true
+```
+
+Only then can a successful `main` CI run trigger the production deployment.
+
 ### `AWS_REGION`
 
 ```text
@@ -238,8 +255,8 @@ YOUR_AMPLIFY_APP_ID
 arn:aws:iam::AWS_ACCOUNT_ID:role/BeforeYouTrustGitHubAmplifyDeploy
 ```
 
-These values are identifiers, not passwords, so repository **Variables** are
-appropriate.
+These values are identifiers/flags, not passwords, so repository **Variables**
+are appropriate.
 
 No `AWS_ACCESS_KEY_ID` or `AWS_SECRET_ACCESS_KEY` should be added.
 
@@ -849,13 +866,16 @@ Once all one-time setup is complete:
 5. Do not push/merge the release to `main` if that live retrieval gate is
    failing.
 6. Review the remaining launch checklist in `docs/14-LAUNCH-READINESS.md`.
-7. Merge `dev` into `main` through a PR, or push the reviewed commit to
+7. Ensure `PRODUCTION_DEPLOY_ENABLED=true` only when you really want
+   successful `main` pushes to deploy automatically.
+8. Merge `dev` into `main` through a PR, or push the reviewed commit to
    `main`.
-8. CI runs on `main`.
-9. If CI fails: **no production deployment**.
-10. If CI passes: **Deploy production** starts automatically.
-11. GitHub waits for Amplify.
-12. Green deployment means Amplify reported `SUCCEED`.
+9. CI runs on `main`.
+10. If CI fails: **no production deployment**.
+11. If CI passes and `PRODUCTION_DEPLOY_ENABLED=true`: **Deploy production**
+    starts automatically.
+12. GitHub waits for Amplify.
+13. Green deployment means Amplify reported `SUCCEED`.
 
 To manually re-run the deployment without making a new commit:
 

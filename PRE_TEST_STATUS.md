@@ -38,7 +38,7 @@ This file tracks readiness **before running a real-person end-to-end test**. No 
 - [x] Repeat-search monitoring stores a keyed fingerprint rather than the raw searched name by default.
 - [x] Raw-name repeat alerts default to disabled.
 
-## External configuration required before a real provider test
+## External configuration required before a real YaCy test
 
 These steps cannot be completed from GitHub alone because they require access to external accounts and secret material.
 
@@ -47,14 +47,17 @@ These steps cannot be completed from GitHub alone because they require access to
 - [ ] Connect/deploy the `dev` branch in AWS Amplify using Node.js 22.
 - [ ] Set `NEXT_PUBLIC_SITE_URL` to the exact HTTPS dev URL.
 - [ ] Create encrypted SSM SecureString `/before-you-trust/dev/runtime`.
-- [ ] Put search/email/runtime secrets only inside that SecureString.
+- [ ] Put optional sensitive runtime values (YaCy password, email, Vision, fingerprint secret) only inside that SecureString.
 - [ ] Set only `RUNTIME_SECRETS_PARAMETER=/before-you-trust/dev/runtime` in normal Amplify configuration.
 - [ ] Create/attach a least-privilege Amplify SSR Compute role with only `ssm:GetParameter`, `dynamodb:UpdateItem`, and optional KMS decrypt if a customer-managed key is used.
 
-### Search provider
+### Search backend
 
-- [ ] Configure at least one real provider: Tavily and/or Brave Search.
-- [ ] Keep `SEARCH_PROVIDER=auto` unless intentionally testing a single provider.
+- [ ] Start a real YaCy node and make it reachable from the app runtime.
+- [ ] Set `SEARCH_PROVIDER=yacy`.
+- [ ] Set `YACY_BASE_URL` to the node URL.
+- [ ] Choose `YACY_RESOURCE=local` (own index only) or `global` (also query peers) intentionally.
+- [ ] If Basic Auth is enabled, keep `YACY_PASSWORD` in encrypted runtime config.
 
 ### Photo matching
 
@@ -88,7 +91,7 @@ These steps cannot be completed from GitHub alone because they require access to
 Do **not** test a real subject until these minimum items are green:
 
 1. `dev` is deployed over HTTPS.
-2. At least one real web-search provider is configured.
+2. A real YaCy node is reachable and configured.
 3. Brevo is configured if report/story email is part of the test.
 4. Google Vision is configured if photo matching is part of the test.
 5. Runtime secrets are in encrypted SSM, not GitHub or normal public environment variables.

@@ -58,6 +58,7 @@ if (!forbiddenAmplifySecrets.some((key) => amplify.includes(key))) {
 
 const requiredEnvKeys = [
   "RUNTIME_SECRETS_PARAMETER",
+  "NEXT_PUBLIC_ALLOW_INDEXING=false",
   "SEARCH_PROVIDER=auto",
   "SEARXNG_BASE_URL",
   "SEARXNG_USERNAME",

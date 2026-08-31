@@ -123,9 +123,7 @@ Photos are processed transiently and should not be written to the report Sheet o
 
 ## 6. Share Your Story
 
-The separate Share Your Story/contact flow may still use Brevo transactional email. It is independent from report storage.
-
-If you do not need that flow yet, Brevo can remain unconfigured.
+The separate Share Your Story/contact flow now uses the same Google Apps Script web-app endpoint as report delivery. Story submissions are emailed directly to the owner address configured in the Sheet Settings tab and are not appended to the Reports sheet. No Brevo configuration is required.
 
 ## 7. Analytics
 

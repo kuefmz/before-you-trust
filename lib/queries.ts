@@ -133,7 +133,7 @@ export function buildDeepQueries(input: SearchInput): SearchQuery[] {
   }
 
   queries.push(
-    ...buildSocialQueries(input, name).slice(0, 5),
+    ...buildSocialQueries(input, name).slice(0, 3),
     { text: `${name} profile`, kind: "general" },
     { text: `${name} registry`, kind: "official" },
     { text: `${name} court`, kind: "official" },

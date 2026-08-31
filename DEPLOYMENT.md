@@ -14,7 +14,8 @@ Set these non-secret values:
 
 ```text
 NEXT_PUBLIC_SITE_URL=https://YOUR-DEV-URL
-SEARCH_PROVIDER=yacy
+SEARCH_PROVIDER=auto
+SEARXNG_BASE_URL=https://YOUR-SEARXNG-HOST
 YACY_BASE_URL=https://YOUR-YACY-HOST
 YACY_RESOURCE=global
 REPORT_APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycbxe1s2hTRDF3m37UDcEHCj8Feb5iEDwjM82ZXizQ1sOgdZvJdNvkLbJsYi3FCJHA7Ml/exec
@@ -33,17 +34,19 @@ If SSM is used, give the Amplify SSR Compute role `ssm:GetParameter` for only th
 ## Verify after deployment
 
 1. Homepage loads.
-2. YaCy search works.
-3. Search without responsible-use confirmation is blocked.
-4. A new search starts from clean state.
-5. Multiple candidate identities remain separate.
-6. Clicking **This is them** selects only the clicked candidate.
-7. Deep results that cannot be tied strongly to that identity are excluded.
-8. Sensitive results are not shown solely because a name matched.
-9. Report email appends exactly one Google Sheet row.
-10. Visitor receives the report.
-11. Owner receives a copy.
-12. No search/report body appears in logs or analytics.
-13. Optional integrations fail gracefully when not configured.
+2. SearXNG broad discovery works.
+3. YaCy fallback works.
+4. Search without responsible-use confirmation is blocked.
+5. A new search starts from clean state.
+6. Multiple candidate identities remain separate.
+7. Clicking **This is them** selects only the clicked candidate.
+8. Deep results that cannot be tied strongly to that identity are excluded.
+9. Sensitive results are not shown solely because a name matched.
+10. The live 28-name Netflix retrieval benchmark passes against the deployed search stack.
+11. Report email appends exactly one Google Sheet row.
+12. Visitor receives the report.
+13. Owner receives a copy.
+14. No search/report body appears in logs or analytics.
+15. Optional integrations fail gracefully when not configured.
 
 See `MANUAL_SETUP.md` for the fuller setup.

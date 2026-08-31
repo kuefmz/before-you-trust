@@ -689,10 +689,13 @@ export function SearchExperience() {
         {identityExcludedCount > 0 ? (
           <div className="quality-note" role="note">
             <strong>
-              {identityExcludedCount} additional low-confidence search result
-              {identityExcludedCount === 1 ? " was" : "s were"} hidden.
+              {identityExcludedCount} raw search result
+              {identityExcludedCount === 1 ? " did" : "s did"} not qualify as
+              an identity lead.
             </strong>{" "}
-            Only the strongest neutral identity possibilities are shown.
+            They may be unrelated pages, weak snippets, duplicates, or results
+            without enough neutral profile evidence. They are not being treated
+            as findings about this person.
           </div>
         ) : null}
 
@@ -710,6 +713,17 @@ export function SearchExperience() {
           Use <strong>Do it yourself</strong> above to run the same
           site-specific searches directly on Google.
         </p>
+
+        {(identityResponse?.warnings.length ?? 0) > 0 ? (
+          <details className="technical-note">
+            <summary>Search-provider notes</summary>
+            <ul>
+              {identityResponse?.warnings.map((warning) => (
+                <li key={warning}>{warning}</li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
 
         <div className="candidate-grid">
           {candidates.map((candidate, index) => (

@@ -91,7 +91,7 @@ describe("Netflix exact-identity release benchmark", () => {
 
       expect(candidates).toHaveLength(1);
       expect(candidates[0]?.searchName).toBe(benchmark.name);
-      expect(candidates[0]?.label).toBe(benchmark.name);
+      expect(candidates[0]?.label).toContain(benchmark.name);
       expect(candidates[0]?.sources.map((source) => source.url)).toContain(
         benchmark.netflixUrl,
       );

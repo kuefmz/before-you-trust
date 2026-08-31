@@ -8,12 +8,13 @@ npm ci
 npm run dev
 ```
 
-Run YaCy separately.
+Run the SearXNG + YaCy search stack separately.
 
 Core local search configuration:
 
 ```text
-SEARCH_PROVIDER=yacy
+SEARCH_PROVIDER=auto
+SEARXNG_BASE_URL=http://localhost:8888
 YACY_BASE_URL=http://localhost:8090
 YACY_RESOURCE=global
 ```
@@ -38,7 +39,8 @@ When a visitor explicitly requests email delivery, the final filtered report/req
 2. Set `NEXT_PUBLIC_SITE_URL`.
 3. Set safe non-secret values:
    ```text
-   SEARCH_PROVIDER=yacy
+   SEARCH_PROVIDER=auto
+   SEARXNG_BASE_URL=https://YOUR-SEARXNG-HOST
    YACY_BASE_URL=https://YOUR-YACY-HOST
    YACY_RESOURCE=global
    REPORT_APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycbxe1s2hTRDF3m37UDcEHCj8Feb5iEDwjM82ZXizQ1sOgdZvJdNvkLbJsYi3FCJHA7Ml/exec
@@ -63,6 +65,6 @@ Do not log request bodies. In particular, do not persist searched names, identit
 
 ## Environment separation
 
-- Local: local YaCy + local env.
-- Dev: Amplify `dev` + development YaCy + dev SSM secret.
-- Production: `main` + production YaCy + separate production secret.
+- Local: local SearXNG + YaCy + local env.
+- Dev: Amplify `dev` + development SearXNG/YaCy stack + optional dev SSM secrets.
+- Production: `main` + production SearXNG/YaCy stack + separate optional production secrets.

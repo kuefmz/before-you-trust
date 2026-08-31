@@ -37,7 +37,8 @@ When a visitor explicitly requests email delivery, the final filtered report/req
 
 1. Deploy `dev` first.
 2. Set `NEXT_PUBLIC_SITE_URL`.
-3. Set safe non-secret values:
+3. Keep `NEXT_PUBLIC_ALLOW_INDEXING=false` on dev/staging.
+4. Set safe non-secret values:
    ```text
    SEARCH_PROVIDER=auto
    SEARXNG_BASE_URL=https://YOUR-SEARXNG-HOST
@@ -45,12 +46,18 @@ When a visitor explicitly requests email delivery, the final filtered report/req
    YACY_RESOURCE=global
    REPORT_APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycbxe1s2hTRDF3m37UDcEHCj8Feb5iEDwjM82ZXizQ1sOgdZvJdNvkLbJsYi3FCJHA7Ml/exec
    ```
-4. Put any optional server-only secrets in an encrypted SSM SecureString.
-5. Set only its parameter name as:
+5. Put any optional server-only secrets in an encrypted SSM SecureString.
+6. Set only its parameter name as:
    ```text
    RUNTIME_SECRETS_PARAMETER=/before-you-trust/dev/runtime
    ```
-6. If using SSM, grant the SSR Compute role `ssm:GetParameter` only for that parameter. No DynamoDB permission is required.
+7. If using SSM, grant the SSR Compute role `ssm:GetParameter` only for that parameter. No DynamoDB permission is required.
+
+For the canonical production domain only, after launch checks pass:
+
+```text
+NEXT_PUBLIC_ALLOW_INDEXING=true
+```
 
 ## Optional server secrets
 

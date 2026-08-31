@@ -5,6 +5,7 @@ export interface ProviderSearchResult {
   url: string;
   snippet: string;
   publishedAt?: string | null;
+  provider: string;
 }
 
 interface SearchProvider {
@@ -29,6 +30,17 @@ interface YacyPayload {
   channel?: YacyChannel;
 }
 
+interface SearxngItem {
+  title?: string;
+  url?: string;
+  content?: string;
+  publishedDate?: string | null;
+}
+
+interface SearxngPayload {
+  results?: SearxngItem[];
+}
+
 export class SearchConfigurationError extends Error {
   constructor(message: string) {
     super(message);
@@ -51,6 +63,40 @@ function plainText(value: string | undefined): string {
     .trim();
 }
 
+function endpoint(baseUrl: string, path: string, variable: string): URL {
+  try {
+    const base = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+    const url = new URL(path, base);
+    if (!["http:", "https:"].includes(url.protocol)) {
+      throw new Error("unsupported protocol");
+    }
+    return url;
+  } catch {
+    throw new SearchConfigurationError(
+      `${variable} must be a valid http(s) URL.`,
+    );
+  }
+}
+
+function basicAuthHeaders(
+  username?: string,
+  password?: string,
+): Record<string, string> {
+  if (!username && !password) return {};
+  if (!username || !password) {
+    throw new SearchConfigurationError(
+      "Configure both search username and password, or neither.",
+    );
+  }
+
+  return {
+    Authorization: `Basic ${Buffer.from(
+      `${username}:${password}`,
+      "utf8",
+    ).toString("base64")}`,
+  };
+}
+
 function yacyItems(payload: YacyPayload): YacyItem[] {
   const rawChannels = payload.channels ?? payload.channel ?? [];
   const channels = Array.isArray(rawChannels) ? rawChannels : [rawChannels];
@@ -69,22 +115,16 @@ function yacyProvider(config: {
   username?: string;
   password?: string;
 }): SearchProvider {
-  let endpoint: URL;
-  try {
-    const base = config.baseUrl.endsWith("/") ? config.baseUrl : `${config.baseUrl}/`;
-    endpoint = new URL("yacysearch.json", base);
-  } catch {
-    throw new SearchConfigurationError("YACY_BASE_URL must be a valid http(s) URL.");
-  }
-
-  if (!["http:", "https:"].includes(endpoint.protocol)) {
-    throw new SearchConfigurationError("YACY_BASE_URL must use http or https.");
-  }
+  const searchEndpoint = endpoint(
+    config.baseUrl,
+    "yacysearch.json",
+    "YACY_BASE_URL",
+  );
 
   return {
     name: "yacy",
     async search(query, signal) {
-      const url = new URL(endpoint);
+      const url = new URL(searchEndpoint);
       url.searchParams.set("query", query);
       url.searchParams.set("resource", config.resource);
       url.searchParams.set("contentdom", "text");
@@ -92,20 +132,12 @@ function yacyProvider(config: {
       url.searchParams.set("verify", "false");
       url.searchParams.set("nav", "none");
 
-      const headers: Record<string, string> = {
-        Accept: "application/json",
-      };
-
-      if (config.username && config.password) {
-        headers.Authorization = `Basic ${Buffer.from(
-          `${config.username}:${config.password}`,
-          "utf8",
-        ).toString("base64")}`;
-      }
-
       const response = await fetch(url, {
         method: "GET",
-        headers,
+        headers: {
+          Accept: "application/json",
+          ...basicAuthHeaders(config.username, config.password),
+        },
         signal,
       });
 
@@ -122,6 +154,59 @@ function yacyProvider(config: {
           url: item.link!,
           snippet: plainText(item.description),
           publishedAt: item.pubDate ?? null,
+          provider: "yacy",
+        }));
+    },
+  };
+}
+
+function searxngProvider(config: {
+  baseUrl: string;
+  username?: string;
+  password?: string;
+}): SearchProvider {
+  const searchEndpoint = endpoint(
+    config.baseUrl,
+    "search",
+    "SEARXNG_BASE_URL",
+  );
+
+  return {
+    name: "searxng",
+    async search(query, signal) {
+      const url = new URL(searchEndpoint);
+      url.searchParams.set("q", query);
+      url.searchParams.set("format", "json");
+      url.searchParams.set("categories", "general");
+      url.searchParams.set("language", "all");
+      url.searchParams.set("safesearch", "0");
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          ...basicAuthHeaders(config.username, config.password),
+        },
+        signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `SearXNG request failed with status ${response.status}. Ensure JSON output is enabled in settings.yml.`,
+        );
+      }
+
+      const payload = (await response.json()) as SearxngPayload;
+
+      return (payload.results ?? [])
+        .filter((item) => item.url)
+        .slice(0, 12)
+        .map((item) => ({
+          title: plainText(item.title) || item.url || "Untitled result",
+          url: item.url!,
+          snippet: plainText(item.content),
+          publishedAt: item.publishedDate ?? null,
+          provider: "searxng",
         }));
     },
   };
@@ -145,14 +230,20 @@ function mockProvider(): SearchProvider {
           title: `Example public registry result — ${subject}`,
           url: `https://registry.example.org/${slug}`,
           snippet: `${subject} in Zurich. Example-only registry fixture used for automated testing. No real person is represented.`,
+          provider: "mock",
         }];
       }
 
-      if (lower.includes("complaint") || lower.includes("allegation") || lower.includes("fraud")) {
+      if (
+        lower.includes("complaint") ||
+        lower.includes("allegation") ||
+        lower.includes("fraud")
+      ) {
         return [{
           title: `Example news mention — ${subject}`,
           url: `https://news.example.org/${slug}`,
           snippet: `${subject} in Zurich. Example-only news fixture used for automated testing. The presence of this result is not a real allegation.`,
+          provider: "mock",
         }];
       }
 
@@ -166,6 +257,7 @@ function mockProvider(): SearchProvider {
           title: `${subject} — public social profile`,
           url: `https://www.instagram.com/${slug}/`,
           snippet: `${subject} public social profile. Zurich and ${company} are mentioned in the example fixture.`,
+          provider: "mock",
         }];
       }
 
@@ -174,16 +266,19 @@ function mockProvider(): SearchProvider {
           title: `${subject} — Professional profile`,
           url: `https://www.linkedin.com/in/${slug}`,
           snippet: `${subject}, data professional in Zurich at ${company}.`,
+          provider: "mock",
         },
         {
           title: `${slug} · GitHub`,
           url: `https://github.com/${slug}`,
           snippet: `Public projects by ${subject}. ${company} and Zurich are mentioned in the profile.`,
+          provider: "mock",
         },
         {
           title: `${subject} — Example conference`,
           url: `https://conference.example.org/speakers/${slug}`,
           snippet: `Speaker biography for ${subject}, based in Zurich.`,
+          provider: "mock",
         },
       ];
     },
@@ -192,20 +287,37 @@ function mockProvider(): SearchProvider {
 
 async function configuredProviders(): Promise<SearchProvider[]> {
   let selection: string;
-  let baseUrl: string;
-  let resource: string;
-  let username: string | undefined;
-  let password: string | undefined;
+  let yacyBaseUrl: string;
+  let yacyResource: string;
+  let yacyUsername: string | undefined;
+  let yacyPassword: string | undefined;
+  let searxngBaseUrl: string;
+  let searxngUsername: string | undefined;
+  let searxngPassword: string | undefined;
 
   try {
-    [selection, baseUrl, resource, username, password] = await Promise.all([
-      getRuntimeSetting("SEARCH_PROVIDER").then((value) => value ?? "yacy"),
+    [
+      selection,
+      yacyBaseUrl,
+      yacyResource,
+      yacyUsername,
+      yacyPassword,
+      searxngBaseUrl,
+      searxngUsername,
+      searxngPassword,
+    ] = await Promise.all([
+      getRuntimeSetting("SEARCH_PROVIDER").then((value) => value ?? "auto"),
       getRuntimeSetting("YACY_BASE_URL").then(
         (value) => value ?? "http://localhost:8090",
       ),
       getRuntimeSetting("YACY_RESOURCE").then((value) => value ?? "global"),
       getRuntimeSetting("YACY_USERNAME"),
       getRuntimeSetting("YACY_PASSWORD"),
+      getRuntimeSetting("SEARXNG_BASE_URL").then(
+        (value) => value ?? "http://localhost:8888",
+      ),
+      getRuntimeSetting("SEARXNG_USERNAME"),
+      getRuntimeSetting("SEARXNG_PASSWORD"),
     ]);
   } catch {
     throw new SearchConfigurationError(
@@ -224,61 +336,98 @@ async function configuredProviders(): Promise<SearchProvider[]> {
     return [mockProvider()];
   }
 
-  if (selection !== "yacy") {
-    throw new SearchConfigurationError(
-      "SEARCH_PROVIDER must be yacy (or mock in automated tests).",
-    );
-  }
-
-  const normalizedResource = resource.toLowerCase();
+  const normalizedResource = yacyResource.toLowerCase();
   if (normalizedResource !== "local" && normalizedResource !== "global") {
     throw new SearchConfigurationError(
       "YACY_RESOURCE must be local or global.",
     );
   }
 
-  if (Boolean(username) !== Boolean(password)) {
-    throw new SearchConfigurationError(
-      "Configure both YACY_USERNAME and YACY_PASSWORD, or neither.",
-    );
-  }
+  const yacy = yacyProvider({
+    baseUrl: yacyBaseUrl,
+    resource: normalizedResource,
+    username: yacyUsername,
+    password: yacyPassword,
+  });
 
-  return [
-    yacyProvider({
-      baseUrl,
-      resource: normalizedResource,
-      username,
-      password,
-    }),
-  ];
+  const searxng = searxngProvider({
+    baseUrl: searxngBaseUrl,
+    username: searxngUsername,
+    password: searxngPassword,
+  });
+
+  if (selection === "auto") return [searxng, yacy];
+  if (selection === "searxng") return [searxng];
+  if (selection === "yacy") return [yacy];
+
+  throw new SearchConfigurationError(
+    "SEARCH_PROVIDER must be auto, searxng, yacy (or mock in automated tests).",
+  );
+}
+
+function dedupeProviderResults(
+  results: ProviderSearchResult[],
+): ProviderSearchResult[] {
+  const seen = new Set<string>();
+  return results.filter((result) => {
+    let key = result.url;
+    try {
+      const url = new URL(result.url);
+      url.hash = "";
+      key = url.toString().replace(/\/$/, "").toLowerCase();
+    } catch {
+      key = result.url.toLowerCase();
+    }
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 export async function searchQuery(
   query: string,
   signal: AbortSignal,
 ): Promise<{
-  provider: string;
+  providers: string[];
   results: ProviderSearchResult[];
   warnings: string[];
 }> {
   const providers = await configuredProviders();
   const warnings: string[] = [];
 
-  for (const provider of providers) {
-    try {
-      const results = await provider.search(query, signal);
-      return { provider: provider.name, results, warnings };
-    } catch (error) {
-      if (signal.aborted) throw error;
-      warnings.push(
-        `${provider.name} failed for one query: ${
-          error instanceof Error ? error.message : "unknown error"
-        }`,
-      );
-    }
+  const outcomes = await Promise.all(
+    providers.map(async (provider) => {
+      try {
+        const results = await provider.search(query, signal);
+        return { provider: provider.name, results };
+      } catch (error) {
+        if (signal.aborted) throw error;
+        warnings.push(
+          `${provider.name} failed for one query: ${
+            error instanceof Error ? error.message : "unknown error"
+          }`,
+        );
+        return { provider: provider.name, results: [] };
+      }
+    }),
+  );
+
+  const successfulProviders = outcomes
+    .filter((outcome) => outcome.results.length > 0)
+    .map((outcome) => outcome.provider);
+  const results = dedupeProviderResults(
+    outcomes.flatMap((outcome) => outcome.results),
+  );
+
+  if (results.length === 0 && warnings.length > 0) {
+    throw new Error(
+      warnings.join(" ") || "All configured search providers failed.",
+    );
   }
 
-  throw new Error(
-    warnings.join(" ") || "All configured search providers failed.",
-  );
+  return {
+    providers: successfulProviders,
+    results,
+    warnings,
+  };
 }

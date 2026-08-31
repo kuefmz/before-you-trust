@@ -181,6 +181,33 @@ describe("identity candidate building", () => {
     );
   });
 
+  it("uses a neutral social/profile URL slug as low-confidence name evidence", () => {
+    const candidates = buildIdentityCandidates(
+      [
+        result({
+          title: "LinkedIn",
+          url: "https://www.linkedin.com/in/sasza-swiatek",
+          snippet: "Public professional profile",
+          sourceType: "professional",
+        }),
+      ],
+      {
+        name: "Sasza Swiatek",
+        location: "Zurich",
+        company: "UBS",
+      },
+    );
+
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.confidence).toBe("low");
+    expect(candidates[0]?.sources[0]?.url).toContain(
+      "linkedin.com/in/sasza-swiatek",
+    );
+    expect(candidates[0]?.supportingSignals.join(" ")).toMatch(
+      /profile URL/i,
+    );
+  });
+
   it("does not require a candidate when there are no results", () => {
     expect(
       buildIdentityCandidates([], { name: "Jane Unique-Surname" }),

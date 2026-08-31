@@ -1,5 +1,7 @@
 # Environment & Deployment
 
+For the complete production setup and automatic `main` deployment workflow, see `15-PRODUCTION-DEPLOYMENT.md`.
+
 ## Local development
 
 ```bash
@@ -74,4 +76,4 @@ Do not log request bodies. In particular, do not persist searched names, identit
 
 - Local: local SearXNG + YaCy + local env.
 - Dev: Amplify `dev` + development SearXNG/YaCy stack + optional dev SSM secrets.
-- Production: `main` + production SearXNG/YaCy stack + separate optional production secrets.
+- Production: `main` + production SearXNG/YaCy stack + separate optional production secrets. A successful `main` CI run triggers the AWS Amplify release workflow.

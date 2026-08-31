@@ -783,6 +783,16 @@ select:focus-visible {
   font-size: 0.86rem;
 }
 
+.source-code-link {
+  align-items: center;
+  display: inline-flex;
+  gap: 7px;
+}
+
+.source-code-link svg {
+  flex: 0 0 auto;
+}
+
 @media (max-width: 860px) {
   .site-header nav {
     display: none;

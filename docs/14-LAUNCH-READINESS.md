@@ -39,8 +39,8 @@ Do not enable public indexing until all blockers below are complete.
   person-level trust/danger score.
 - [ ] Sensitive or damaging material remains source-linked and requires strong
   identity attribution before inclusion.
-- [ ] A working privacy/contact channel exists independently of optional
-  analytics.
+- [ ] Set `NEXT_PUBLIC_PRIVACY_EMAIL` to a monitored mailbox so privacy and
+  correction requests do not depend on the optional story-form integration.
 - [ ] Misattribution/correction requests can be handled promptly.
 - [ ] Decide and implement a report-retention period for the Google Sheet.
   The current app does not automatically purge report rows.

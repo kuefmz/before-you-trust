@@ -2,29 +2,24 @@
 
 This is the current operator setup for the `dev` branch.
 
-## 1. Local search with YaCy
+## 1. Local search stack
 
-Run YaCy:
+Start both free search services:
 
 ```bash
-docker run -d \
-  --name yacy_search_server \
-  -p 8090:8090 \
-  -p 8443:8443 \
-  -v yacy_search_server_data:/opt/yacy_search_server/DATA \
-  --restart unless-stopped \
-  yacy/yacy_search_server:latest
+docker compose -f search-stack/docker-compose.yml up -d
 ```
 
 Use:
 
 ```text
-SEARCH_PROVIDER=yacy
+SEARCH_PROVIDER=auto
+SEARXNG_BASE_URL=http://localhost:8888
 YACY_BASE_URL=http://localhost:8090
 YACY_RESOURCE=global
 ```
 
-Use `local` instead of `global` if searches must stay within your own YaCy index.
+SearXNG is the broad-discovery source. If a SearXNG query returns fewer than five results, YaCy supplements it. The committed SearXNG settings enable JSON output for the application API. Use YaCy `local` instead of `global` if YaCy queries must stay within your own index.
 
 ## 2. Google Sheet + Apps Script report storage
 
@@ -121,12 +116,13 @@ RUNTIME_SECRETS_PARAMETER=/before-you-trust/dev/runtime
 
 If SSM is used, the Amplify SSR Compute role needs only `ssm:GetParameter` for that parameter (plus `kms:Decrypt` only if you use a customer-managed KMS key). No DynamoDB permission is required.
 
-## 4. Production YaCy
+## 4. Production search stack
 
-Run YaCy on a host reachable by the Amplify SSR runtime and configure:
+Run SearXNG and YaCy on infrastructure reachable by the Amplify SSR runtime and configure:
 
 ```text
-SEARCH_PROVIDER=yacy
+SEARCH_PROVIDER=auto
+SEARXNG_BASE_URL=https://YOUR-SEARXNG-HOST
 YACY_BASE_URL=https://YOUR-YACY-HOST
 YACY_RESOURCE=global
 REPORT_APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycbxe1s2hTRDF3m37UDcEHCj8Feb5iEDwjM82ZXizQ1sOgdZvJdNvkLbJsYi3FCJHA7Ml/exec

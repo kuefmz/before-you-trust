@@ -266,6 +266,19 @@ export function SearchExperience() {
     [form.claim, reportResults],
   );
 
+  const reportSearchQueries = useMemo(
+    () => [
+      ...new Set(
+        [
+          ...(identityResponse?.results ?? []),
+          ...(deepResponse?.results ?? []),
+        ].flatMap((result) => result.queries),
+      ),
+    ].slice(0, 50),
+    [identityResponse, deepResponse],
+  );
+
+
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
   }
@@ -500,8 +513,26 @@ export function SearchExperience() {
         </div>
 
         <EmailReportForm
+          claim={form.claim || undefined}
+          company={form.company || undefined}
+          confirmedIdentity={
+            confirmed
+              ? {
+                  label: confirmed.label,
+                  confidence: confirmed.confidence,
+                  supportingSignals: confirmed.supportingSignals,
+                  urls: confirmed.sources.map((source) => source.url),
+                }
+              : undefined
+          }
+          context={form.context || undefined}
+          location={form.location || undefined}
+          profileUrl={form.profileUrl || undefined}
           reportLabel={confirmed?.label ?? form.name}
           results={reportResults}
+          searchedName={form.name}
+          searchQueries={reportSearchQueries}
+          socialProfiles={parseSocialProfiles(form.socialProfiles)}
         />
 
         {(deepResponse?.warnings.length ?? 0) > 0 ? (

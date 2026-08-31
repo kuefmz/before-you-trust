@@ -11,6 +11,8 @@ import "./globals.css";
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 const verification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
 const supportUrl = process.env.NEXT_PUBLIC_BUY_ME_A_COFFEE_URL?.trim();
+const ga4Id =
+  process.env.NEXT_PUBLIC_GA4_ID?.trim() || "G-MVDVBJJFQB";
 const gtmId = process.env.NEXT_PUBLIC_GTM_ID?.trim();
 
 export const metadata: Metadata = {
@@ -72,12 +74,12 @@ export default function RootLayout({
               <Link href="/privacy">Privacy</Link>
               <Link href="/terms">Terms</Link>
               <Link href="/acceptable-use">Acceptable use</Link>
-              {gtmId ? <PrivacyPreferencesButton /> : null}
+              {ga4Id || gtmId ? <PrivacyPreferencesButton /> : null}
             </div>
           </div>
         </footer>
 
-        <AnalyticsConsent gtmId={gtmId} />
+        <AnalyticsConsent ga4Id={ga4Id} gtmId={gtmId} />
       </body>
     </html>
   );

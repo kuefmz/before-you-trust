@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server";
 
-import {
-  EmailConfigurationError,
-  sendTransactionalEmail,
-} from "@/lib/email";
 import { checkStoryRateLimit } from "@/lib/rate-limit";
-import { getRuntimeSetting } from "@/lib/runtime-config";
 import { validateStorySubmission } from "@/lib/story-validation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_BODY_BYTES = 10_000;
+const DEFAULT_STORY_APPS_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbzSiEe3FT7x3SY-vnMGHb1goDlB8SAqvleIxzvtMHYVXOdJFKSTo-UxkN2uFq0mWU8o/exec";
 
 function clientKey(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -72,71 +69,73 @@ export async function POST(request: Request) {
     });
   }
 
-  let to: string | undefined;
-  try {
-    to = await getRuntimeSetting("OWNER_NOTIFICATION_EMAIL");
-  } catch {
-    return response(503, {
-      error: {
-        code: "STORY_EMAIL_NOT_CONFIGURED",
-        message: "Story submissions are not configured yet.",
-      },
-    });
-  }
-
-  if (!to) {
-    return response(503, {
-      error: {
-        code: "STORY_EMAIL_NOT_CONFIGURED",
-        message: "Story submissions are not configured yet.",
-      },
-    });
-  }
-
   const submissionId = crypto.randomUUID();
-  const item = validation.data;
-  const topicLabel = {
-    story: "Story",
-    concern: "Concern / feedback",
-    privacy: "Privacy / data request",
-    other: "Other",
-  }[item.topic];
+  if (process.env.E2E_MOCK_EMAIL === "true") {
+    return response(200, { ok: true, submissionId });
+  }
 
+  const item = validation.data;
+  const endpoint =
+    process.env.REPORT_APPS_SCRIPT_URL?.trim() ||
+    DEFAULT_STORY_APPS_SCRIPT_URL;
+
+  let upstream: Response;
   try {
-    await sendTransactionalEmail({
-      to,
-      replyTo: item.email,
-      subject: `Before You Trust — ${topicLabel} submission`,
-      text: [
-        `Submission ID: ${submissionId}`,
-        `Topic: ${topicLabel}`,
-        `Name provided: ${item.name || "No"}`,
-        `Reply email provided: ${item.email || "No"}`,
-        `Permission to publish an anonymized excerpt: ${
-          item.permissionToPublish ? "Yes" : "No"
-        }`,
-        "",
-        "Message:",
-        item.message,
-        "",
-        "Privacy note: this submission is not stored in the application database. It is delivered to the configured mailbox via the transactional email provider.",
-      ].join("\n"),
-      idempotencyKey: submissionId,
-      tags: ["story-submission", item.topic],
+    upstream = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Accept: "application/json, text/plain;q=0.9",
+        "Content-Type": "text/plain;charset=utf-8",
+      },
+      body: JSON.stringify({
+        kind: "story",
+        submissionId,
+        topic: item.topic,
+        name: item.name ?? "",
+        email: item.email ?? "",
+        message: item.message,
+        permissionToPublish: item.permissionToPublish,
+      }),
+      cache: "no-store",
+      redirect: "follow",
+      signal: AbortSignal.timeout(15_000),
     });
-  } catch (error) {
-    if (error instanceof EmailConfigurationError) {
-      return response(503, {
-        error: {
-          code: "STORY_EMAIL_NOT_CONFIGURED",
-          message: "Story submissions are not configured yet.",
-        },
-      });
-    }
+  } catch {
     return response(502, {
       error: {
-        code: "EMAIL_DELIVERY_FAILED",
+        code: "STORY_DELIVERY_FAILED",
         message: "Your submission could not be delivered. Please try again.",
+      },
+    });
+  }
+
+  const upstreamText = await upstream.text();
+  let upstreamPayload: { ok?: boolean; error?: string } = {};
+  try {
+    upstreamPayload = JSON.parse(upstreamText) as {
+      ok?: boolean;
+      error?: string;
+    };
+  } catch {
+    // Google can return an HTML sign-in/access page for a misconfigured
+    // Apps Script deployment. Surface a useful error below.
+  }
+
+  if (!upstream.ok || upstreamPayload.ok !== true) {
+    const looksLikeGoogleAccessPage =
+      /<html|accounts\.google\.com|sign in|authorization required/i.test(
+        upstreamText,
+      );
+
+    return response(502, {
+      error: {
+        code: looksLikeGoogleAccessPage
+          ? "STORY_APPS_SCRIPT_ACCESS"
+          : "STORY_DELIVERY_FAILED",
+        message: looksLikeGoogleAccessPage
+          ? "The story-delivery service is not publicly reachable. Update the Apps Script web-app deployment and try again."
+          : upstreamPayload.error ||
+            `The story-delivery service returned an unexpected response (HTTP ${upstream.status}).`,
       },
     });
   }

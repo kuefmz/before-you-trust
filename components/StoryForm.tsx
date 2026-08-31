@@ -167,10 +167,10 @@ export function StoryForm() {
           type="checkbox"
         />
         <span>
-          I understand that this message is emailed to the project operator via
-          the configured transactional email provider. It is not stored in the
-          application database. If I provide an email address, it can be used
-          to reply to me.
+          I understand that this message is emailed to the project operator
+          through the project&apos;s Google Apps Script delivery service. It is
+          not stored in the application database or report Sheet. If I provide
+          an email address, it can be used to reply to me.
         </span>
       </label>
 

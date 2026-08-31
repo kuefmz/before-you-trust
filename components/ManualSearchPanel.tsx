@@ -49,7 +49,9 @@ export function ManualSearchPanel({
             These are the same focused queries used by the research flow. Each
             button opens a normal Google search in a new tab so you can compare
             results yourself, especially for social profiles that YaCy may not
-            have indexed.
+            have indexed. If you find the correct profile, go back to the search
+            form, paste its URL under Social profiles or handles, and run the
+            identity search again.
           </p>
         </div>
       </div>

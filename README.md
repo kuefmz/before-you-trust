@@ -10,8 +10,8 @@ Before You Trust is an evidence-first public-web research tool. It searches publ
 
 - Branded responsive landing/search experience
 - Identity-first neutral search stage
-- Self-hosted YaCy search adapter with no paid per-search API
-- YaCy `local` and `global` resource modes
+- Self-hosted SearXNG for broad web discovery, with YaCy as an independent index/fallback
+- No paid per-search API; YaCy `local` and `global` resource modes remain supported
 - Search timeouts, bounded concurrency, result caps and URL normalization
 - Explainable candidate identity matching
 - Explicit **This is them** selection before deep research
@@ -30,19 +30,15 @@ Before You Trust is an evidence-first public-web research tool. It searches publ
 
 ## Local setup
 
-Requires Node.js 22 and a running YaCy node.
+Requires Node.js 22 and the free local search stack.
 
-Start YaCy:
+Start SearXNG + YaCy together:
 
 ```bash
-docker run -d \
-  --name yacy_search_server \
-  -p 8090:8090 \
-  -p 8443:8443 \
-  -v yacy_search_server_data:/opt/yacy_search_server/DATA \
-  --restart unless-stopped \
-  yacy/yacy_search_server:latest
+docker compose -f search-stack/docker-compose.yml up -d
 ```
+
+SearXNG will be available at `http://localhost:8888` and YaCy at `http://localhost:8090`.
 
 Then:
 
@@ -55,7 +51,8 @@ npm run dev
 Default search configuration:
 
 ```text
-SEARCH_PROVIDER=yacy
+SEARCH_PROVIDER=auto
+SEARXNG_BASE_URL=http://localhost:8888
 YACY_BASE_URL=http://localhost:8090
 YACY_RESOURCE=global
 ```

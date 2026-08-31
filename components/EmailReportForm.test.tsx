@@ -19,6 +19,7 @@ describe("EmailReportForm", () => {
     render(
       <EmailReportForm
         reportLabel="Example Person"
+        searchedName="Example Person"
         results={[{
           title: "Public profile",
           url: "https://example.org/person",
@@ -33,7 +34,7 @@ describe("EmailReportForm", () => {
     );
 
     await user.type(screen.getByLabelText("Email address"), "reader@example.com");
-    await user.click(screen.getByLabelText(/I understand my email is used/i));
+    await user.click(screen.getByLabelText(/private Before You Trust Google Sheet/i));
     await user.click(screen.getByRole("button", { name: "Email me the report" }));
     expect(await screen.findByText(/Check your inbox/i)).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(1);

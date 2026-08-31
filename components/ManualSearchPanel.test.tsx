@@ -20,12 +20,8 @@ describe("ManualSearchPanel", () => {
       />,
     );
 
-    const instagram = screen.getByRole("link", {
-      name: "Search Google ↗",
-    });
-    expect(instagram).toHaveAttribute("target", "_blank");
-
     const links = screen.getAllByRole("link", { name: "Search Google ↗" });
+    expect(links[0]).toHaveAttribute("target", "_blank");
     expect(links[0]?.getAttribute("href")).toContain(
       "google.com/search?q=",
     );

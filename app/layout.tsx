@@ -89,6 +89,13 @@ export default function RootLayout({
               <Link href="/privacy">Privacy</Link>
               <Link href="/terms">Terms</Link>
               <Link href="/acceptable-use">Acceptable use</Link>
+              <a
+                href="https://github.com/kuefmz/before-you-trust"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                GitHub ↗
+              </a>
               {ga4Id || gtmId ? <PrivacyPreferencesButton /> : null}
             </div>
           </div>

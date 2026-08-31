@@ -229,10 +229,8 @@ export function renderReportEmail(data: ReportEmailRequest): string {
 
 export function buildAppsScriptPayload(
   data: ReportEmailRequest,
-  apiSecret: string,
 ): Record<string, unknown> {
   return {
-    apiSecret,
     requestId: crypto.randomUUID(),
     userEmail: data.email,
     searchedName: data.searchedName,

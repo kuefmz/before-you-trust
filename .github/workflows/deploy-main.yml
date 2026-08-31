@@ -29,9 +29,9 @@ jobs:
     timeout-minutes: 35
 
     env:
-      AWS_REGION: ${{ vars.AWS_REGION || 'eu-central-1' }}
+      AWS_REGION: ${{ vars.AWS_REGION || 'eu-north-1' }}
       AMPLIFY_APP_ID: ${{ vars.AMPLIFY_APP_ID }}
-      AWS_ROLE_TO_ASSUME: ${{ vars.AWS_ROLE_TO_ASSUME }}
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
       AMPLIFY_BRANCH: main
 
     steps:
@@ -73,14 +73,14 @@ jobs:
 
           for name in AWS_REGION AMPLIFY_APP_ID AWS_ROLE_TO_ASSUME; do
             if [[ -z "${!name}" ]]; then
-              echo "::error::GitHub Actions variable $name is not configured."
+              echo "::error::GitHub Actions deployment setting $name is not configured."
               missing=1
             fi
           done
 
           if [[ "$missing" -ne 0 ]]; then
             echo
-            echo "Configure the repository Actions variables documented in docs/15-PRODUCTION-DEPLOYMENT.md."
+            echo "Configure AWS_REGION and AMPLIFY_APP_ID as repository Variables, and AWS_ROLE_TO_ASSUME as a repository Secret."
             exit 1
           fi
 

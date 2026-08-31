@@ -177,7 +177,7 @@ function searxngProvider(config: {
       const url = new URL(searchEndpoint);
       url.searchParams.set("q", query);
       url.searchParams.set("format", "json");
-      url.searchParams.set("categories", "general");
+      url.searchParams.set("categories", "general,social media");
       url.searchParams.set("language", "all");
       url.searchParams.set("safesearch", "0");
 
@@ -200,7 +200,7 @@ function searxngProvider(config: {
 
       return (payload.results ?? [])
         .filter((item) => item.url)
-        .slice(0, 12)
+        .slice(0, 30)
         .map((item) => ({
           title: plainText(item.title) || item.url || "Untitled result",
           url: item.url!,

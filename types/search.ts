@@ -38,7 +38,6 @@ export interface SearchInput {
   name: string;
   location?: string;
   company?: string;
-  username?: string;
   profileUrl?: string;
   socialProfiles?: string[];
   claim?: string;

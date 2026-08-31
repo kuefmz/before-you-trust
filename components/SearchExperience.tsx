@@ -259,6 +259,12 @@ export function SearchExperience() {
     candidates.length > 0 &&
     candidates.every((candidate) => candidate.confidence === "low");
 
+  const broadDiscoveryUnavailable =
+    Boolean(identityResponse) &&
+    identityResponse.providers.includes("yacy") &&
+    !identityResponse.providers.includes("searxng");
+
+
   const candidateSourceUrls = useMemo(
     () => new Set(candidates.flatMap((candidate) => candidate.sources.map((source) => source.url))),
     [candidates],
@@ -427,11 +433,6 @@ export function SearchExperience() {
         result_count: combinedResults.length,
         candidate_count: nextCandidates.length,
       });
-      if (nextCandidates.length === 0) {
-        setError(
-          "We found too little reliable identity information to suggest a match. Try adding a city, employer, social profile/handle, or profile URL.",
-        );
-      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Search failed.");
     } finally {
@@ -654,6 +655,16 @@ export function SearchExperience() {
                   : `We found ${candidates.length} likely identity matches. Choose the correct person before we generate a report.`}
           </p>
         </div>
+
+        {broadDiscoveryUnavailable ? (
+          <div className="photo-warning" role="note">
+            <strong>Broad web discovery is currently unavailable.</strong>{" "}
+            This search only received results from YaCy, so LinkedIn,
+            Instagram, Facebook and other profiles may be missing even when
+            they exist. Start/reconnect SearXNG or use <strong>Do it yourself</strong>{" "}
+            for a direct Google check.
+          </div>
+        ) : null}
 
         {photoWarning ? (
           <div className="photo-warning" role="note">

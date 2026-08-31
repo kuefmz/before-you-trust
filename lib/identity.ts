@@ -17,6 +17,37 @@ const STOP_WORDS = new Set([
   "page",
 ]);
 
+const DISCOVERY_NAME_BLOCKLIST = new Set([
+  "the",
+  "a",
+  "an",
+  "netflix",
+  "documentary",
+  "documentaries",
+  "series",
+  "episode",
+  "episodes",
+  "puppet",
+  "master",
+  "hunting",
+  "ultimate",
+  "conman",
+  "conmen",
+  "official",
+  "site",
+  "profile",
+  "news",
+  "interview",
+  "conference",
+  "facebook",
+  "instagram",
+  "linkedin",
+  "github",
+  "tiktok",
+  "youtube",
+  "reddit",
+]);
+
 function normalize(value: string): string {
   return value
     .toLocaleLowerCase()
@@ -32,6 +63,13 @@ function words(value?: string): string[] {
     .split(" ")
     .map((word) => word.replace(/^[.@_-]+|[.@_-]+$/g, ""))
     .filter((word) => word.length > 2 && !STOP_WORDS.has(word));
+}
+
+function nameParts(value: string): string[] {
+  return normalize(value)
+    .split(/[\s._-]+/)
+    .map((word) => word.replace(/^@+|@+$/g, ""))
+    .filter((word) => word.length > 1);
 }
 
 function contentText(result: SearchResult): string {
@@ -261,6 +299,136 @@ function relatedByAnchor(
   return new Set(contextualOverlap).size >= 2;
 }
 
+function resultHost(result: SearchResult): string {
+  try {
+    return new URL(result.url).hostname.replace(/^www\./, "").toLowerCase();
+  } catch {
+    return result.url;
+  }
+}
+
+function extractRelatedNames(
+  result: SearchResult,
+  inputName: string,
+): string[] {
+  const inputParts = nameParts(inputName);
+  const firstInputPart = inputParts[0];
+  if (!firstInputPart) return [];
+
+  const raw = `${result.title}. ${result.snippet}`;
+  const matches =
+    raw.match(
+      /\b\p{Lu}[\p{L}'’.-]+(?:\s+\p{Lu}[\p{L}'’.-]+){1,3}\b/gu,
+    ) ?? [];
+
+  const candidates = matches
+    .map((value) => value.replace(/[.,;:!?]+$/g, "").trim())
+    .filter((value) => {
+      const parts = nameParts(value);
+      if (parts.length < 2 || parts.length > 4) return false;
+      if (!parts.includes(firstInputPart)) return false;
+      if (
+        parts.some(
+          (part) =>
+            DISCOVERY_NAME_BLOCKLIST.has(part) &&
+            !inputParts.includes(part),
+        )
+      ) {
+        return false;
+      }
+      return normalize(value) !== normalize(inputName);
+    });
+
+  return [...new Set(candidates)];
+}
+
+function relatedNamesCompatible(left: string, right: string): boolean {
+  const leftParts = nameParts(left);
+  const rightParts = nameParts(right);
+  if (!leftParts.length || !rightParts.length) return false;
+  if (leftParts[0] !== rightParts[0]) return false;
+
+  const leftFamily = new Set(leftParts.slice(1));
+  return rightParts.slice(1).some((part) => leftFamily.has(part));
+}
+
+function buildRelatedIdentityCandidates(
+  results: SearchResult[],
+  inputName: string,
+): IdentityCandidate[] {
+  const inputWords = words(inputName);
+  const discoveries: Array<{ name: string; source: SearchResult }> = [];
+
+  for (const result of results) {
+    for (const name of extractRelatedNames(result, inputName)) {
+      discoveries.push({ name, source: result });
+    }
+  }
+
+  const groups: Array<{ name: string; sources: SearchResult[] }> = [];
+
+  for (const discovery of discoveries) {
+    const group = groups.find((candidate) =>
+      relatedNamesCompatible(candidate.name, discovery.name),
+    );
+
+    if (group) {
+      if (
+        nameParts(discovery.name).length > nameParts(group.name).length
+      ) {
+        group.name = discovery.name;
+      }
+      if (!group.sources.some((source) => source.url === discovery.source.url)) {
+        group.sources.push(discovery.source);
+      }
+    } else {
+      groups.push({ name: discovery.name, sources: [discovery.source] });
+    }
+  }
+
+  return groups
+    .map((group) => {
+      const hosts = new Set(group.sources.map(resultHost));
+      const searchTermsTogether = group.sources.some((source) => {
+        const text = contentText(source);
+        return (
+          inputWords.length >= 2 &&
+          inputWords.every((word) => text.includes(word))
+        );
+      });
+
+      const corroborated = hosts.size >= 2 || searchTermsTogether;
+      return {
+        group,
+        hosts,
+        corroborated,
+      };
+    })
+    .filter(({ corroborated }) => corroborated)
+    .sort((a, b) => {
+      if (b.hosts.size !== a.hosts.size) return b.hosts.size - a.hosts.size;
+      return b.group.sources.length - a.group.sources.length;
+    })
+    .slice(0, 5)
+    .map(({ group, hosts }) => ({
+      id: stableId(`related:${normalize(group.name)}`),
+      label: group.name,
+      searchName: group.name,
+      summary:
+        group.sources[0]?.snippet ||
+        "A related identity name appears in the public search results.",
+      confidence: hosts.size >= 2 ? "medium" : "low",
+      supportingSignals: [
+        hosts.size >= 2
+          ? `Related name appears across ${hosts.size} independent domains`
+          : "Related name appears in a source matching the original search terms",
+        "Search name may be incomplete, approximate, or an alias",
+      ],
+      conflictingSignals: [],
+      sources: group.sources.slice(0, 6),
+    }));
+}
+
 export function buildIdentityCandidates(
   results: SearchResult[],
   input: Pick<
@@ -292,17 +460,15 @@ export function buildIdentityCandidates(
       entry.result.sourceType === "professional" ||
       entry.result.sourceType === "social";
 
-    // A same-name LinkedIn/social profile is still useful as a namesake
-    // candidate even when its snippet lacks the supplied city/employer.
     if (identityBearing && entry.exactNameInTitle) return true;
-
-    // Generic web pages need corroborating context when the user supplied any.
     if (hasProvidedContext) return false;
 
     return entry.exactNameInTitle && entry.score >= 5;
   });
 
-  if (eligible.length === 0) return [];
+  if (eligible.length === 0) {
+    return buildRelatedIdentityCandidates(results, input.name);
+  }
 
   const seeds = eligible.slice(0, 6);
   const candidates: IdentityCandidate[] = [];
@@ -325,6 +491,7 @@ export function buildIdentityCandidates(
     candidates.push({
       id: stableId(seed.result.url),
       label: seed.result.title || input.name,
+      searchName: input.name,
       summary:
         seed.result.snippet || "Potential identity match from public sources.",
       confidence: confidence(seed.score),

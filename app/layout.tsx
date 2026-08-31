@@ -15,7 +15,8 @@ const supportUrl =
   "https://buymeacoffee.com/jenifertabitaciuciukiss";
 const ga4Id =
   process.env.NEXT_PUBLIC_GA4_ID?.trim() || "G-MVDVBJJFQB";
-const gtmId = process.env.NEXT_PUBLIC_GTM_ID?.trim();
+const gtmId =
+  process.env.NEXT_PUBLIC_GTM_ID?.trim() || "GTM-TPGSP8XN";
 
 export const metadata: Metadata = {
   metadataBase: siteUrl ? new URL(siteUrl) : undefined,

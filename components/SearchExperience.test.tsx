@@ -210,6 +210,43 @@ describe("SearchExperience", () => {
     expect(screen.getByText(/Possible match #1/i)).toBeInTheDocument();
   });
 
+  it("highlights Do it yourself when no identity candidate is found", async () => {
+    const user = userEvent.setup();
+    const noMatchResponse: SearchResponse = {
+      ...identityResponse,
+      providers: ["searxng", "yacy"],
+      results: [
+        {
+          ...identityResponse.results[0]!,
+          title: "Different Person",
+          url: "https://example.org/different-person",
+          snippet: "Unrelated public page",
+          sourceType: "web",
+        },
+      ],
+    };
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(noMatchResponse), { status: 200 }),
+      ),
+    );
+
+    render(<SearchExperience />);
+    await user.type(screen.getByLabelText("Full name *"), "Jane Unique-Surname");
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(
+      screen.getByRole("button", { name: "Search the public web →" }),
+    );
+
+    const diy = await screen.findByRole("button", { name: "Do it yourself" });
+    expect(diy).toHaveClass("button--primary", "button--manual-highlight");
+    expect(screen.getByRole("button", { name: "Start new search" })).toHaveClass(
+      "button--ghost",
+    );
+  });
+
   it("warns when broad SearXNG discovery did not contribute", async () => {
     const user = userEvent.setup();
     const yacyOnlyResponse: SearchResponse = {

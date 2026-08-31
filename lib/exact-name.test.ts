@@ -11,14 +11,14 @@ describe("strict exact-name normalization", () => {
   it("treats hyphenation and spacing as the same exact token sequence", () => {
     expect(
       containsExactFullName(
-        "Jenifer Tabita Ciuciu-Kiss — data engineer",
-        "Jenifer Tabita Ciuciu Kiss",
+        "Jane Tabita Unique-Surname — data engineer",
+        "Jane Tabita Unique Surname",
       ),
     ).toBe(true);
     expect(
       containsExactFullName(
-        "Jenifer Tabita Ciuciu Kiss — data engineer",
-        "Jenifer Tabita Ciuciu-Kiss",
+        "Jane Tabita Unique Surname — data engineer",
+        "Jane Tabita Unique-Surname",
       ),
     ).toBe(true);
   });
@@ -37,15 +37,15 @@ describe("strict exact-name normalization", () => {
   it("recognizes exact names in social profile URL slugs", () => {
     expect(
       urlPathContainsExactFullName(
-        "https://www.linkedin.com/in/jenifer-tabita-ciuciu-kiss",
-        "Jenifer Tabita Ciuciu-Kiss",
+        "https://www.linkedin.com/in/jane-tabita-unique-surname",
+        "Jane Tabita Unique-Surname",
       ),
     ).toBe(true);
   });
 
   it("creates a punctuation-neutral exact search variant", () => {
-    expect(exactNameSearchVariant("Jenifer Tabita Ciuciu-Kiss")).toBe(
-      "jenifer tabita ciuciu kiss",
+    expect(exactNameSearchVariant("Jane Tabita Unique-Surname")).toBe(
+      "jane tabita unique surname",
     );
     expect(canonicalNameWords("Manti Te'o")).toEqual(["manti", "te", "o"]);
   });

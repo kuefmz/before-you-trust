@@ -70,12 +70,10 @@ export async function POST(request: Request) {
   }
 
   let endpoint: string;
-  let apiSecret: string | undefined;
   try {
     endpoint =
       (await getRuntimeSetting("REPORT_APPS_SCRIPT_URL")) ??
       DEFAULT_REPORT_APPS_SCRIPT_URL;
-    apiSecret = await getRuntimeSetting("REPORT_APPS_SCRIPT_SECRET");
   } catch {
     return response(503, {
       error: {
@@ -85,23 +83,12 @@ export async function POST(request: Request) {
     });
   }
 
-  if (!apiSecret) {
-    return response(503, {
-      error: {
-        code: "REPORT_EMAIL_NOT_CONFIGURED",
-        message: "Report delivery is not configured yet.",
-      },
-    });
-  }
-
   let upstream: Response;
   try {
     upstream = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(
-        buildAppsScriptPayload(validation.data, apiSecret),
-      ),
+      body: JSON.stringify(buildAppsScriptPayload(validation.data)),
       cache: "no-store",
       redirect: "follow",
       signal: AbortSignal.timeout(20_000),

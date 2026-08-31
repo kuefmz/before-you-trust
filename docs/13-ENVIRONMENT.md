@@ -24,7 +24,7 @@ YACY_RESOURCE=global
 For report-by-email testing, the Apps Script endpoint is:
 
 ```text
-REPORT_APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycbxe1s2hTRDF3m37UDcEHCj8Feb5iEDwjM82ZXizQ1sOgdZvJdNvkLbJsYi3FCJHA7Ml/exec
+REPORT_APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycbwZ0drdWpB_b4VL4jnsp5t1adsxzZPcZaeWM5prbcSt3RaiGrIdzJLZ1lW7MH9GjUef/exec
 ```
 
 No shared report secret is required by the current Apps Script deployment.
@@ -46,7 +46,7 @@ When a visitor explicitly requests email delivery, the final filtered report/req
    SEARXNG_BASE_URL=https://YOUR-SEARXNG-HOST
    YACY_BASE_URL=https://YOUR-YACY-HOST
    YACY_RESOURCE=global
-   REPORT_APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycbxe1s2hTRDF3m37UDcEHCj8Feb5iEDwjM82ZXizQ1sOgdZvJdNvkLbJsYi3FCJHA7Ml/exec
+   REPORT_APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycbwZ0drdWpB_b4VL4jnsp5t1adsxzZPcZaeWM5prbcSt3RaiGrIdzJLZ1lW7MH9GjUef/exec
    ```
 5. Put any optional server-only secrets in an encrypted SSM SecureString.
 6. Set only its parameter name as:

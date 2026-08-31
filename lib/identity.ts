@@ -47,17 +47,10 @@ function urlText(result: SearchResult): string {
   return normalize(result.url);
 }
 
-function profileUrlContainsExactName(
+function resultUrlContainsExactName(
   result: SearchResult,
   inputName: string,
 ): boolean {
-  if (
-    result.sourceType !== "professional" &&
-    result.sourceType !== "social"
-  ) {
-    return false;
-  }
-
   return urlPathContainsExactFullName(result.url, inputName);
 }
 
@@ -100,10 +93,10 @@ function scoreResult(
     signals.push("Exact full name appears in the page title or snippet");
   }
 
-  if (!nameEvidence && profileUrlContainsExactName(result, input.name)) {
+  if (!nameEvidence && resultUrlContainsExactName(result, input.name)) {
     score += 4;
     nameEvidence = true;
-    signals.push("Exact full name appears in the public profile URL");
+    signals.push("Exact full name appears in the public result URL");
   }
 
   if (input.location) {

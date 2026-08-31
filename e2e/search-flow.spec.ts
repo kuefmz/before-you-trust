@@ -80,11 +80,11 @@ test("submits a story privately through the email route", async ({ page }) => {
   await expect(page.getByText(/delivered privately/i)).toBeVisible();
 });
 
-test("does not show analytics consent when GTM is not configured", async ({
+test("shows analytics consent when production analytics is configured", async ({
   page,
 }) => {
   await page.goto("/");
   await expect(
     page.getByRole("dialog", { name: "Analytics preferences" }),
-  ).toHaveCount(0);
+  ).toBeVisible();
 });

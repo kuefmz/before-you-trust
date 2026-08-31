@@ -122,26 +122,30 @@ describe("search providers", () => {
     );
   });
 
-  it("supplements sparse SearXNG results with YaCy in auto mode", async () => {
+  it("queries SearXNG and YaCy for every query in auto mode", async () => {
     process.env.SEARCH_PROVIDER = "auto";
     process.env.SEARXNG_BASE_URL = "http://localhost:8888";
     process.env.YACY_BASE_URL = "http://localhost:8090";
 
-    const mockedFetch = vi
-      .fn()
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            results: [{
-              title: "Jane Example",
-              url: "https://example.net/jane",
-              content: "One broad-search result",
-            }],
-          }),
-          { status: 200 },
-        ),
-      )
-      .mockResolvedValueOnce(
+    const mockedFetch = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url = new URL(String(input));
+
+      if (url.pathname === "/search") {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              results: Array.from({ length: 8 }, (_, index) => ({
+                title: `Jane Example ${index + 1}`,
+                url: `https://example.net/jane-${index + 1}`,
+                content: "Broad-search result",
+              })),
+            }),
+            { status: 200 },
+          ),
+        );
+      }
+
+      return Promise.resolve(
         new Response(
           JSON.stringify({
             channels: [{
@@ -155,6 +159,7 @@ describe("search providers", () => {
           { status: 200 },
         ),
       );
+    });
     vi.stubGlobal("fetch", mockedFetch);
 
     const response = await searchQuery(
@@ -162,8 +167,9 @@ describe("search providers", () => {
       new AbortController().signal,
     );
 
+    expect(mockedFetch).toHaveBeenCalledTimes(2);
     expect(response.providers).toEqual(["searxng", "yacy"]);
-    expect(response.results).toHaveLength(2);
+    expect(response.results).toHaveLength(9);
   });
 
   it("supports optional basic authentication for a protected YaCy node", async () => {

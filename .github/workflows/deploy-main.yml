@@ -1,0 +1,123 @@
+name: Deploy production
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: before-you-trust-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy main to AWS Amplify
+    if: >-
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.conclusion == 'success') ||
+      (github.event_name == 'workflow_dispatch' &&
+       github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION || 'eu-central-1' }}
+      AMPLIFY_APP_ID: ${{ vars.AMPLIFY_APP_ID }}
+      AWS_ROLE_TO_ASSUME: ${{ vars.AWS_ROLE_TO_ASSUME }}
+      AMPLIFY_BRANCH: main
+
+    steps:
+      - name: Resolve release commit
+        id: release
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            echo "sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          missing=0
+
+          for name in AWS_REGION AMPLIFY_APP_ID AWS_ROLE_TO_ASSUME; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::GitHub Actions variable $name is not configured."
+              missing=1
+            fi
+          done
+
+          if [[ "$missing" -ne 0 ]]; then
+            echo
+            echo "Configure the repository Actions variables documented in docs/15-PRODUCTION-DEPLOYMENT.md."
+            exit 1
+          fi
+
+          echo "Release commit: ${{ steps.release.outputs.sha }}"
+          echo "Amplify app: $AMPLIFY_APP_ID"
+          echo "Amplify branch: $AMPLIFY_BRANCH"
+          echo "AWS region: $AWS_REGION"
+
+      - name: Configure AWS credentials with GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: before-you-trust-production
+
+      - name: Start Amplify release
+        id: amplify
+        shell: bash
+        env:
+          RELEASE_SHA: ${{ steps.release.outputs.sha }}
+        run: |
+          job_id="$(
+            aws amplify start-job               --app-id "$AMPLIFY_APP_ID"               --branch-name "$AMPLIFY_BRANCH"               --job-type RELEASE               --job-reason "GitHub Actions production release $RELEASE_SHA"               --commit-id "$RELEASE_SHA"               --commit-message "Deploy $RELEASE_SHA after CI passed"               --query 'jobSummary.jobId'               --output text
+          )"
+
+          if [[ -z "$job_id" || "$job_id" == "None" ]]; then
+            echo "::error::Amplify did not return a deployment job id."
+            exit 1
+          fi
+
+          echo "job_id=$job_id" >> "$GITHUB_OUTPUT"
+          echo "Started Amplify job $job_id."
+
+      - name: Wait for Amplify deployment
+        shell: bash
+        env:
+          JOB_ID: ${{ steps.amplify.outputs.job_id }}
+        run: |
+          for attempt in {1..120}; do
+            status="$(
+              aws amplify get-job                 --app-id "$AMPLIFY_APP_ID"                 --branch-name "$AMPLIFY_BRANCH"                 --job-id "$JOB_ID"                 --query 'job.summary.status'                 --output text
+            )"
+
+            echo "Amplify status: $status"
+
+            case "$status" in
+              SUCCEED)
+                echo "Production deployment succeeded."
+                exit 0
+                ;;
+              FAILED|CANCELLED)
+                echo "::error::Amplify deployment ended with status $status."
+                exit 1
+                ;;
+              *)
+                sleep 15
+                ;;
+            esac
+          done
+
+          echo "::error::Timed out waiting for Amplify deployment."
+          exit 1

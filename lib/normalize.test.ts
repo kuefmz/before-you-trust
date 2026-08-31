@@ -48,6 +48,7 @@ describe("result normalization", () => {
     expect(results).toHaveLength(1);
     expect(results[0]?.providers).toEqual(["tavily", "brave"]);
     expect(results[0]?.queryKinds).toEqual(["identity", "news"]);
+    expect(results[0]?.title).toBe("Jane profile");
     expect(results[0]?.snippet).toContain("longer snippet");
   });
 });

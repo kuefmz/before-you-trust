@@ -36,6 +36,10 @@ const DISCOVERY_NAME_BLOCKLIST = new Set([
   "official",
   "site",
   "profile",
+  "public",
+  "professional",
+  "personal",
+  "page",
   "news",
   "interview",
   "conference",
@@ -349,7 +353,7 @@ function extractRelatedNames(
   const raw = `${result.title}. ${result.snippet}`;
   const matches =
     raw.match(
-      /\b\p{Lu}[\p{L}'’.-]+(?:\s+\p{Lu}[\p{L}'’.-]+){1,3}\b/gu,
+      /\b\p{Lu}[\p{L}'’-]+(?:\s+\p{Lu}[\p{L}'’-]+){1,3}\b/gu,
     ) ?? [];
 
   const candidates = matches

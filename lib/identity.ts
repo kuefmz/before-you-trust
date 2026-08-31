@@ -1,3 +1,7 @@
+import {
+  containsExactFullName,
+  urlPathContainsExactFullName,
+} from "@/lib/exact-name";
 import type {
   IdentityCandidate,
   SearchInput,
@@ -35,28 +39,6 @@ function words(value?: string): string[] {
     .filter((word) => word.length > 2 && !STOP_WORDS.has(word));
 }
 
-function nameParts(value: string): string[] {
-  return normalize(value)
-    .split(/[\s._-]+/)
-    .map((word) => word.replace(/^@+|@+$/g, ""))
-    .filter((word) => word.length > 1);
-}
-
-function containsExactFullName(value: string, inputName: string): boolean {
-  const haystack = nameParts(value);
-  const needle = nameParts(inputName);
-  if (needle.length < 2 || haystack.length < needle.length) return false;
-
-  for (let index = 0; index <= haystack.length - needle.length; index += 1) {
-    const matches = needle.every(
-      (part, offset) => haystack[index + offset] === part,
-    );
-    if (matches) return true;
-  }
-
-  return false;
-}
-
 function contentText(result: SearchResult): string {
   return `${result.title} ${result.snippet}`;
 }
@@ -76,15 +58,7 @@ function profileUrlContainsExactName(
     return false;
   }
 
-  try {
-    const parsed = new URL(result.url);
-    return containsExactFullName(
-      decodeURIComponent(parsed.pathname.replace(/\+/g, " ")),
-      inputName,
-    );
-  } catch {
-    return false;
-  }
+  return urlPathContainsExactFullName(result.url, inputName);
 }
 
 interface ResultScore {

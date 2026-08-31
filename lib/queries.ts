@@ -77,7 +77,7 @@ function buildSocialQueries(input: SearchInput, name: string): SearchQuery[] {
     }
   }
 
-  return unique(queries).slice(0, 14);
+  return unique(queries).slice(0, 12);
 }
 
 export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
@@ -125,7 +125,7 @@ export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
     { text: `${name} filetype:pdf`, kind: "general" },
   );
 
-  return unique(queries).slice(0, 22);
+  return unique(queries).slice(0, 18);
 }
 
 export function buildDeepQueries(input: SearchInput): SearchQuery[] {
@@ -186,5 +186,5 @@ export function buildDeepQueries(input: SearchInput): SearchQuery[] {
     }
   }
 
-  return unique(queries).slice(0, 24);
+  return unique(queries).slice(0, 20);
 }

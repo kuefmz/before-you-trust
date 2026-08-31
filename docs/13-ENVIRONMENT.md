@@ -18,14 +18,13 @@ YACY_BASE_URL=http://localhost:8090
 YACY_RESOURCE=global
 ```
 
-For report-by-email testing, set:
+For report-by-email testing, the Apps Script endpoint is:
 
 ```text
 REPORT_APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycbxe1s2hTRDF3m37UDcEHCj8Feb5iEDwjM82ZXizQ1sOgdZvJdNvkLbJsYi3FCJHA7Ml/exec
-REPORT_APPS_SCRIPT_SECRET=<same value as Apps Script API_SECRET>
 ```
 
-Never commit `.env.local`. Never expose the report secret via `NEXT_PUBLIC_*`.
+No shared report secret is required by the current Apps Script deployment.
 
 ## Persistent storage
 
@@ -44,7 +43,7 @@ When a visitor explicitly requests email delivery, the final filtered report/req
    YACY_RESOURCE=global
    REPORT_APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycbxe1s2hTRDF3m37UDcEHCj8Feb5iEDwjM82ZXizQ1sOgdZvJdNvkLbJsYi3FCJHA7Ml/exec
    ```
-4. Put `REPORT_APPS_SCRIPT_SECRET` and any other server secret in an encrypted SSM SecureString.
+4. Put any optional server-only secrets in an encrypted SSM SecureString.
 5. Set only its parameter name as:
    ```text
    RUNTIME_SECRETS_PARAMETER=/before-you-trust/dev/runtime
@@ -54,7 +53,6 @@ When a visitor explicitly requests email delivery, the final filtered report/req
 ## Optional server secrets
 
 Depending on enabled features:
-- `REPORT_APPS_SCRIPT_SECRET`
 - `YACY_USERNAME` / `YACY_PASSWORD`
 - `GOOGLE_VISION_API_KEY`
 - Brevo values for Share Your Story only

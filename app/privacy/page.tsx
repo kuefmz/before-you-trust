@@ -96,9 +96,9 @@ export default function PrivacyPage() {
 
         <h2>6. Analytics and cookies</h2>
         <p>
-          Google Tag Manager is optional and is not loaded at all unless it is
-          configured by the operator. When configured, analytics storage is
-          denied by default and no Google tag is loaded until you explicitly
+          Google Analytics 4 is configured for the site, and Google Tag Manager
+          may also be configured by the operator. Analytics storage is denied
+          by default and no Google analytics tag is loaded until you explicitly
           choose “Allow analytics.” If you reject analytics, the site remains
           fully functional.
         </p>

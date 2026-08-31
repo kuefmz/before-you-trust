@@ -352,6 +352,94 @@ function relatedNamesCompatible(left: string, right: string): boolean {
   return rightParts.slice(1).some((part) => leftFamily.has(part));
 }
 
+function buildLowConfidenceCandidates(
+  scored: Array<{
+    result: SearchResult;
+    score: number;
+    signals: string[];
+    conflicts: string[];
+    nameEvidence: boolean;
+    exactNameInTitle: boolean;
+    contextEvidence: boolean;
+    profileEvidence: boolean;
+  }>,
+  input: Pick<SearchInput, "name" | "location" | "company">,
+): IdentityCandidate[] {
+  const candidates: IdentityCandidate[] = [];
+  const consumed = new Set<string>();
+
+  const possible = scored.filter((entry) => {
+    if (!entry.nameEvidence && !entry.profileEvidence) return false;
+
+    // Never surface potentially damaging/interpretive material merely as an
+    // identity guess. Low-confidence fallback is for neutral identity leads.
+    if (
+      entry.result.sourceType === "news" ||
+      entry.result.sourceType === "official" ||
+      entry.result.queryKinds.some((kind) =>
+        ["news", "official", "concern", "claim"].includes(kind),
+      )
+    ) {
+      return false;
+    }
+
+    const identityBearing =
+      entry.result.sourceType === "professional" ||
+      entry.result.sourceType === "social";
+
+    return (
+      entry.profileEvidence ||
+      entry.exactNameInTitle ||
+      (identityBearing && entry.nameEvidence)
+    );
+  });
+
+  for (const seed of possible) {
+    if (consumed.has(seed.result.url)) continue;
+
+    const sources = possible
+      .filter(
+        (entry) =>
+          !consumed.has(entry.result.url) &&
+          relatedByAnchor(seed.result, entry.result, input.name),
+      )
+      .slice(0, 4)
+      .map((entry) => entry.result);
+
+    for (const source of sources) consumed.add(source.url);
+
+    const missingContext: string[] = [];
+    if (input.location && !seed.contextEvidence) {
+      missingContext.push("location");
+    }
+    if (input.company && !seed.contextEvidence) {
+      missingContext.push("employer");
+    }
+
+    candidates.push({
+      id: stableId(`low:${seed.result.url}`),
+      label: seed.result.title || input.name,
+      searchName: input.name,
+      summary:
+        seed.result.snippet ||
+        "The name matches, but there is not enough context to confirm this identity.",
+      confidence: "low",
+      supportingSignals: [
+        ...seed.signals,
+        missingContext.length > 0
+          ? `Name matches, but ${missingContext.join(" and ")} context is not confirmed`
+          : "Name matches, but identity context is limited",
+      ].filter((signal, index, all) => all.indexOf(signal) === index),
+      conflictingSignals: seed.conflicts,
+      sources: sources.length > 0 ? sources : [seed.result],
+    });
+
+    if (candidates.length >= 4) break;
+  }
+
+  return candidates;
+}
+
 function buildRelatedIdentityCandidates(
   results: SearchResult[],
   inputName: string,
@@ -467,7 +555,10 @@ export function buildIdentityCandidates(
   });
 
   if (eligible.length === 0) {
-    return buildRelatedIdentityCandidates(results, input.name);
+    const related = buildRelatedIdentityCandidates(results, input.name);
+    if (related.length > 0) return related;
+
+    return buildLowConfidenceCandidates(scored, input);
   }
 
   const seeds = eligible.slice(0, 6);

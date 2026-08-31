@@ -9,6 +9,7 @@ Keep the MVP as one repository and one application deployment, with a separately
 - TypeScript
 - CSS variables + plain CSS to minimize runtime/build dependencies
 - AWS Amplify Hosting
+- Self-hosted SearXNG metasearch
 - Self-hosted YaCy Search Server
 - Vitest + Testing Library + Playwright
 - No application database for searched people
@@ -26,8 +27,9 @@ Browser
 /api/search  (server-side)
   |
   +--> validation + rate limiting
-  +--> neutral/deep YaCy-compatible query builder
-  +--> YaCy JSON search API
+  +--> bounded identity/deep query builder
+  +--> SearXNG JSON discovery API
+  +--> YaCy JSON supplement/fallback
   +--> timeout + concurrency control
   +--> normalize/dedupe/classify
   +--> sourced JSON response
@@ -40,13 +42,14 @@ Browser
   +--> evidence-first Trust Brief
 ```
 
-## Search node
+## Search stack
 
-The app calls `/yacysearch.json` on the configured `YACY_BASE_URL`.
+The app calls SearXNG `/search?format=json` first for broad discovery. When that query returns fewer than five results, it also calls YaCy `/yacysearch.json` and merges the results before identity filtering.
 
 - `YACY_RESOURCE=local` searches only the node's own index.
 - `YACY_RESOURCE=global` also asks YaCy peers for results.
-- The app requests at most six results per query.
+- SearXNG returns up to 12 results per query to the app.
+- YaCy returns up to 10 results when used as a supplement/fallback.
 - Optional HTTP Basic Auth is supported with `YACY_USERNAME` + `YACY_PASSWORD`.
 - No third-party search API key or per-query billing is required.
 

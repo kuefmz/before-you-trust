@@ -86,10 +86,8 @@ function buildSocialQueries(input: SearchInput, name: string): SearchQuery[] {
 
 export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
   const name = quote(input.name);
-  const plainName = clean(input.name);
   const queries: SearchQuery[] = [
     { text: name, kind: "identity" },
-    { text: plainName, kind: "identity" },
   ];
 
   if (input.location) {
@@ -135,18 +133,9 @@ export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
 export function buildDeepQueries(input: SearchInput): SearchQuery[] {
   const researchName = input.confirmedIdentity?.searchName?.trim() || input.name;
   const name = quote(researchName);
-  const plainName = clean(researchName);
   const queries: SearchQuery[] = [
     { text: name, kind: "identity" },
-    { text: plainName, kind: "identity" },
   ];
-
-  if (clean(input.name).toLowerCase() !== plainName.toLowerCase()) {
-    queries.push({
-      text: quote(input.name),
-      kind: "identity",
-    });
-  }
 
   if (input.location) {
     queries.push({

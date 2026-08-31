@@ -144,7 +144,7 @@ function mockProvider(): SearchProvider {
         return [{
           title: `Example public registry result — ${subject}`,
           url: `https://registry.example.org/${slug}`,
-          snippet: "Example-only registry fixture used for automated testing. No real person is represented.",
+          snippet: `${subject} in Zurich. Example-only registry fixture used for automated testing. No real person is represented.`,
         }];
       }
 
@@ -152,7 +152,7 @@ function mockProvider(): SearchProvider {
         return [{
           title: `Example news mention — ${subject}`,
           url: `https://news.example.org/${slug}`,
-          snippet: "Example-only news fixture used for automated testing. The presence of this result is not a real allegation.",
+          snippet: `${subject} in Zurich. Example-only news fixture used for automated testing. The presence of this result is not a real allegation.`,
         }];
       }
 

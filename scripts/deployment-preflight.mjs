@@ -34,9 +34,10 @@ if (
   amplify.includes("^NEXT_PUBLIC_") &&
   amplify.includes("YACY_BASE_URL") &&
   amplify.includes("YACY_RESOURCE") &&
+  amplify.includes("REPORT_APPS_SCRIPT_URL") &&
   amplify.includes("^RUNTIME_SECRETS_PARAMETER=")
 ) {
-  pass("Amplify exports only public/non-secret search config plus the SSM parameter name");
+  pass("Amplify exports only public/non-secret endpoint config plus the SSM parameter name");
 } else {
   fail("Amplify environment export rules are not in the expected safe form");
 }
@@ -45,7 +46,7 @@ const forbiddenAmplifySecrets = [
   "YACY_PASSWORD",
   "GOOGLE_VISION_API_KEY",
   "BREVO_API_KEY",
-  "SEARCH_FINGERPRINT_SECRET",
+  "REPORT_APPS_SCRIPT_SECRET",
 ];
 
 for (const key of forbiddenAmplifySecrets) {
@@ -63,10 +64,9 @@ const requiredEnvKeys = [
   "YACY_USERNAME",
   "YACY_PASSWORD",
   "GOOGLE_VISION_API_KEY",
+  "REPORT_APPS_SCRIPT_URL",
+  "REPORT_APPS_SCRIPT_SECRET",
   "BREVO_API_KEY",
-  "SEARCH_SIGNAL_TABLE",
-  "SEARCH_FINGERPRINT_SECRET",
-  "REPEAT_ALERT_INCLUDE_NAME=false",
 ];
 
 for (const key of requiredEnvKeys) {

@@ -129,6 +129,14 @@ export function dedupeResults(
       if (!existing.queryKinds.includes(contribution.queryKind)) {
         existing.queryKinds.push(contribution.queryKind);
       }
+      const nextTitle = contribution.title.trim().slice(0, 300);
+      if (
+        nextTitle &&
+        (existing.title === existing.url ||
+          nextTitle.length > existing.title.length)
+      ) {
+        existing.title = nextTitle;
+      }
       if (
         contribution.snippet.length > existing.snippet.length &&
         contribution.snippet.length <= 1200

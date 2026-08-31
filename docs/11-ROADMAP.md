@@ -2,7 +2,7 @@
 
 ## Phase 0 — brand + research
 - Finalize logo and visual identity.
-- Benchmark Tavily and Brave Search on controlled names.
+- Benchmark YaCy local/global search quality on controlled names.
 - Define legal/safety boundaries.
 
 ## Phase 1 — search proof of concept
@@ -36,8 +36,8 @@ Keep basic identity discovery free. If deeper reports create material third-part
 ## Immediate implementation order
 1. Scaffold Next.js + TypeScript + Tailwind.
 2. Build branded landing/search screen.
-3. Add provider adapter interface.
-4. Implement Tavily and Brave benchmark path.
+3. Add the YaCy search adapter.
+4. Benchmark local vs global YaCy coverage and tune the crawler/index.
 5. Normalize and deduplicate results.
 6. Add candidate identity cards.
 7. Add user confirmation.

@@ -3,9 +3,12 @@ import type { Metadata } from "next";
 export const SITE_NAME = "Before You Trust";
 export const SITE_DESCRIPTION =
   "Research a person's public web footprint, confirm the right identity, verify claims, and review original sources before placing meaningful trust.";
+export const PRODUCTION_SITE_URL = "https://beforeyoutrust.org";
 
 export function configuredSiteUrl(): string | undefined {
-  const value = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  const value =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    (process.env.NODE_ENV === "production" ? PRODUCTION_SITE_URL : undefined);
   if (!value) return undefined;
 
   try {

@@ -29,6 +29,7 @@ export type SourceType =
 
 export interface ConfirmedIdentity {
   label: string;
+  searchName?: string;
   confidence: "high" | "medium" | "low";
   supportingSignals: string[];
   urls: string[];
@@ -86,6 +87,7 @@ export interface ImageSearchResponse {
 export interface IdentityCandidate {
   id: string;
   label: string;
+  searchName: string;
   summary: string;
   confidence: "high" | "medium" | "low";
   supportingSignals: string[];

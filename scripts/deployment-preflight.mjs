@@ -32,6 +32,7 @@ for (const required of ["nvm install 22", "npm ci", "npm run build", "baseDirect
 
 if (
   amplify.includes("^NEXT_PUBLIC_") &&
+  amplify.includes("SEARXNG_BASE_URL") &&
   amplify.includes("YACY_BASE_URL") &&
   amplify.includes("YACY_RESOURCE") &&
   amplify.includes("REPORT_APPS_SCRIPT_URL") &&
@@ -58,7 +59,10 @@ if (!forbiddenAmplifySecrets.some((key) => amplify.includes(key))) {
 
 const requiredEnvKeys = [
   "RUNTIME_SECRETS_PARAMETER",
-  "SEARCH_PROVIDER=yacy",
+  "SEARCH_PROVIDER=auto",
+  "SEARXNG_BASE_URL",
+  "SEARXNG_USERNAME",
+  "SEARXNG_PASSWORD",
   "YACY_BASE_URL",
   "YACY_RESOURCE",
   "YACY_USERNAME",

@@ -1,6 +1,6 @@
 # Before You Trust — Manual Setup
 
-This is the current operator setup for the `dev` branch.
+This is the current operator setup for local/dev work. For the complete one-time production setup and automatic `main` deployment flow, see `docs/15-PRODUCTION-DEPLOYMENT.md`.
 
 ## 1. Local search stack
 
@@ -19,7 +19,7 @@ YACY_BASE_URL=http://localhost:8090
 YACY_RESOURCE=global
 ```
 
-SearXNG is the broad-discovery source. If a SearXNG query returns fewer than five results, YaCy supplements it. The committed SearXNG settings enable JSON output for the application API. Use YaCy `local` instead of `global` if YaCy queries must stay within your own index.
+In `SEARCH_PROVIDER=auto`, every query is sent to both SearXNG and YaCy in parallel, then merged and deduplicated. The committed SearXNG settings enable JSON output for the application API. Use YaCy `local` instead of `global` if YaCy queries must stay within your own index.
 
 ## 2. Google Sheet + Apps Script report storage
 
@@ -188,6 +188,7 @@ Then submit `/sitemap.xml` in Google Search Console.
 
 Before public use:
 
+- [ ] SearXNG is reachable.
 - [ ] YaCy is reachable.
 - [ ] A fresh search clears all previous search state.
 - [ ] Multiple namesakes remain separate.

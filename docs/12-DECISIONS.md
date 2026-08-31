@@ -8,7 +8,7 @@
 6. **Accounts:** none for MVP.
 7. **Styling:** plain CSS + design tokens instead of Tailwind to reduce dependencies.
 8. **Search privacy:** do not store searched names/reports server-side.
-9. **Search providers:** Tavily and Brave adapters; auto mode can fall back between them.
+9. **Search backend:** self-hosted YaCy via its JSON/OpenSearch endpoint; no paid per-search provider dependency. `local` and `global` resource modes are configurable.
 10. **Identity:** user confirms the correct candidate before deep research.
 11. **Evidence:** every meaningful finding links to its original source.
 12. **Risk scoring:** no generalized person-level risk/trust score.

@@ -25,23 +25,29 @@ function hostname(value?: string): string | undefined {
 
 const DEFAULT_SOCIAL_HOSTS = [
   "linkedin.com",
-  "github.com",
   "instagram.com",
-  "tiktok.com",
   "facebook.com",
+  "tiktok.com",
   "x.com",
+  "github.com",
+  "youtube.com",
+  "reddit.com",
 ] as const;
 
 function buildSocialQueries(input: SearchInput, name: string): SearchQuery[] {
-  const queries: SearchQuery[] = DEFAULT_SOCIAL_HOSTS.map((host) => ({
-    text: `${name} site:${host}`,
-    kind: "social" as const,
-  }));
+  const queries: SearchQuery[] = [];
 
+  // User-supplied clues are the strongest social/profile hints, so search them
+  // before generic platform queries.
   for (const profile of input.socialProfiles ?? []) {
     if (/^https?:\/\//i.test(profile)) {
       const host = hostname(profile);
-      if (host) queries.push({ text: `${name} site:${host}`, kind: "social" });
+      if (host) {
+        queries.push({
+          text: `${name} site:${host}`,
+          kind: "social",
+        });
+      }
     } else {
       queries.push({
         text: `${name} ${quote(profile)}`,
@@ -50,7 +56,14 @@ function buildSocialQueries(input: SearchInput, name: string): SearchQuery[] {
     }
   }
 
-  return unique(queries).slice(0, 7);
+  for (const host of DEFAULT_SOCIAL_HOSTS) {
+    queries.push({
+      text: `${name} site:${host}`,
+      kind: "social",
+    });
+  }
+
+  return unique(queries).slice(0, 9);
 }
 
 export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
@@ -87,7 +100,7 @@ export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
     { text: `${name} filetype:pdf`, kind: "general" },
   );
 
-  return unique(queries).slice(0, 13);
+  return unique(queries).slice(0, 14);
 }
 
 export function buildDeepQueries(input: SearchInput): SearchQuery[] {
@@ -116,7 +129,7 @@ export function buildDeepQueries(input: SearchInput): SearchQuery[] {
   }
 
   queries.push(
-    ...buildSocialQueries(input, name).slice(0, 3),
+    ...buildSocialQueries(input, name).slice(0, 5),
     { text: `${name} profile`, kind: "general" },
     { text: `${name} registry`, kind: "official" },
     { text: `${name} court`, kind: "official" },
@@ -136,5 +149,5 @@ export function buildDeepQueries(input: SearchInput): SearchQuery[] {
     }
   }
 
-  return unique(queries).slice(0, 15);
+  return unique(queries).slice(0, 17);
 }

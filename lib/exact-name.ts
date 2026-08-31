@@ -5,15 +5,21 @@ function normalizeDiacritics(value: string): string {
     .replace(/\p{M}+/gu, "");
 }
 
-function canonicalWord(value: string): string {
-  return normalizeDiacritics(value).replace(/[^\p{L}\p{N}]+/gu, "");
-}
-
+/**
+ * Exact-name matching is token-exact, not punctuation-exact.
+ *
+ * Examples that are intentionally equivalent:
+ *   Ciuciu-Kiss === Ciuciu Kiss
+ *   Te'o === Te o
+ *   Jean–Luc === Jean Luc
+ *
+ * Spelling must still match token-for-token:
+ *   Swiatek !== Swiatecki
+ *   Te'o !== Te'ox
+ */
 export function canonicalNameWords(value: string): string[] {
-  return value
-    .trim()
-    .split(/\s+/)
-    .map(canonicalWord)
+  return normalizeDiacritics(value)
+    .split(/[^\p{L}\p{N}]+/gu)
     .filter((word) => word.length > 0);
 }
 
@@ -37,34 +43,42 @@ export function containsExactFullName(
   return false;
 }
 
+export function exactNameSearchVariant(fullName: string): string {
+  return canonicalNameWords(fullName).join(" ");
+}
+
 export function urlPathContainsExactFullName(
   rawUrl: string,
   fullName: string,
 ): boolean {
-  const target = canonicalNameWords(fullName).join("");
-  if (!target) return false;
+  const needle = canonicalNameWords(fullName);
+  if (needle.length < 2) return false;
 
   try {
     const parsed = new URL(rawUrl);
-    const segments = decodeURIComponent(parsed.pathname)
-      .split("/")
-      .map(canonicalWord)
-      .filter(Boolean);
+    const pathWords = canonicalNameWords(decodeURIComponent(parsed.pathname));
 
-    for (let start = 0; start < segments.length; start += 1) {
-      let combined = "";
-      for (
-        let end = start;
-        end < Math.min(segments.length, start + 4);
-        end += 1
+    for (
+      let index = 0;
+      index <= pathWords.length - needle.length;
+      index += 1
+    ) {
+      if (
+        needle.every((word, offset) => pathWords[index + offset] === word)
       ) {
-        combined += segments[end];
-        if (combined === target) return true;
-        if (combined.length > target.length) break;
+        return true;
       }
     }
 
-    return false;
+    // Some profile systems collapse punctuation and spaces into one slug
+    // segment. Compare the exact token sequence only after concatenation.
+    const target = needle.join("");
+    const segments = decodeURIComponent(parsed.pathname)
+      .split("/")
+      .map((segment) => canonicalNameWords(segment).join(""))
+      .filter(Boolean);
+
+    return segments.some((segment) => segment === target);
   } catch {
     return false;
   }

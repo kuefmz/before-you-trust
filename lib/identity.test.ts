@@ -93,6 +93,35 @@ describe("identity candidate building", () => {
     expect(candidates[0]?.id).not.toBe(candidates[1]?.id);
   });
 
+  it("rejects unrelated generic pages when supplied context does not match", () => {
+    const candidates = buildIdentityCandidates(
+      [
+        result({
+          title: "Someone else's personal website",
+          url: "https://unrelated.example/about",
+          snippet: "Portfolio by a different person in Zurich",
+          sourceType: "web",
+        }),
+        result({
+          title: "Alex Morgan | LinkedIn",
+          url: "https://linkedin.com/in/alex-morgan",
+          snippet: "Alex Morgan, engineer at Alpha AG in Zurich",
+          sourceType: "professional",
+        }),
+      ],
+      {
+        name: "Alex Morgan",
+        location: "Zurich",
+        company: "Alpha AG",
+      },
+    );
+
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.sources.map((source) => source.url)).toEqual([
+      "https://linkedin.com/in/alex-morgan",
+    ]);
+  });
+
   it("does not require a candidate when there are no results", () => {
     expect(
       buildIdentityCandidates([], { name: "Jane Unique-Surname" }),

@@ -88,7 +88,7 @@ function yacyProvider(config: {
       url.searchParams.set("query", query);
       url.searchParams.set("resource", config.resource);
       url.searchParams.set("contentdom", "text");
-      url.searchParams.set("maximumRecords", "6");
+      url.searchParams.set("maximumRecords", "10");
       url.searchParams.set("verify", "false");
       url.searchParams.set("nav", "none");
 

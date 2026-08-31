@@ -31,19 +31,7 @@ The configured Apps Script web-app endpoint is:
 https://script.google.com/macros/s/AKfycbxe1s2hTRDF3m37UDcEHCj8Feb5iEDwjM82ZXizQ1sOgdZvJdNvkLbJsYi3FCJHA7Ml/exec
 ```
 
-The Apps Script must contain a Script Property:
-
-```text
-API_SECRET=<long-random-secret>
-```
-
-Set the same value server-side for Before You Trust:
-
-```text
-REPORT_APPS_SCRIPT_SECRET=<same-secret>
-```
-
-Do **not** commit that value to GitHub or expose it via `NEXT_PUBLIC_*`.
+The current Apps Script web app does not require a shared API secret. The Next.js server posts the validated report request directly to the configured web-app URL.
 
 The non-secret URL can be overridden with:
 
@@ -85,19 +73,10 @@ For production/dev deployment, create one encrypted SSM Parameter Store SecureSt
 /before-you-trust/dev/runtime
 ```
 
-A minimal report-enabled JSON can be:
-
-```json
-{
-  "REPORT_APPS_SCRIPT_SECRET": "same-secret-as-Apps-Script"
-}
-```
-
 If used, add optional server-only values such as:
 
 ```json
 {
-  "REPORT_APPS_SCRIPT_SECRET": "same-secret-as-Apps-Script",
   "YACY_USERNAME": "optional",
   "YACY_PASSWORD": "optional",
   "GOOGLE_VISION_API_KEY": "optional",
@@ -171,7 +150,6 @@ Before public use:
 - [ ] Deep search begins only after confirmation.
 - [ ] Wrong-person/low-confidence results are excluded from the final report.
 - [ ] Sensitive findings require corroborating identity context.
-- [ ] Apps Script `API_SECRET` matches `REPORT_APPS_SCRIPT_SECRET`.
 - [ ] Report request appends one row to the private Google Sheet.
 - [ ] Visitor receives the report email.
 - [ ] Owner receives a copy.

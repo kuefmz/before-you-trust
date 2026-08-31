@@ -1,4 +1,5 @@
-import type { SearchResult } from "@/types/search";
+import { normalizeUrl } from "@/lib/normalize";
+import type { SearchInput, SearchResult } from "@/types/search";
 
 export interface ReportSection {
   id:
@@ -19,6 +20,167 @@ function includesKind(result: SearchResult, kind: SearchResult["queryKinds"][num
   return result.queryKinds.includes(kind);
 }
 
+function normalizeText(value: string): string {
+  return value
+    .toLocaleLowerCase()
+    .normalize("NFKD")
+    .replace(/[^\p{L}\p{N}@._/-]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function meaningfulWords(value?: string): string[] {
+  if (!value) return [];
+  return normalizeText(value)
+    .split(/[\s,./_-]+/)
+    .filter((word) => word.length >= 3);
+}
+
+function resultText(result: SearchResult): string {
+  return normalizeText(`${result.title} ${result.snippet} ${result.url}`);
+}
+
+function identityUrlAnchor(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace(/^www\./, "").toLowerCase();
+    const segments = parsed.pathname.split("/").filter(Boolean);
+
+    if (host === "linkedin.com" && segments[0] === "in" && segments[1]) {
+      return normalizeText(segments[1]);
+    }
+
+    if (
+      [
+        "github.com",
+        "instagram.com",
+        "tiktok.com",
+        "x.com",
+        "twitter.com",
+        "facebook.com",
+        "youtube.com",
+      ].includes(host) &&
+      segments[0]
+    ) {
+      return normalizeText(segments[0].replace(/^@/, ""));
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function urlMatchesKnownProfile(resultUrl: string, knownUrl?: string): boolean {
+  if (!knownUrl) return false;
+
+  try {
+    const result = new URL(normalizeUrl(resultUrl));
+    const known = new URL(normalizeUrl(knownUrl));
+    const knownPath = known.pathname.replace(/\/+$/, "");
+
+    return (
+      result.hostname === known.hostname &&
+      Boolean(knownPath) &&
+      knownPath !== "/" &&
+      (result.pathname === knownPath || result.pathname.startsWith(`${knownPath}/`))
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function filterResultsForConfirmedIdentity(
+  results: SearchResult[],
+  selectedSources: SearchResult[],
+  input: Pick<
+    SearchInput,
+    "name" | "location" | "company" | "profileUrl" | "socialProfiles"
+  >,
+): { results: SearchResult[]; excludedCount: number } {
+  const selectedUrls = new Set(
+    selectedSources.map((source) => normalizeUrl(source.url)),
+  );
+  const selectedAnchors = [
+    ...new Set(
+      selectedSources
+        .map((source) => identityUrlAnchor(source.url))
+        .filter((anchor): anchor is string => Boolean(anchor && anchor.length >= 4)),
+    ),
+  ];
+
+  const name = normalizeText(input.name);
+  const nameWords = meaningfulWords(input.name);
+  const locationWords = meaningfulWords(input.location);
+  const companyWords = meaningfulWords(input.company);
+  const socialHandles = (input.socialProfiles ?? [])
+    .filter((value) => !/^https?:\/\//i.test(value))
+    .map((value) => normalizeText(value.replace(/^@/, "")))
+    .filter((value) => value.length >= 3);
+
+  const hasStrongContext =
+    locationWords.length > 0 ||
+    companyWords.length > 0 ||
+    Boolean(input.profileUrl) ||
+    (input.socialProfiles?.length ?? 0) > 0 ||
+    selectedAnchors.length > 0;
+
+  const kept = results.filter((result) => {
+    if (selectedUrls.has(normalizeUrl(result.url))) return true;
+
+    const text = resultText(result);
+    const title = normalizeText(result.title);
+    const exactNameInTitle = Boolean(name && title.includes(name));
+    const exactNameAnywhere = Boolean(name && text.includes(name));
+    const allNameWords =
+      nameWords.length >= 2 && nameWords.every((word) => text.includes(word));
+    const nameMatches = exactNameAnywhere || allNameWords;
+
+    if (!nameMatches) return false;
+
+    const locationMatches =
+      locationWords.length > 0 &&
+      locationWords.some((word) => text.includes(word));
+    const companyMatches =
+      companyWords.length > 0 &&
+      companyWords.some((word) => text.includes(word));
+    const knownProfileMatches =
+      urlMatchesKnownProfile(result.url, input.profileUrl) ||
+      (input.socialProfiles ?? [])
+        .filter((value) => /^https?:\/\//i.test(value))
+        .some((value) => urlMatchesKnownProfile(result.url, value));
+    const handleMatches = socialHandles.some((handle) => text.includes(handle));
+    const confirmedAnchorMatches = selectedAnchors.some((anchor) =>
+      text.includes(anchor),
+    );
+
+    const contextMatches =
+      locationMatches ||
+      companyMatches ||
+      knownProfileMatches ||
+      handleMatches ||
+      confirmedAnchorMatches;
+
+    const sensitive = result.queryKinds.some((kind) =>
+      ["official", "news", "concern", "claim"].includes(kind),
+    );
+
+    // Precision is deliberately favored over recall. Potentially reputation-
+    // harming results must be tied to both the searched name and a confirmed
+    // identity signal whenever such a signal is available.
+    if (sensitive) {
+      return hasStrongContext ? contextMatches : exactNameInTitle;
+    }
+
+    return hasStrongContext ? contextMatches : exactNameInTitle;
+  });
+
+  return {
+    results: kept,
+    excludedCount: Math.max(0, results.length - kept.length),
+  };
+}
+
 export function buildReportSections(results: SearchResult[]): ReportSection[] {
   const sections: ReportSection[] = [
     {
@@ -36,7 +198,7 @@ export function buildReportSections(results: SearchResult[]): ReportSection[] {
       id: "official",
       title: "Official & registry sources",
       description:
-        "Government, court, regulator, registry, or credential-oriented search results. Open the original source before drawing conclusions.",
+        "Government, court, regulator, registry, or credential-oriented results that passed the identity-quality filter. Open the original source before drawing conclusions.",
       results: results.filter(
         (result) =>
           result.sourceType === "official" || includesKind(result, "official"),
@@ -46,7 +208,7 @@ export function buildReportSections(results: SearchResult[]): ReportSection[] {
       id: "social",
       title: "Social-media & photo matches",
       description:
-        "Public social profiles and pages connected by name, handle, profile URL or an uploaded photo. Treat these as leads to confirm, not proof by themselves.",
+        "Public social profiles and pages connected to the selected identity. Treat these as leads to confirm, not proof by themselves.",
       results: results.filter(
         (result) =>
           result.sourceType === "social" ||
@@ -58,7 +220,7 @@ export function buildReportSections(results: SearchResult[]): ReportSection[] {
       id: "professional",
       title: "Professional & organizational footprint",
       description:
-        "Professional profiles and sources related to employers, organizations, publications, or public work.",
+        "Professional profiles and sources related to employers, organizations, publications, or public work that match the selected identity.",
       results: results.filter(
         (result) =>
           result.sourceType === "professional" ||
@@ -69,7 +231,7 @@ export function buildReportSections(results: SearchResult[]): ReportSection[] {
       id: "news",
       title: "News & public mentions",
       description:
-        "News-oriented results and public mentions. Source quality matters more than the number of mentions.",
+        "News-oriented results that passed the identity-quality filter. Source quality matters more than the number of mentions.",
       results: results.filter(
         (result) => result.sourceType === "news" || includesKind(result, "news"),
       ),
@@ -78,14 +240,14 @@ export function buildReportSections(results: SearchResult[]): ReportSection[] {
       id: "claim",
       title: "Claim-verification leads",
       description:
-        "Sources returned for the specific claim you asked to check. These are leads to review, not an automatic verification.",
+        "Sources returned for the specific claim you asked to check and linked to the selected identity. These are leads to review, not automatic verification.",
       results: results.filter((result) => includesKind(result, "claim")),
     },
     {
       id: "concern",
       title: "Needs closer review",
       description:
-        "These sources were returned by concern-oriented searches. Their presence is not evidence of wrongdoing, and allegations must not be treated as facts.",
+        "Only concern-oriented results that also passed the identity-quality filter appear here. Their presence is still not evidence of wrongdoing.",
       results: results.filter((result) => includesKind(result, "concern")),
     },
   ];
@@ -99,7 +261,8 @@ export function buildReportSections(results: SearchResult[]): ReportSection[] {
     sections.push({
       id: "other",
       title: "Other public sources",
-      description: "Additional results that may provide useful context.",
+      description:
+        "Additional sources that passed the identity-quality filter and may provide useful context.",
       results: other,
     });
   }
@@ -119,7 +282,7 @@ export function claimAssessment(results: SearchResult[]): {
     return {
       label: "Not corroborated by this search",
       detail:
-        "No result was returned for the claim-specific query. This does not prove the claim is false.",
+        "No sufficiently identity-matched result was returned for the claim-specific query. This does not prove the claim is false.",
     };
   }
 
@@ -135,13 +298,13 @@ export function claimAssessment(results: SearchResult[]): {
     return {
       label: "Multiple potentially relevant sources",
       detail:
-        "Multiple results may help corroborate the claim, but they still require source-by-source review.",
+        "Multiple identity-matched results may help corroborate the claim, but they still require source-by-source review.",
     };
   }
 
   return {
     label: "One potentially relevant source",
     detail:
-      "A single result may be relevant to the claim. One source alone is not enough to establish the claim as fact.",
+      "A single identity-matched result may be relevant to the claim. One source alone is not enough to establish the claim as fact.",
   };
 }

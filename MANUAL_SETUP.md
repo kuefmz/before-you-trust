@@ -129,15 +129,16 @@ If you do not need that flow yet, Brevo can remain unconfigured.
 
 ## 7. Analytics
 
-GTM/GA4 is optional. When unset, no analytics tag loads.
-
-If enabled:
+The project currently has production defaults for GA4 and GTM, but both remain
+blocked until the visitor explicitly allows analytics.
 
 ```text
-NEXT_PUBLIC_GTM_ID=GTM-...
+NEXT_PUBLIC_GA4_ID=G-MVDVBJJFQB
+NEXT_PUBLIC_GTM_ID=GTM-TPGSP8XN
 ```
 
-Never send searched names, report contents, source URLs, delivery emails or candidate identities to analytics.
+Never send searched names, report contents, source URLs, delivery emails or
+candidate identities to analytics.
 
 ## 8. Live retrieval benchmark
 

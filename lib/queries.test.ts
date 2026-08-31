@@ -19,6 +19,7 @@ describe("query generation", () => {
     expect(queries.some((query) => query.toLowerCase().includes("linkedin.com"))).toBe(true);
     expect(queries.some((query) => /fraud|scam|lawsuit/i.test(query))).toBe(false);
     expect(queries.some((query) => query.includes("site:example.org"))).toBe(true);
+    expect(queries).toContain("Jane Unique-Surname");
     expect(queries.some((query) => /\sOR\s/i.test(query))).toBe(false);
   });
 
@@ -68,6 +69,25 @@ describe("query generation", () => {
     expect(deep.some((query) => query.kind === "official")).toBe(true);
     expect(deep.some((query) => query.kind === "concern")).toBe(true);
     expect(deep.some((query) => query.kind === "claim")).toBe(true);
+  });
+
+  it("uses the confirmed canonical identity name for deep research", () => {
+    const deep = buildDeepQueries({
+      ...base,
+      name: "Robert Conman",
+      mode: "deep",
+      confirmedIdentity: {
+        label: "Robert Hendy-Freegard",
+        searchName: "Robert Hendy-Freegard",
+        confidence: "medium",
+        supportingSignals: [],
+        urls: ["https://example.org/robert"],
+      },
+    }).map((query) => query.text);
+
+    expect(deep).toContain('"Robert Hendy-Freegard"');
+    expect(deep).toContain("Robert Hendy-Freegard");
+    expect(deep).toContain('"Robert Conman"');
   });
 
   it("deduplicates repeated query strings", () => {

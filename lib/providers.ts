@@ -395,22 +395,35 @@ export async function searchQuery(
   const providers = await configuredProviders();
   const warnings: string[] = [];
 
-  const outcomes = await Promise.all(
-    providers.map(async (provider) => {
-      try {
-        const results = await provider.search(query, signal);
-        return { provider: provider.name, results };
-      } catch (error) {
-        if (signal.aborted) throw error;
-        warnings.push(
-          `${provider.name} failed for one query: ${
-            error instanceof Error ? error.message : "unknown error"
-          }`,
-        );
-        return { provider: provider.name, results: [] };
+  const outcomes: Array<{
+    provider: string;
+    results: ProviderSearchResult[];
+  }> = [];
+
+  for (const provider of providers) {
+    try {
+      const results = await provider.search(query, signal);
+      outcomes.push({ provider: provider.name, results });
+
+      // In auto mode SearXNG is the broad-discovery source. If it already
+      // returned a healthy result set, avoid doubling the upstream work.
+      if (
+        providers.length > 1 &&
+        provider.name === "searxng" &&
+        results.length >= 5
+      ) {
+        break;
       }
-    }),
-  );
+    } catch (error) {
+      if (signal.aborted) throw error;
+      warnings.push(
+        `${provider.name} failed for one query: ${
+          error instanceof Error ? error.message : "unknown error"
+        }`,
+      );
+      outcomes.push({ provider: provider.name, results: [] });
+    }
+  }
 
   const successfulProviders = outcomes
     .filter((outcome) => outcome.results.length > 0)

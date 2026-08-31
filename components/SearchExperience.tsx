@@ -1,14 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { EmailReportForm } from "@/components/EmailReportForm";
 import { JourneyProgress } from "@/components/JourneyProgress";
+import { ManualSearchPanel } from "@/components/ManualSearchPanel";
 
 import { buildIdentityCandidates } from "@/lib/identity";
 import { trackEvent } from "@/lib/client-analytics";
 import { mergeSearchResults } from "@/lib/normalize";
+import { buildDeepQueries, buildIdentityQueries } from "@/lib/queries";
 import { buildReportSections, claimAssessment, filterResultsForConfirmedIdentity } from "@/lib/report";
 import type {
   ConfirmedIdentity,
@@ -220,7 +222,65 @@ export function SearchExperience() {
   const [confirmed, setConfirmed] = useState<IdentityCandidate | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmingCandidateId, setConfirmingCandidateId] = useState<string | null>(null);
+  const [manualSearchOpen, setManualSearchOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const panelRef = useRef<HTMLElement | null>(null);
+  const previousStageRef = useRef<Stage>(stage);
+
+  const confirmedIdentityForSearch = useMemo<ConfirmedIdentity | undefined>(
+    () =>
+      confirmed
+        ? {
+            label: confirmed.label,
+            confidence: confirmed.confidence,
+            supportingSignals: confirmed.supportingSignals,
+            urls: confirmed.sources.map((source) => source.url),
+          }
+        : undefined,
+    [confirmed],
+  );
+
+  const manualSearchQueries = useMemo(() => {
+    if (form.name.trim().length < 2) return [];
+
+    if (stage === "report" && confirmedIdentityForSearch) {
+      return buildDeepQueries(
+        toInput(form, "deep", confirmedIdentityForSearch),
+      );
+    }
+
+    return buildIdentityQueries(toInput(form, "identity"));
+  }, [form, stage, confirmedIdentityForSearch]);
+
+  const candidateSourceUrls = useMemo(
+    () => new Set(candidates.flatMap((candidate) => candidate.sources.map((source) => source.url))),
+    [candidates],
+  );
+
+  const candidateMatchedIdentityResults = useMemo(
+    () =>
+      (identityResponse?.results ?? []).filter((result) =>
+        candidateSourceUrls.has(result.url),
+      ),
+    [identityResponse, candidateSourceUrls],
+  );
+
+  const identityExcludedCount = Math.max(
+    0,
+    (identityResponse?.results.length ?? 0) - candidateMatchedIdentityResults.length,
+  );
+
+  useEffect(() => {
+    if (previousStageRef.current === stage) return;
+    previousStageRef.current = stage;
+
+    window.requestAnimationFrame(() => {
+      panelRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }, [stage]);
 
   const reportQuality = useMemo(() => {
     if (!confirmed) return { results: [] as SearchResult[], excludedCount: 0 };
@@ -410,6 +470,7 @@ export function SearchExperience() {
     setConfirmingCandidateId(null);
     setError(null);
     setPhotoWarning(null);
+    setManualSearchOpen(false);
   }
 
   function reset() {
@@ -422,6 +483,7 @@ export function SearchExperience() {
     setCandidates([]);
     setConfirmed(null);
     setConfirmingCandidateId(null);
+    setManualSearchOpen(false);
     setError(null);
     setPhoto(null);
     setPhotoWarning(null);
@@ -438,9 +500,21 @@ export function SearchExperience() {
     ).length;
 
     return (
-      <section aria-labelledby="trust-brief-title" className="experience-panel">
-        <JourneyProgress step={3} />
-        <div className="panel-heading panel-heading--split">
+      <section
+        aria-labelledby="trust-brief-title"
+        className="experience-panel"
+        ref={panelRef}
+      >
+        <JourneyProgress
+          manualSearchOpen={manualSearchOpen}
+          onStartNewSearch={reset}
+          onToggleManualSearch={() => setManualSearchOpen((open) => !open)}
+          step={3}
+        />
+        {manualSearchOpen ? (
+          <ManualSearchPanel queries={manualSearchQueries} />
+        ) : null}
+        <div className="panel-heading">
           <div>
             <span className="eyebrow">Evidence-first report</span>
             <h2 id="trust-brief-title">Trust Brief</h2>
@@ -449,9 +523,6 @@ export function SearchExperience() {
               original sources before drawing conclusions.
             </p>
           </div>
-          <button className="button button--ghost" onClick={reset} type="button">
-            Start new search
-          </button>
         </div>
 
         <div className="report-warning" role="note">
@@ -515,16 +586,7 @@ export function SearchExperience() {
         <EmailReportForm
           claim={form.claim || undefined}
           company={form.company || undefined}
-          confirmedIdentity={
-            confirmed
-              ? {
-                  label: confirmed.label,
-                  confidence: confirmed.confidence,
-                  supportingSignals: confirmed.supportingSignals,
-                  urls: confirmed.sources.map((source) => source.url),
-                }
-              : undefined
-          }
+          confirmedIdentity={confirmedIdentityForSearch}
           context={form.context || undefined}
           location={form.location || undefined}
           profileUrl={form.profileUrl || undefined}
@@ -551,8 +613,20 @@ export function SearchExperience() {
 
   if (stage === "candidates") {
     return (
-      <section aria-labelledby="candidate-title" className="experience-panel">
-        <JourneyProgress step={2} />
+      <section
+        aria-labelledby="candidate-title"
+        className="experience-panel"
+        ref={panelRef}
+      >
+        <JourneyProgress
+          manualSearchOpen={manualSearchOpen}
+          onStartNewSearch={reset}
+          onToggleManualSearch={() => setManualSearchOpen((open) => !open)}
+          step={2}
+        />
+        {manualSearchOpen ? (
+          <ManualSearchPanel queries={manualSearchQueries} />
+        ) : null}
         <div className="panel-heading">
           <span className="eyebrow">Identity confirmation</span>
           <h2 id="candidate-title">Which person do you mean?</h2>
@@ -584,6 +658,23 @@ export function SearchExperience() {
           </div>
         ) : null}
 
+        {identityExcludedCount > 0 ? (
+          <div className="quality-note" role="note">
+            <strong>
+              {identityExcludedCount} low-confidence search result
+              {identityExcludedCount === 1 ? " was" : "s were"} hidden.
+            </strong>{" "}
+            They did not contain enough identity evidence to show as a possible
+            match.
+          </div>
+        ) : null}
+
+        <p className="candidate-help">
+          Missing an expected Instagram, Facebook, LinkedIn or other profile?
+          Use <strong>Do it yourself</strong> above to run the same
+          site-specific searches directly on Google.
+        </p>
+
         <div className="candidate-grid">
           {candidates.map((candidate, index) => (
             <CandidateCard
@@ -597,13 +688,15 @@ export function SearchExperience() {
           ))}
         </div>
 
-        {identityResponse && identityResponse.results.length > 0 ? (
+        {candidateMatchedIdentityResults.length > 0 ? (
           <details className="technical-note">
             <summary>
-              See all {identityResponse.results.length} identity-search sources
+              See {candidateMatchedIdentityResults.length} candidate-matched
+              identity source
+              {candidateMatchedIdentityResults.length === 1 ? "" : "s"}
             </summary>
             <div className="result-grid result-grid--compact">
-              {identityResponse.results.map((result) => (
+              {candidateMatchedIdentityResults.map((result) => (
                 <ResultLink key={result.url} result={result} />
               ))}
             </div>
@@ -623,8 +716,20 @@ export function SearchExperience() {
   }
 
   return (
-    <section aria-labelledby="search-title" className="experience-panel">
-      <JourneyProgress step={1} />
+    <section
+      aria-labelledby="search-title"
+      className="experience-panel"
+      ref={panelRef}
+    >
+      <JourneyProgress
+        manualSearchOpen={manualSearchOpen}
+        onStartNewSearch={reset}
+        onToggleManualSearch={() => setManualSearchOpen((open) => !open)}
+        step={1}
+      />
+      {manualSearchOpen ? (
+        <ManualSearchPanel queries={manualSearchQueries} />
+      ) : null}
       <div className="panel-heading">
         <span className="eyebrow">Start with identity, not assumptions</span>
         <h2 id="search-title">Who are you thinking of trusting?</h2>

@@ -198,6 +198,35 @@ describe("identity candidate building", () => {
     );
   });
 
+  it("accepts an exact identity when the searched surname uses different punctuation", () => {
+    const candidates = buildIdentityCandidates(
+      [
+        result({
+          title: "Jenifer Tabita Ciuciu-Kiss | LinkedIn",
+          url: "https://www.linkedin.com/in/jenifer-tabita-ciuciu-kiss",
+          snippet: "Jenifer Tabita Ciuciu Kiss, UBS, Zurich",
+          sourceType: "professional",
+        }),
+        result({
+          title: "kuefmz (Jenifer Tabita Ciuciu-Kiss) · GitHub",
+          url: "https://github.com/kuefmz",
+          snippet: "Jenifer Tabita Ciuciu Kiss — UBS — Zurich",
+          sourceType: "professional",
+        }),
+      ],
+      {
+        name: "Jenifer Tabita Ciuciu Kiss",
+        location: "Zurich",
+        company: "UBS",
+      },
+    );
+
+    expect(candidates.length).toBeGreaterThan(0);
+    expect(
+      candidates.flatMap((candidate) => candidate.sources).map((source) => source.url),
+    ).toContain("https://www.linkedin.com/in/jenifer-tabita-ciuciu-kiss");
+  });
+
   it("rejects similar surnames even when location and employer match", () => {
     const candidates = buildIdentityCandidates(
       [

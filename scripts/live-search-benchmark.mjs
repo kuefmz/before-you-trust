@@ -18,8 +18,7 @@ function normalizeWords(value) {
     .toLocaleLowerCase()
     .normalize("NFKD")
     .replace(/\p{M}+/gu, "")
-    .split(/\s+/)
-    .map((word) => word.replace(/[^\p{L}\p{N}]+/gu, ""))
+    .split(/[^\p{L}\p{N}]+/gu)
     .filter(Boolean);
 }
 

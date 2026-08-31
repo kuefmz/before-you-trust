@@ -4,6 +4,9 @@ import { SearchConfigurationError, searchQuery } from "@/lib/providers";
 
 const originalEnvironment = {
   SEARCH_PROVIDER: process.env.SEARCH_PROVIDER,
+  SEARXNG_BASE_URL: process.env.SEARXNG_BASE_URL,
+  SEARXNG_USERNAME: process.env.SEARXNG_USERNAME,
+  SEARXNG_PASSWORD: process.env.SEARXNG_PASSWORD,
   YACY_BASE_URL: process.env.YACY_BASE_URL,
   YACY_RESOURCE: process.env.YACY_RESOURCE,
   YACY_USERNAME: process.env.YACY_USERNAME,
@@ -63,19 +66,101 @@ describe("search providers", () => {
       new AbortController().signal,
     );
 
-    expect(response.provider).toBe("yacy");
+    expect(response.providers).toEqual(["yacy"]);
     expect(response.results[0]).toMatchObject({
       title: "Jane Example",
       url: "https://example.org/jane",
       snippet: "Public profile & biography",
       publishedAt: "Mon, 31 Aug 2026 10:00:00 +0200",
+      provider: "yacy",
     });
 
     const requested = new URL(String(mockedFetch.mock.calls[0]?.[0]));
     expect(requested.pathname).toBe("/yacysearch.json");
     expect(requested.searchParams.get("resource")).toBe("global");
     expect(requested.searchParams.get("maximumRecords")).toBe("10");
-    expect(requested.searchParams.get("verify")).toBe("false");
+  });
+
+  it("uses SearXNG JSON results for broad discovery", async () => {
+    process.env.SEARCH_PROVIDER = "searxng";
+    process.env.SEARXNG_BASE_URL = "http://localhost:8888";
+
+    const mockedFetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          results: [
+            {
+              title: "Jane Example",
+              url: "https://example.net/jane",
+              content: "Public profile in Zurich",
+            },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+    vi.stubGlobal("fetch", mockedFetch);
+
+    const response = await searchQuery(
+      '"Jane Example" Zurich',
+      new AbortController().signal,
+    );
+
+    expect(response.providers).toEqual(["searxng"]);
+    expect(response.results[0]).toMatchObject({
+      title: "Jane Example",
+      url: "https://example.net/jane",
+      snippet: "Public profile in Zurich",
+      provider: "searxng",
+    });
+
+    const requested = new URL(String(mockedFetch.mock.calls[0]?.[0]));
+    expect(requested.pathname).toBe("/search");
+    expect(requested.searchParams.get("format")).toBe("json");
+  });
+
+  it("supplements sparse SearXNG results with YaCy in auto mode", async () => {
+    process.env.SEARCH_PROVIDER = "auto";
+    process.env.SEARXNG_BASE_URL = "http://localhost:8888";
+    process.env.YACY_BASE_URL = "http://localhost:8090";
+
+    const mockedFetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            results: [{
+              title: "Jane Example",
+              url: "https://example.net/jane",
+              content: "One broad-search result",
+            }],
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            channels: [{
+              items: [{
+                title: "Jane Example on another site",
+                link: "https://example.org/jane",
+                description: "YaCy result",
+              }],
+            }],
+          }),
+          { status: 200 },
+        ),
+      );
+    vi.stubGlobal("fetch", mockedFetch);
+
+    const response = await searchQuery(
+      '"Jane Example"',
+      new AbortController().signal,
+    );
+
+    expect(response.providers).toEqual(["searxng", "yacy"]);
+    expect(response.results).toHaveLength(2);
   });
 
   it("supports optional basic authentication for a protected YaCy node", async () => {
@@ -117,7 +202,7 @@ describe("search providers", () => {
       new AbortController().signal,
     );
 
-    expect(response.provider).toBe("mock");
+    expect(response.providers).toEqual(["mock"]);
     expect(response.results.length).toBeGreaterThan(0);
   });
 });

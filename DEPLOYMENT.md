@@ -14,6 +14,7 @@ Set these non-secret values:
 
 ```text
 NEXT_PUBLIC_SITE_URL=https://YOUR-DEV-URL
+NEXT_PUBLIC_ALLOW_INDEXING=false
 SEARCH_PROVIDER=auto
 SEARXNG_BASE_URL=https://YOUR-SEARXNG-HOST
 YACY_BASE_URL=https://YOUR-YACY-HOST
@@ -30,6 +31,25 @@ RUNTIME_SECRETS_PARAMETER=/before-you-trust/dev/runtime
 ```
 
 If SSM is used, give the Amplify SSR Compute role `ssm:GetParameter` for only that parameter. DynamoDB is not used by the current search/report flow.
+
+## Production indexing
+
+Keep preview/dev deployments out of search engines:
+
+```text
+NEXT_PUBLIC_ALLOW_INDEXING=false
+```
+
+Only on the canonical production domain, after the live retrieval benchmark and
+final launch review pass, set:
+
+```text
+NEXT_PUBLIC_SITE_URL=https://YOUR-PRODUCTION-DOMAIN
+NEXT_PUBLIC_ALLOW_INDEXING=true
+```
+
+The application then emits canonical URLs, an indexable sitemap, and a robots
+policy that advertises that sitemap.
 
 ## Verify after deployment
 

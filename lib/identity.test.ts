@@ -203,13 +203,13 @@ describe("identity candidate building", () => {
       [
         result({
           title: "Curriculum vitae",
-          url: "https://example.org/jenifer_tabita_ciuciu_kiss_cv.pdf",
+          url: "https://example.org/jane_tabita_unique_surname_cv.pdf",
           snippet: "",
           sourceType: "web",
         }),
       ],
       {
-        name: "Jenifer Tabita Ciuciu-Kiss",
+        name: "Jane Tabita Unique-Surname",
       },
     );
 
@@ -223,20 +223,20 @@ describe("identity candidate building", () => {
     const candidates = buildIdentityCandidates(
       [
         result({
-          title: "Jenifer Tabita Ciuciu-Kiss | LinkedIn",
-          url: "https://www.linkedin.com/in/jenifer-tabita-ciuciu-kiss",
-          snippet: "Jenifer Tabita Ciuciu Kiss, UBS, Zurich",
+          title: "Jane Tabita Unique-Surname | LinkedIn",
+          url: "https://www.linkedin.com/in/jane-tabita-unique-surname",
+          snippet: "Jane Tabita Unique Surname, UBS, Zurich",
           sourceType: "professional",
         }),
         result({
-          title: "kuefmz (Jenifer Tabita Ciuciu-Kiss) · GitHub",
+          title: "kuefmz (Jane Tabita Unique-Surname) · GitHub",
           url: "https://github.com/kuefmz",
-          snippet: "Jenifer Tabita Ciuciu Kiss — UBS — Zurich",
+          snippet: "Jane Tabita Unique Surname — UBS — Zurich",
           sourceType: "professional",
         }),
       ],
       {
-        name: "Jenifer Tabita Ciuciu Kiss",
+        name: "Jane Tabita Unique Surname",
         location: "Zurich",
         company: "UBS",
       },
@@ -245,7 +245,7 @@ describe("identity candidate building", () => {
     expect(candidates.length).toBeGreaterThan(0);
     expect(
       candidates.flatMap((candidate) => candidate.sources).map((source) => source.url),
-    ).toContain("https://www.linkedin.com/in/jenifer-tabita-ciuciu-kiss");
+    ).toContain("https://www.linkedin.com/in/jane-tabita-unique-surname");
   });
 
   it("rejects similar surnames even when location and employer match", () => {

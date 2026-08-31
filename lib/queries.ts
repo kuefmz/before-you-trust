@@ -63,13 +63,17 @@ function buildSocialQueries(input: SearchInput, name: string): SearchQuery[] {
     }
   }
 
+  // First guarantee broad coverage across every major platform.
   for (const host of DEFAULT_SOCIAL_HOSTS) {
     queries.push({
       text: `${name} site:${host}`,
       kind: "social",
     });
+  }
 
-    if (contextTerms.length > 0) {
+  // Then use the remaining budget for higher-precision contextual variants.
+  if (contextTerms.length > 0) {
+    for (const host of DEFAULT_SOCIAL_HOSTS) {
       queries.push({
         text: `${name} ${contextTerms.join(" ")} site:${host}`,
         kind: "social",
@@ -77,7 +81,7 @@ function buildSocialQueries(input: SearchInput, name: string): SearchQuery[] {
     }
   }
 
-  return unique(queries).slice(0, 12);
+  return unique(queries).slice(0, 14);
 }
 
 export function buildIdentityQueries(input: SearchInput): SearchQuery[] {

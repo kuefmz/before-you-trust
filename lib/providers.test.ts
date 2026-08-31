@@ -74,7 +74,7 @@ describe("search providers", () => {
     const requested = new URL(String(mockedFetch.mock.calls[0]?.[0]));
     expect(requested.pathname).toBe("/yacysearch.json");
     expect(requested.searchParams.get("resource")).toBe("global");
-    expect(requested.searchParams.get("maximumRecords")).toBe("6");
+    expect(requested.searchParams.get("maximumRecords")).toBe("10");
     expect(requested.searchParams.get("verify")).toBe("false");
   });
 

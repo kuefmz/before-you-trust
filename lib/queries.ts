@@ -38,13 +38,6 @@ function buildSocialQueries(input: SearchInput, name: string): SearchQuery[] {
     kind: "social" as const,
   }));
 
-  if (input.username) {
-    queries.push({
-      text: `${name} ${quote(input.username)}`,
-      kind: "social",
-    });
-  }
-
   for (const profile of input.socialProfiles ?? []) {
     if (/^https?:\/\//i.test(profile)) {
       const host = hostname(profile);

@@ -1,6 +1,11 @@
-export const metadata = {
-  title: "Terms",
-};
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "Terms of Use",
+  description: "Terms for using Before You Trust as a public-web research assistant, including accuracy limits, prohibited uses, third-party sources and regulated-screening restrictions.",
+  path: "/terms",
+  index: true,
+});
 
 export default function TermsPage() {
   return (

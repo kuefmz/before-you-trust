@@ -646,7 +646,7 @@ export function SearchExperience() {
           <h2 id="candidate-title">Which person do you mean?</h2>
           <p>
             {candidates.length === 0
-              ? "We did not find even a neutral name-matched candidate to show safely. Add more context or use the manual Google searches above."
+              ? "We found no result with enough exact full-name identity evidence to show as a candidate. Similar names are deliberately excluded. You can add context or inspect the manual Google searches above."
               : onlyLowConfidenceCandidates
                 ? `We did not find a strong identity match, but we found ${candidates.length} low-confidence possibilit${candidates.length === 1 ? "y" : "ies"}. Review the source carefully before confirming anyone.`
                 : candidates.length === 1
@@ -690,12 +690,11 @@ export function SearchExperience() {
           <div className="quality-note" role="note">
             <strong>
               {identityExcludedCount} raw search result
-              {identityExcludedCount === 1 ? " did" : "s did"} not qualify as
-              an identity lead.
+              {identityExcludedCount === 1 ? " did" : "s did"} not match the
+              exact identity strongly enough.
             </strong>{" "}
-            They may be unrelated pages, weak snippets, duplicates, or results
-            without enough neutral profile evidence. They are not being treated
-            as findings about this person.
+            Similar names, unrelated pages, weak snippets and duplicates are
+            deliberately excluded.
           </div>
         ) : null}
 

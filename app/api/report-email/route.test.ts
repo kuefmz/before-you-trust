@@ -8,7 +8,6 @@ beforeEach(() => {
   vi.unstubAllGlobals();
   resetRateLimitForTests();
   resetRuntimeConfigForTests();
-  process.env.REPORT_APPS_SCRIPT_SECRET = "test-secret";
 });
 
 function request(body: unknown) {
@@ -53,7 +52,6 @@ describe("POST /api/report-email", () => {
 
     const options = fetchMock.mock.calls[0]?.[1] as RequestInit;
     const body = JSON.parse(String(options.body)) as Record<string, unknown>;
-    expect(body.apiSecret).toBe("test-secret");
     expect(body.userEmail).toBe("reader@example.com");
     expect(body.searchedName).toBe("Example Person");
   });

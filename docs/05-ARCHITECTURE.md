@@ -1,7 +1,7 @@
 # Technical Architecture
 
 ## Principle
-Keep the MVP as one repository and one deployment.
+Keep the MVP as one repository and one application deployment, with a separately operated search node.
 
 ## Implemented stack
 - Next.js 15.5.24 (App Router)
@@ -9,12 +9,12 @@ Keep the MVP as one repository and one deployment.
 - TypeScript
 - CSS variables + plain CSS to minimize runtime/build dependencies
 - AWS Amplify Hosting
-- Tavily and Brave Search provider adapters
+- Self-hosted YaCy Search Server
 - Vitest + Testing Library + Playwright
-- No database
+- No application database for searched people
 - No authentication
 
-> The original plan suggested Tailwind. The implementation intentionally uses plain CSS instead: the design does not require a utility framework, and removing that dependency reduces build/toolchain surface while keeping the codebase easier to deploy and audit.
+> The implementation intentionally uses plain CSS instead of a utility framework because the design does not require one and removing that dependency reduces build/toolchain surface.
 
 ## High-level flow
 
@@ -26,8 +26,8 @@ Browser
 /api/search  (server-side)
   |
   +--> validation + rate limiting
-  +--> neutral/deep query builder
-  +--> provider adapter (Tavily -> Brave fallback)
+  +--> neutral/deep YaCy-compatible query builder
+  +--> YaCy JSON search API
   +--> timeout + concurrency control
   +--> normalize/dedupe/classify
   +--> sourced JSON response
@@ -40,8 +40,22 @@ Browser
   +--> evidence-first Trust Brief
 ```
 
+## Search node
+
+The app calls `/yacysearch.json` on the configured `YACY_BASE_URL`.
+
+- `YACY_RESOURCE=local` searches only the node's own index.
+- `YACY_RESOURCE=global` also asks YaCy peers for results.
+- The app requests at most six results per query.
+- Optional HTTP Basic Auth is supported with `YACY_USERNAME` + `YACY_PASSWORD`.
+- No third-party search API key or per-query billing is required.
+
+The YaCy node is operational infrastructure, not a second application backend. Before You Trust still has one application repository and one application API surface.
+
 ## Privacy model
 Report state is maintained in the active browser session. The application has no database of searched people. The API uses `Cache-Control: no-store` and the UI never puts a searched person's name in the URL.
+
+When `YACY_RESOURCE=global`, the configured YaCy node can distribute search terms to peer nodes. Deployments using global mode must disclose that behavior accurately.
 
 ## Runtime responsibilities
 
@@ -53,29 +67,33 @@ Report state is maintained in the active browser session. The application has no
 - Trust Brief rendering
 
 ### Server-side route
-- Keep provider API keys secret
 - Validate request shape and size
 - Enforce responsible-use acknowledgement
 - Best-effort connection rate limiting
-- Build bounded query sets
+- Build bounded YaCy-compatible query sets
 - Execute searches with concurrency and timeout limits
 - Normalize and deduplicate public results
 - Return source provenance
+- Keep optional YaCy credentials server-side
 
-### Search providers
-Search providers are replaceable adapters. `SEARCH_PROVIDER=auto` prefers Tavily when configured and falls back to Brave if a query fails.
+### YaCy
+- Maintain/query the local search index
+- Optionally participate in the peer-to-peer search network
+- Return OpenSearch-style JSON results
 
 ## Architecture constraints
-- No separate backend repository.
-- No long-running server.
-- No database in MVP.
+- No separate application backend repository.
+- No paid search API dependency.
+- No database of searched people in MVP.
 - No user account system.
-- No Docker required.
+- Docker is optional locally but recommended for running YaCy.
 - No searched names in application analytics.
 - No secret values exposed via `NEXT_PUBLIC_*`.
 
 ## Rate-limit note
 The built-in rate limiter is a defensive best-effort control and is intentionally dependency-free. Because Amplify serverless compute can run multiple instances, production scale should add an infrastructure-level control such as AWS WAF/rate-based rules rather than treating in-memory state as a global quota.
 
+The YaCy endpoint itself should also be protected from direct abuse, especially if it is internet-accessible.
+
 ## Deployment
-A single Amplify app builds the Next.js repository. The `dev` branch should be connected first as the preview environment; `main` remains release-ready only.
+The Next.js application is deployed through Amplify. The YaCy node runs separately on infrastructure you control. The `dev` branch should be connected first as the preview environment; `main` remains release-ready only.

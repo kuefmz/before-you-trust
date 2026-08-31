@@ -11,7 +11,7 @@ export default function HowItWorksPage() {
   return (
     <div className="shell content-page">
       <span className="eyebrow">How it works</span>
-      <h1>Public-web research with identity checks built in.</h1>
+      <h1>How to verify someone online using public sources.</h1>
       <p className="lead">
         Before You Trust is not a private-record broker and does not promise a
         complete background check. It organizes public search results so they

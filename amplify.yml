@@ -10,6 +10,8 @@ frontend:
       commands:
         # Public values are safe to expose to Next.js at build time.
         - env | grep -e '^NEXT_PUBLIC_' >> .env.production || true
+        # YaCy endpoint/mode are server configuration, but not credentials.
+        - env | grep -E '^(SEARCH_PROVIDER|YACY_BASE_URL|YACY_RESOURCE)=' >> .env.production || true
         # This is only an SSM parameter name, never the secret value itself.
         - env | grep -e '^RUNTIME_SECRETS_PARAMETER=' >> .env.production || true
         - npm run build

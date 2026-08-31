@@ -42,7 +42,7 @@ function scoreResult(
   result: SearchResult,
   input: Pick<
     SearchInput,
-    "name" | "location" | "company" | "username" | "profileUrl" | "socialProfiles"
+    "name" | "location" | "company" | "profileUrl" | "socialProfiles"
   >,
 ): { score: number; signals: string[]; conflicts: string[] } {
   const text = haystack(result);
@@ -80,11 +80,6 @@ function scoreResult(
       score += 3;
       signals.push("Employer or organization context matches");
     }
-  }
-
-  if (input.username && text.includes(normalize(input.username))) {
-    score += 4;
-    signals.push("Username matches");
   }
 
   for (const social of input.socialProfiles ?? []) {
@@ -214,7 +209,7 @@ export function buildIdentityCandidates(
   results: SearchResult[],
   input: Pick<
     SearchInput,
-    "name" | "location" | "company" | "username" | "profileUrl" | "socialProfiles"
+    "name" | "location" | "company" | "profileUrl" | "socialProfiles"
   >,
 ): IdentityCandidate[] {
   if (results.length === 0) return [];

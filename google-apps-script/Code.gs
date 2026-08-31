@@ -225,7 +225,16 @@ function doPost(e) {
         : "{}"
     );
 
-    if (body.kind === "story") {
+    const isStory =
+      body.kind === "story" ||
+      (
+        !body.kind &&
+        typeof body.message === "string" &&
+        !body.userEmail &&
+        !body.reportText
+      );
+
+    if (isStory) {
       return handleStorySubmission(body);
     }
 

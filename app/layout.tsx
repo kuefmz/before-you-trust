@@ -90,11 +90,22 @@ export default function RootLayout({
               <Link href="/terms">Terms</Link>
               <Link href="/acceptable-use">Acceptable use</Link>
               <a
+                aria-label="View the Before You Trust source code on GitHub"
+                className="source-code-link"
                 href="https://github.com/kuefmz/before-you-trust"
                 rel="noopener noreferrer"
                 target="_blank"
               >
-                GitHub ↗
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  width="18"
+                >
+                  <path d="M12 .7a11.3 11.3 0 0 0-3.57 22c.57.1.77-.24.77-.54v-2.2c-3.15.68-3.81-1.34-3.81-1.34-.52-1.31-1.26-1.66-1.26-1.66-1.03-.7.08-.69.08-.69 1.14.08 1.74 1.17 1.74 1.17 1.01 1.73 2.65 1.23 3.3.94.1-.73.4-1.23.72-1.51-2.51-.29-5.15-1.26-5.15-5.59 0-1.23.44-2.24 1.17-3.03-.12-.29-.51-1.44.11-2.99 0 0 .95-.3 3.11 1.16a10.8 10.8 0 0 1 5.66 0c2.16-1.46 3.11-1.16 3.11-1.16.62 1.55.23 2.7.11 2.99.73.79 1.17 1.8 1.17 3.03 0 4.34-2.65 5.3-5.17 5.58.41.35.77 1.04.77 2.11v3.19c0 .3.21.65.78.54A11.3 11.3 0 0 0 12 .7Z" />
+                </svg>
+                <span>Source code</span>
               </a>
               {ga4Id || gtmId ? <PrivacyPreferencesButton /> : null}
             </div>

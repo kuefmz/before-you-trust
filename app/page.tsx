@@ -2,23 +2,56 @@ import Link from "next/link";
 
 import { SearchExperience } from "@/components/SearchExperience";
 import { SupportLink } from "@/components/SupportLink";
+import {
+  canonicalUrl,
+  pageMetadata,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+} from "@/lib/seo";
 
-const supportUrl = process.env.NEXT_PUBLIC_BUY_ME_A_COFFEE_URL?.trim();
+const supportUrl =
+  process.env.NEXT_PUBLIC_BUY_ME_A_COFFEE_URL?.trim() ||
+  "https://buymeacoffee.com/jenifertabitaciuciukiss";
+
+export const metadata = pageMetadata({
+  title: "Verify Someone's Public Web Footprint",
+  description: SITE_DESCRIPTION,
+  path: "/",
+});
 
 export default function HomePage() {
+  const homeUrl = canonicalUrl("/");
+  const websiteSchema = homeUrl
+    ? {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        name: SITE_NAME,
+        url: homeUrl,
+        description: SITE_DESCRIPTION,
+      }
+    : null;
   return (
     <>
+      {websiteSchema ? (
+        <script
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteSchema).replace(/</g, "\\u003c"),
+          }}
+          type="application/ld+json"
+        />
+      ) : null}
       <section className="hero">
         <div className="shell hero-grid">
           <div className="hero-copy">
             <span className="eyebrow eyebrow--light">
               Evidence before assumptions
             </span>
-            <h1>Know what the internet already knows.</h1>
+            <h1>Verify someone before trust gets expensive.</h1>
             <p>
-              Before You Trust helps you research a public footprint, confirm
-              you have the right person, verify claims, and inspect the original
-              sources before making an important decision.
+              Before You Trust helps you research a person&apos;s public web
+              footprint, confirm you have the right identity, verify public
+              claims, and inspect original sources before making an important
+              personal or business decision.
             </p>
             <div className="hero-points" aria-label="Product principles">
               <span>Sources, not mystery scores</span>

@@ -1,0 +1,40 @@
+# Example reverse proxy for a production search host.
+#
+# Replace the hostnames and password hash before use.
+# Generate a Caddy password hash with:
+#   caddy hash-password --plaintext 'YOUR_LONG_RANDOM_PASSWORD'
+#
+# Then configure the same username/password in Before You Trust through the
+# server-only runtime settings:
+#   SEARXNG_USERNAME
+#   SEARXNG_PASSWORD
+#   YACY_USERNAME
+#   YACY_PASSWORD
+
+search.example.com {
+  @api path /search
+
+  handle @api {
+    basic_auth {
+      beforeyoutrust REPLACE_WITH_CADDY_PASSWORD_HASH
+    }
+
+    reverse_proxy 127.0.0.1:8888
+  }
+
+  respond 404
+}
+
+yacy.example.com {
+  @api path /yacysearch.json
+
+  handle @api {
+    basic_auth {
+      beforeyoutrust REPLACE_WITH_CADDY_PASSWORD_HASH
+    }
+
+    reverse_proxy 127.0.0.1:8090
+  }
+
+  respond 404
+}

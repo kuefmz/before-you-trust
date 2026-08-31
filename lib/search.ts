@@ -12,8 +12,8 @@ import type {
 
 export { SearchConfigurationError };
 
-const QUERY_TIMEOUT_MS = 9_000;
-const CONCURRENCY = 3;
+const QUERY_TIMEOUT_MS = 12_000;
+const CONCURRENCY = 2;
 
 export class SearchExecutionError extends Error {
   constructor(message: string) {

@@ -34,9 +34,11 @@ export default function PrivacyPage() {
         <p>
           To perform a search, the server necessarily processes the name and
           optional context you enter and sends relevant search queries to the
-          configured YaCy search node. If that deployment uses YaCy global
-          resource mode, the node may ask peers in the YaCy network for results.
-          Search results are returned to your browser.
+          configured self-hosted search stack. SearXNG may forward the search
+          query to enabled upstream search engines to discover public results.
+          YaCy may also be queried as an independent index/fallback; in global
+          mode it can ask peers in the YaCy network for results. Search results
+          are returned to your browser.
         </p>
         <p>
           The application does not persist ordinary search requests, candidate
@@ -137,7 +139,8 @@ export default function PrivacyPage() {
         <h2>9. Service providers and international transfers</h2>
         <p>
           Depending on deployment, the service may use AWS Amplify, a
-          self-hosted YaCy search node (and YaCy peers when global search mode is
+          self-hosted SearXNG metasearch node and its enabled upstream search
+          engines, a self-hosted YaCy node (and YaCy peers when global mode is
           enabled), Google Sheets/Apps Script/Gmail for requested report
           storage and delivery, Google Cloud Vision for optional photo web
           matching, Brevo for the separate story/contact flow, and—only after

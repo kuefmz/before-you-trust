@@ -1,0 +1,22 @@
+services:
+  yacy:
+    image: yacy/yacy_search_server:latest
+    container_name: before-you-trust-yacy
+    ports:
+      - "8090:8090"
+      - "8443:8443"
+    volumes:
+      - yacy_data:/opt/yacy_search_server/DATA
+    restart: unless-stopped
+
+  searxng:
+    image: searxng/searxng:latest
+    container_name: before-you-trust-searxng
+    ports:
+      - "8888:8080"
+    volumes:
+      - ./searxng-settings.yml:/etc/searxng/settings.yml:ro
+    restart: unless-stopped
+
+volumes:
+  yacy_data:

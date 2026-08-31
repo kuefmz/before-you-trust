@@ -20,6 +20,7 @@ describe("query generation", () => {
     expect(queries.some((query) => query.toLowerCase().includes("linkedin.com"))).toBe(true);
     expect(queries.some((query) => /fraud|scam|lawsuit/i.test(query))).toBe(false);
     expect(queries.some((query) => query.includes("site:example.org"))).toBe(true);
+    expect(queries.some((query) => /\sOR\s/i.test(query))).toBe(false);
   });
 
   it("searches major social platforms in the identity stage", () => {

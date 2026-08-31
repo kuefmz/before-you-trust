@@ -139,7 +139,26 @@ NEXT_PUBLIC_GTM_ID=GTM-...
 
 Never send searched names, report contents, source URLs, delivery emails or candidate identities to analytics.
 
-## 8. Final smoke test
+## 8. Live retrieval benchmark
+
+With SearXNG, YaCy and the Next.js app running locally, test the real search
+stack (not mocks) against the Netflix identity set:
+
+```bash
+npm run benchmark:live
+```
+
+You can append any additional exact-name benchmark, for example:
+
+```bash
+npm run benchmark:live -- "Another Exact Full Name"
+```
+
+This command fails if even one benchmark name has no exact-name result returned
+by the live `/api/search` endpoint. Do not treat the search stack as
+launch-ready until it passes.
+
+## 9. Final smoke test
 
 Before public use:
 

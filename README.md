@@ -10,7 +10,7 @@ Before You Trust is an evidence-first public-web research tool. It searches publ
 
 - Branded responsive landing/search experience
 - Identity-first neutral search stage
-- Self-hosted SearXNG for broad web discovery, with YaCy as an independent index/fallback
+- Self-hosted SearXNG + YaCy queried in parallel for independent public-web coverage
 - No paid per-search API; YaCy `local` and `global` resource modes remain supported
 - Search timeouts, bounded concurrency, result caps and URL normalization
 - Explainable candidate identity matching
@@ -27,6 +27,7 @@ Before You Trust is an evidence-first public-web research tool. It searches publ
 - GA4 (G-MVDVBJJFQB) and GTM (GTM-TPGSP8XN) are both blocked until analytics consent
 - Privacy Notice, Terms of Use, Acceptable Use and About pages
 - Unit/API/component/Playwright tests and GitHub Actions quality gates
+- Automatic AWS Amplify production release after CI succeeds on a `main` push
 
 ## Local setup
 
@@ -82,4 +83,4 @@ npm run test:e2e
 
 Before You Trust is a public-web research assistant, not a comprehensive background-check service or consumer reporting agency. Search coverage can be incomplete or wrong. “Nothing found” does not mean a person is safe, and an allegation does not prove wrongdoing. Do not use it for employment, housing, credit, insurance or other regulated eligibility decisions.
 
-See [MANUAL_SETUP.md](MANUAL_SETUP.md) and [the documentation index](docs/00-INDEX.md).
+See [MANUAL_SETUP.md](MANUAL_SETUP.md), the [production deployment runbook](docs/15-PRODUCTION-DEPLOYMENT.md), and [the documentation index](docs/00-INDEX.md).

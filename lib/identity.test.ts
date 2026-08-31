@@ -194,7 +194,28 @@ describe("identity candidate building", () => {
       "linkedin.com/in/sasza-swiatek",
     );
     expect(candidates[0]?.supportingSignals.join(" ")).toMatch(
-      /profile URL/i,
+      /result URL/i,
+    );
+  });
+
+  it("accepts exact-name evidence from a generic public URL when metadata is weak", () => {
+    const candidates = buildIdentityCandidates(
+      [
+        result({
+          title: "Curriculum vitae",
+          url: "https://example.org/jenifer_tabita_ciuciu_kiss_cv.pdf",
+          snippet: "",
+          sourceType: "web",
+        }),
+      ],
+      {
+        name: "Jenifer Tabita Ciuciu-Kiss",
+      },
+    );
+
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.supportingSignals.join(" ")).toMatch(
+      /result URL/i,
     );
   });
 

@@ -117,6 +117,9 @@ describe("search providers", () => {
     const requested = new URL(String(mockedFetch.mock.calls[0]?.[0]));
     expect(requested.pathname).toBe("/search");
     expect(requested.searchParams.get("format")).toBe("json");
+    expect(requested.searchParams.get("categories")).toBe(
+      "general,social media",
+    );
   });
 
   it("supplements sparse SearXNG results with YaCy in auto mode", async () => {

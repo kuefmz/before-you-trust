@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   analyticsConsentKey,
@@ -10,6 +10,7 @@ describe("client analytics", () => {
   beforeEach(() => {
     window.localStorage.clear();
     delete (window as Window & { dataLayer?: unknown[] }).dataLayer;
+    delete (window as Window & { gtag?: (...args: unknown[]) => void }).gtag;
   });
 
   it("does nothing without analytics consent", () => {
@@ -20,7 +21,19 @@ describe("client analytics", () => {
     ).toBeUndefined();
   });
 
-  it("pushes only explicit coarse event parameters after consent", () => {
+  it("sends coarse events through gtag when direct GA4 is loaded", () => {
+    window.localStorage.setItem(analyticsConsentKey, "granted");
+    const gtag = vi.fn();
+    (window as Window & { gtag?: (...args: unknown[]) => void }).gtag = gtag;
+
+    trackEvent("search_completed", { result_count: 4 });
+
+    expect(gtag).toHaveBeenCalledWith("event", "search_completed", {
+      result_count: 4,
+    });
+  });
+
+  it("falls back to dataLayer events for GTM-only setups", () => {
     window.localStorage.setItem(analyticsConsentKey, "granted");
     trackEvent("search_completed", { result_count: 4 });
 

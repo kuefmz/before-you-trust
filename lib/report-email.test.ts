@@ -52,8 +52,7 @@ describe("report email validation", () => {
     });
     expect(result.ok).toBe(true);
     if (result.ok) {
-      const payload = buildAppsScriptPayload(result.data, "secret");
-      expect(payload.apiSecret).toBe("secret");
+      const payload = buildAppsScriptPayload(result.data);
       expect(payload.userEmail).toBe("reader@example.com");
       expect(payload.searchQueries).toEqual(['"Example Person" Zurich']);
       expect(payload.sourceUrls).toEqual(["https://example.org/person"]);

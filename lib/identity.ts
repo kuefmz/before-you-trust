@@ -80,6 +80,31 @@ function urlText(result: SearchResult): string {
   return normalize(result.url);
 }
 
+function profileUrlContainsName(
+  result: SearchResult,
+  inputName: string,
+): boolean {
+  if (
+    result.sourceType !== "professional" &&
+    result.sourceType !== "social"
+  ) {
+    return false;
+  }
+
+  const expected = nameParts(inputName);
+  if (expected.length < 2) return false;
+
+  try {
+    const parsed = new URL(result.url);
+    const pathTokens = nameParts(
+      decodeURIComponent(parsed.pathname.replace(/\+/g, " ")),
+    );
+    return expected.every((part) => pathTokens.includes(part));
+  } catch {
+    return false;
+  }
+}
+
 interface ResultScore {
   score: number;
   signals: string[];
@@ -122,6 +147,12 @@ function scoreResult(
       nameEvidence = true;
       signals.push("All name terms appear in the page title or snippet");
     }
+  }
+
+  if (!nameEvidence && profileUrlContainsName(result, input.name)) {
+    score += 2;
+    nameEvidence = true;
+    signals.push("Name appears in the public profile URL");
   }
 
   if (input.location) {

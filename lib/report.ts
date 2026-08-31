@@ -129,9 +129,10 @@ export function filterResultsForConfirmedIdentity(
     if (selectedUrls.has(normalizeUrl(result.url))) return true;
 
     const text = resultText(result);
+    const contentText = normalizeText(`${result.title} ${result.snippet}`);
     const title = normalizeText(result.title);
     const exactNameInTitle = Boolean(name && title.includes(name));
-    const exactNameAnywhere = Boolean(name && text.includes(name));
+    const exactNameAnywhere = Boolean(name && contentText.includes(name));
     const allNameWords =
       nameWords.length >= 2 && nameWords.every((word) => text.includes(word));
     const nameMatches = exactNameAnywhere || allNameWords;
@@ -140,10 +141,10 @@ export function filterResultsForConfirmedIdentity(
 
     const locationMatches =
       locationWords.length > 0 &&
-      locationWords.some((word) => text.includes(word));
+      locationWords.some((word) => contentText.includes(word));
     const companyMatches =
       companyWords.length > 0 &&
-      companyWords.some((word) => text.includes(word));
+      companyWords.some((word) => contentText.includes(word));
     const knownProfileMatches =
       urlMatchesKnownProfile(result.url, input.profileUrl) ||
       (input.socialProfiles ?? [])

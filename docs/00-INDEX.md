@@ -21,6 +21,7 @@ This directory is the source of truth for the initial Before You Trust product a
 - [Initial decisions](12-DECISIONS.md)
 - [Environment & deployment](13-ENVIRONMENT.md)
 - [MVP launch checklist](14-LAUNCH-CHECKLIST.md)
+- [Production deployment runbook](15-PRODUCTION-DEPLOYMENT.md)
 
 ## Implementation rule
 When code and documentation disagree during MVP development, update the relevant decision document in the same change so the rationale remains visible.

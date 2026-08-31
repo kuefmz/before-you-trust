@@ -260,9 +260,8 @@ export function SearchExperience() {
     candidates.every((candidate) => candidate.confidence === "low");
 
   const broadDiscoveryUnavailable =
-    Boolean(identityResponse) &&
-    identityResponse.providers.includes("yacy") &&
-    !identityResponse.providers.includes("searxng");
+    identityResponse?.providers.includes("yacy") === true &&
+    identityResponse.providers.includes("searxng") === false;
 
 
   const candidateSourceUrls = useMemo(

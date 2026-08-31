@@ -40,9 +40,6 @@ const DEFAULT_SOCIAL_HOSTS = [
 
 function buildSocialQueries(input: SearchInput, name: string): SearchQuery[] {
   const queries: SearchQuery[] = [];
-  const contextTerms = [input.location, input.company]
-    .filter((value): value is string => Boolean(value?.trim()))
-    .map(quote);
 
   // User-supplied clues are the strongest social/profile hints, so search them
   // before generic platform queries.
@@ -71,17 +68,7 @@ function buildSocialQueries(input: SearchInput, name: string): SearchQuery[] {
     });
   }
 
-  // Then use the remaining budget for higher-precision contextual variants.
-  if (contextTerms.length > 0) {
-    for (const host of DEFAULT_SOCIAL_HOSTS) {
-      queries.push({
-        text: `${name} ${contextTerms.join(" ")} site:${host}`,
-        kind: "social",
-      });
-    }
-  }
-
-  return unique(queries).slice(0, 14);
+  return unique(queries).slice(0, 10);
 }
 
 export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
@@ -121,13 +108,12 @@ export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
 
   queries.push(
     ...buildSocialQueries(input, name),
-    { text: `${name} interview`, kind: "general" },
+    { text: `${name} profile`, kind: "general" },
     { text: `${name} conference`, kind: "general" },
-    { text: `${name} biography`, kind: "general" },
     { text: `${name} filetype:pdf`, kind: "general" },
   );
 
-  return unique(queries).slice(0, 18);
+  return unique(queries).slice(0, 16);
 }
 
 export function buildDeepQueries(input: SearchInput): SearchQuery[] {

@@ -158,7 +158,33 @@ This command fails if even one benchmark name has no exact-name result returned
 by the live `/api/search` endpoint. Do not treat the search stack as
 launch-ready until it passes.
 
-## 9. Final smoke test
+## 9. SEO / indexing
+
+Keep local and staging deployments non-indexable:
+
+```text
+NEXT_PUBLIC_SITE_URL=https://YOUR-STAGING-DOMAIN
+NEXT_PUBLIC_ALLOW_INDEXING=false
+```
+
+Set a monitored privacy address:
+
+```text
+NEXT_PUBLIC_PRIVACY_EMAIL=privacy@example.com
+```
+
+On the canonical production domain, after live-search and launch-readiness checks
+pass:
+
+```text
+NEXT_PUBLIC_SITE_URL=https://YOUR-PRODUCTION-DOMAIN
+NEXT_PUBLIC_ALLOW_INDEXING=true
+NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=YOUR-SEARCH-CONSOLE-TOKEN
+```
+
+Then submit `/sitemap.xml` in Google Search Console.
+
+## 10. Final smoke test
 
 Before public use:
 

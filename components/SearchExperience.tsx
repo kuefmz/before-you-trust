@@ -9,7 +9,7 @@ import { JourneyProgress } from "@/components/JourneyProgress";
 import { buildIdentityCandidates } from "@/lib/identity";
 import { trackEvent } from "@/lib/client-analytics";
 import { dedupeResults, mergeSearchResults } from "@/lib/normalize";
-import { buildReportSections, claimAssessment } from "@/lib/report";
+import { buildReportSections, claimAssessment, filterResultsForConfirmedIdentity } from "@/lib/report";
 import type {
   ConfirmedIdentity,
   IdentityCandidate,
@@ -26,7 +26,6 @@ interface FormState {
   name: string;
   location: string;
   company: string;
-  username: string;
   profileUrl: string;
   socialProfiles: string;
   claim: string;
@@ -37,7 +36,6 @@ const initialForm: FormState = {
   name: "",
   location: "",
   company: "",
-  username: "",
   profileUrl: "",
   socialProfiles: "",
   claim: "",
@@ -114,7 +112,6 @@ function toInput(
     name: form.name,
     location: form.location || undefined,
     company: form.company || undefined,
-    username: form.username || undefined,
     profileUrl: form.profileUrl || undefined,
     socialProfiles: parseSocialProfiles(form.socialProfiles),
     claim: form.claim || undefined,
@@ -154,11 +151,13 @@ function CandidateCard({
   rank,
   onConfirm,
   busy,
+  confirming,
 }: {
   candidate: IdentityCandidate;
   rank: number;
   onConfirm: (candidate: IdentityCandidate) => void;
   busy: boolean;
+  confirming: boolean;
 }) {
   return (
     <article className="candidate-card">
@@ -199,7 +198,7 @@ function CandidateCard({
         onClick={() => onConfirm(candidate)}
         type="button"
       >
-        {busy ? "Building Trust Brief…" : "This is them"}
+        {busy && confirming ? "Building Trust Brief…" : "This is them"}
       </button>
     </article>
   );
@@ -220,28 +219,42 @@ export function SearchExperience() {
   const [candidates, setCandidates] = useState<IdentityCandidate[]>([]);
   const [confirmed, setConfirmed] = useState<IdentityCandidate | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirmingCandidateId, setConfirmingCandidateId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const reportResults = useMemo(() => {
-    if (!identityResponse && !deepResponse) return [];
-    const contributions = [
-      ...(identityResponse?.results ?? []),
-      ...(deepResponse?.results ?? []),
-      ...(imageResponse?.matches ?? []),
-    ].flatMap((result) =>
-      result.queries.map((query, index) => ({
-        title: result.title,
-        url: result.url,
-        snippet: result.snippet,
-        publishedAt: result.publishedAt,
-        provider: result.providers[0] ?? "unknown",
-        query,
-        queryKind:
-          result.queryKinds[index] ?? result.queryKinds[0] ?? "general",
-      })),
+  const reportQuality = useMemo(() => {
+    if (!confirmed) return { results: [] as SearchResult[], excludedCount: 0 };
+
+    const filteredDeep = filterResultsForConfirmedIdentity(
+      deepResponse?.results ?? [],
+      confirmed.sources,
+      {
+        name: form.name,
+        location: form.location || undefined,
+        company: form.company || undefined,
+        profileUrl: form.profileUrl || undefined,
+        socialProfiles: parseSocialProfiles(form.socialProfiles),
+      },
     );
-    return dedupeResults(contributions, 80);
-  }, [identityResponse, deepResponse, imageResponse]);
+
+    return {
+      results: mergeSearchResults(
+        [...confirmed.sources, ...filteredDeep.results],
+        80,
+      ),
+      excludedCount: filteredDeep.excludedCount,
+    };
+  }, [
+    confirmed,
+    deepResponse,
+    form.name,
+    form.location,
+    form.company,
+    form.profileUrl,
+    form.socialProfiles,
+  ]);
+
+  const reportResults = reportQuality.results;
 
   const reportSections = useMemo(
     () => buildReportSections(reportResults),
@@ -270,13 +283,20 @@ export function SearchExperience() {
       mode: "identity",
       has_location: Boolean(form.location),
       has_company: Boolean(form.company),
-      has_username: Boolean(form.username),
       has_profile_url: Boolean(form.profileUrl),
       has_social_profiles: Boolean(form.socialProfiles.trim()),
       has_photo: Boolean(photo),
       has_claim: Boolean(form.claim),
     });
 
+    // Every submit is a fresh search run. Never carry results or a previous
+    // confirmation into a new identity search.
+    setIdentityResponse(null);
+    setDeepResponse(null);
+    setImageResponse(null);
+    setCandidates([]);
+    setConfirmed(null);
+    setConfirmingCandidateId(null);
     setBusy(true);
     setPhotoWarning(null);
     try {
@@ -323,7 +343,7 @@ export function SearchExperience() {
       });
       if (nextCandidates.length === 0) {
         setError(
-          "We found too little reliable identity information to suggest a match. Try adding a city, employer, username, or profile URL.",
+          "We found too little reliable identity information to suggest a match. Try adding a city, employer, social profile/handle, or profile URL.",
         );
       }
     } catch (caught) {
@@ -336,6 +356,7 @@ export function SearchExperience() {
   async function confirmCandidate(candidate: IdentityCandidate) {
     setError(null);
     setBusy(true);
+    setConfirmingCandidateId(candidate.id);
     setConfirmed(candidate);
     trackEvent("identity_confirmed", {
       confidence: candidate.confidence,
@@ -362,7 +383,20 @@ export function SearchExperience() {
       setError(caught instanceof Error ? caught.message : "Deep search failed.");
     } finally {
       setBusy(false);
+      setConfirmingCandidateId(null);
     }
+  }
+
+  function refineSearch() {
+    setStage("search");
+    setIdentityResponse(null);
+    setDeepResponse(null);
+    setImageResponse(null);
+    setCandidates([]);
+    setConfirmed(null);
+    setConfirmingCandidateId(null);
+    setError(null);
+    setPhotoWarning(null);
   }
 
   function reset() {
@@ -374,6 +408,7 @@ export function SearchExperience() {
     setImageResponse(null);
     setCandidates([]);
     setConfirmed(null);
+    setConfirmingCandidateId(null);
     setError(null);
     setPhoto(null);
     setPhotoWarning(null);
@@ -402,14 +437,23 @@ export function SearchExperience() {
             </p>
           </div>
           <button className="button button--ghost" onClick={reset} type="button">
-            New search
+            Start new search
           </button>
         </div>
 
         <div className="report-warning" role="note">
-          This report summarizes public search results and may be incomplete or
-          incorrect. A missing record does not prove safety, and an allegation
-          does not prove wrongdoing.
+          This report contains only sources linked to the identity you selected
+          with sufficient confidence. A missing record does not prove safety,
+          and an allegation does not prove wrongdoing.
+          {reportQuality.excludedCount > 0 ? (
+            <p>
+              <strong>
+                {reportQuality.excludedCount} low-confidence result
+                {reportQuality.excludedCount === 1 ? " was" : "s were"} excluded
+                because it could not be linked strongly enough to this person.
+              </strong>
+            </p>
+          ) : null}
         </div>
 
         <div className="coverage-grid">
@@ -514,6 +558,7 @@ export function SearchExperience() {
             <CandidateCard
               busy={busy}
               candidate={candidate}
+              confirming={confirmingCandidateId === candidate.id}
               key={candidate.id}
               onConfirm={confirmCandidate}
               rank={index + 1}
@@ -537,7 +582,7 @@ export function SearchExperience() {
         <button
           className="button button--ghost"
           disabled={busy}
-          onClick={() => setStage("search")}
+          onClick={refineSearch}
           type="button"
         >
           None of these — refine search
@@ -591,18 +636,6 @@ export function SearchExperience() {
             onChange={(event) => update("company", event.target.value)}
             placeholder="Example AG"
             value={form.company}
-          />
-        </label>
-
-        <label className="field">
-          <span>Known username / handle</span>
-          <small>The person’s public handle, e.g. @kuefmz — not your username.</small>
-          <input
-            autoComplete="off"
-            maxLength={120}
-            onChange={(event) => update("username", event.target.value)}
-            placeholder="@janesmith"
-            value={form.username}
           />
         </label>
 
@@ -741,8 +774,9 @@ export function SearchExperience() {
             {busy ? "Searching public sources…" : "Search the public web →"}
           </button>
           <span>
-            Searched names are never sent to GA4. If repeat monitoring is
-            enabled, only a keyed fingerprint and count are retained. Photos are not stored.{" "}
+            Search and report data are not persisted by the app itself. When
+            report delivery is configured, the Google Sheet is the application
+            datastore for the submitted report request. Photos are not stored.{" "}
             <a href="/privacy">Privacy details</a>
           </span>
         </div>

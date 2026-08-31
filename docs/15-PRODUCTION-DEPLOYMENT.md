@@ -842,14 +842,20 @@ Once all one-time setup is complete:
 1. Work on `dev`.
 2. Push changes to `dev`.
 3. Wait for CI.
-4. Review/test.
-5. Merge `dev` into `main` through a PR, or push the reviewed commit to
+4. Run the real retrieval check against the release candidate/search stack:
+   ```bash
+   APP_BASE_URL=https://YOUR-STAGING-OR-DEV-URL npm run benchmark:live
+   ```
+5. Do not push/merge the release to `main` if that live retrieval gate is
+   failing.
+6. Review the remaining launch checklist in `docs/14-LAUNCH-READINESS.md`.
+7. Merge `dev` into `main` through a PR, or push the reviewed commit to
    `main`.
-6. CI runs on `main`.
-7. If CI fails: **no production deployment**.
-8. If CI passes: **Deploy production** starts automatically.
-9. GitHub waits for Amplify.
-10. Green deployment means Amplify reported `SUCCEED`.
+8. CI runs on `main`.
+9. If CI fails: **no production deployment**.
+10. If CI passes: **Deploy production** starts automatically.
+11. GitHub waits for Amplify.
+12. Green deployment means Amplify reported `SUCCEED`.
 
 To manually re-run the deployment without making a new commit:
 

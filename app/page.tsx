@@ -46,7 +46,7 @@ export default function HomePage() {
             <span className="eyebrow eyebrow--light">
               Evidence before assumptions
             </span>
-            <h1>Verify someone before trust gets expensive.</h1>
+            <h1>Verify someone online before trust gets expensive.</h1>
             <p>
               Before You Trust helps you research a person&apos;s public web
               footprint, confirm you have the right identity, verify public

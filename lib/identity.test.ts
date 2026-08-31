@@ -149,6 +149,38 @@ describe("identity candidate building", () => {
     expect(candidates[0]?.supportingSignals.join(" ")).toMatch(/related name/i);
   });
 
+  it("shows neutral low-confidence possibilities when no strong match survives", () => {
+    const candidates = buildIdentityCandidates(
+      [
+        result({
+          title: "Sasza Swiatek | LinkedIn",
+          url: "https://linkedin.com/in/sasza-swiatek",
+          snippet: "Public professional profile",
+          sourceType: "professional",
+        }),
+        result({
+          title: "Sasza Swiatek",
+          url: "https://example.org/sasza",
+          snippet: "Public profile page",
+          sourceType: "web",
+        }),
+      ],
+      {
+        name: "Sasza Swiatek",
+        location: "Zurich",
+        company: "UBS",
+      },
+    );
+
+    expect(candidates.length).toBeGreaterThan(0);
+    expect(candidates.every((candidate) => candidate.confidence === "low")).toBe(
+      true,
+    );
+    expect(candidates[0]?.supportingSignals.join(" ")).toMatch(
+      /not confirmed|limited/i,
+    );
+  });
+
   it("does not require a candidate when there are no results", () => {
     expect(
       buildIdentityCandidates([], { name: "Jane Unique-Surname" }),

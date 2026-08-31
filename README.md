@@ -57,13 +57,7 @@ YACY_BASE_URL=http://localhost:8090
 YACY_RESOURCE=global
 ```
 
-For report-by-email testing, also set the same secret you configured as the Apps Script Script Property `API_SECRET`:
-
-```text
-REPORT_APPS_SCRIPT_SECRET=YOUR_PRIVATE_SECRET
-```
-
-The Apps Script endpoint is already configured in `.env.example` and in the server-side route.
+For report-by-email testing, no additional shared secret is required. The Apps Script endpoint is already configured in `.env.example` and in the server-side route.
 
 ## Persistent data model
 

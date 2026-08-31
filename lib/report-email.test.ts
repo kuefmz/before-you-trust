@@ -1,11 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { renderReportEmail, validateReportEmailRequest } from "@/lib/report-email";
+import {
+  buildAppsScriptPayload,
+  renderReportEmail,
+  validateReportEmailRequest,
+} from "@/lib/report-email";
 
 describe("report email validation", () => {
   const valid = {
     email: "reader@example.com",
     reportLabel: "Example Person",
+    searchedName: "Example Person",
+    location: "Zurich",
+    company: "Example AG",
     consentAccepted: true,
     results: [{
       title: "Public profile",
@@ -36,5 +43,20 @@ describe("report email validation", () => {
       expect(text).toContain("does not prove safety");
     }
     vi.useRealTimers();
+  });
+
+  it("builds the Apps Script payload without changing the filtered sources", () => {
+    const result = validateReportEmailRequest({
+      ...valid,
+      searchQueries: ['"Example Person" Zurich'],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const payload = buildAppsScriptPayload(result.data, "secret");
+      expect(payload.apiSecret).toBe("secret");
+      expect(payload.userEmail).toBe("reader@example.com");
+      expect(payload.searchQueries).toEqual(['"Example Person" Zurich']);
+      expect(payload.sourceUrls).toEqual(["https://example.org/person"]);
+    }
   });
 });

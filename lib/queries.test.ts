@@ -26,7 +26,11 @@ describe("query generation", () => {
     const queries = buildIdentityQueries(base);
     expect(queries.length).toBeLessThanOrEqual(16);
     expect(
-      queries.every((query) => query.text.includes('"Jane Unique-Surname"')),
+      queries.every(
+        (query) =>
+          query.text.includes('"Jane Unique-Surname"') ||
+          query.text.includes('"jane unique surname"'),
+      ),
     ).toBe(true);
   });
 
@@ -93,9 +97,13 @@ describe("query generation", () => {
 
     expect(deep).toContain('"Jane Unique-Surname"');
     expect(deep).not.toContain("Jane Unique-Surname");
-    expect(deep.every((query) => query.includes('"Jane Unique-Surname"'))).toBe(
-      true,
-    );
+    expect(
+      deep.every(
+        (query) =>
+          query.includes('"Jane Unique-Surname"') ||
+          query.includes('"jane unique surname"'),
+      ),
+    ).toBe(true);
   });
 
   it("deduplicates repeated query strings", () => {

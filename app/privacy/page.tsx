@@ -32,8 +32,10 @@ export default function PrivacyPage() {
         <p>
           To perform a search, the server necessarily processes the name and
           optional context you enter and sends relevant search queries to the
-          configured public-web search provider. Search results are returned to
-          your browser. Before You Trust does not create a persistent database
+          configured YaCy search node. If that deployment uses YaCy global
+          resource mode, the node may ask peers in the YaCy network for results.
+          Search results are returned to your browser. Before You Trust does not
+          create a persistent database
           containing the raw searched name or your Trust Brief.
         </p>
 
@@ -150,11 +152,12 @@ export default function PrivacyPage() {
 
         <h2>10. Service providers and international transfers</h2>
         <p>
-          Depending on deployment, the service may use AWS Amplify/DynamoDB,
-          Tavily and/or Brave Search, Google Cloud Vision for optional photo
-          web matching, Brevo, and—only after analytics
-          consent—Google Tag Manager/Google Analytics. Each provider has its own
-          processing locations, contractual terms and privacy documentation.
+          Depending on deployment, the service may use AWS Amplify/DynamoDB, a
+          self-hosted YaCy search node (and YaCy peers when global search mode is
+          enabled), Google Cloud Vision for optional photo web matching, Brevo,
+          and—only after analytics consent—Google Tag Manager/Google Analytics.
+          Each external service or peer network has its own processing context,
+          locations, contractual terms and privacy characteristics.
           The operator should maintain appropriate data-processing agreements
           and transfer safeguards where required.
         </p>

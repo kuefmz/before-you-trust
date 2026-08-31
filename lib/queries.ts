@@ -23,21 +23,24 @@ function hostname(value?: string): string | undefined {
   }
 }
 
+const DEFAULT_SOCIAL_HOSTS = [
+  "linkedin.com",
+  "github.com",
+  "instagram.com",
+  "tiktok.com",
+  "facebook.com",
+  "x.com",
+] as const;
+
 function buildSocialQueries(input: SearchInput, name: string): SearchQuery[] {
-  const queries: SearchQuery[] = [
-    {
-      text: `${name} (site:instagram.com OR site:tiktok.com OR site:facebook.com OR site:x.com)`,
-      kind: "social",
-    },
-    {
-      text: `${name} (site:linkedin.com OR site:github.com OR site:youtube.com)`,
-      kind: "social",
-    },
-  ];
+  const queries: SearchQuery[] = DEFAULT_SOCIAL_HOSTS.map((host) => ({
+    text: `${name} site:${host}`,
+    kind: "social" as const,
+  }));
 
   if (input.username) {
     queries.push({
-      text: `${name} ${quote(input.username)} (site:instagram.com OR site:tiktok.com OR site:facebook.com OR site:x.com OR site:linkedin.com OR site:github.com)`,
+      text: `${name} ${quote(input.username)}`,
       kind: "social",
     });
   }
@@ -48,13 +51,13 @@ function buildSocialQueries(input: SearchInput, name: string): SearchQuery[] {
       if (host) queries.push({ text: `${name} site:${host}`, kind: "social" });
     } else {
       queries.push({
-        text: `${name} ${quote(profile)} (site:instagram.com OR site:tiktok.com OR site:facebook.com OR site:x.com OR site:youtube.com)`,
+        text: `${name} ${quote(profile)}`,
         kind: "social",
       });
     }
   }
 
-  return queries;
+  return unique(queries).slice(0, 7);
 }
 
 export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
@@ -85,7 +88,9 @@ export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
 
   queries.push(
     ...buildSocialQueries(input, name),
-    { text: `${name} (interview OR conference OR biography)`, kind: "general" },
+    { text: `${name} interview`, kind: "general" },
+    { text: `${name} conference`, kind: "general" },
+    { text: `${name} biography`, kind: "general" },
     { text: `${name} filetype:pdf`, kind: "general" },
   );
 
@@ -94,30 +99,7 @@ export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
 
 export function buildDeepQueries(input: SearchInput): SearchQuery[] {
   const name = quote(input.name);
-  const queries: SearchQuery[] = [
-    { text: name, kind: "identity" },
-    ...buildSocialQueries(input, name),
-    {
-      text: `${name} (interview OR profile OR biography OR conference)`,
-      kind: "general",
-    },
-    {
-      text: `${name} (license OR registry OR registration OR credential)`,
-      kind: "official",
-    },
-    {
-      text: `${name} (court OR lawsuit OR regulator OR sanction)`,
-      kind: "official",
-    },
-    {
-      text: `${name} (news OR investigation)`,
-      kind: "news",
-    },
-    {
-      text: `${name} (complaint OR allegation OR fraud OR scam)`,
-      kind: "concern",
-    },
-  ];
+  const queries: SearchQuery[] = [{ text: name, kind: "identity" }];
 
   if (input.location) {
     queries.push({
@@ -149,6 +131,17 @@ export function buildDeepQueries(input: SearchInput): SearchQuery[] {
       });
     }
   }
+
+  queries.push(
+    ...buildSocialQueries(input, name).slice(0, 5),
+    { text: `${name} profile`, kind: "general" },
+    { text: `${name} registry`, kind: "official" },
+    { text: `${name} court`, kind: "official" },
+    { text: `${name} regulator`, kind: "official" },
+    { text: `${name} news`, kind: "news" },
+    { text: `${name} complaint`, kind: "concern" },
+    { text: `${name} fraud`, kind: "concern" },
+  );
 
   return unique(queries).slice(0, 15);
 }

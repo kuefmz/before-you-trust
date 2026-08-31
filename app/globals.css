@@ -1485,6 +1485,23 @@ select:focus-visible {
 }
 
 @media (max-width: 860px) {
+  .journey-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .journey-toolbar__actions {
+    justify-content: flex-start;
+  }
+
+  .manual-search-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .manual-search-row .button {
+    align-self: flex-start;
+  }
+
   .email-report-card {
     grid-template-columns: 1fr;
   }

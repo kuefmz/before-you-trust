@@ -101,10 +101,11 @@ export default function PrivacyPage() {
         <p>
           The story form can contain personal data that you voluntarily submit,
           including an optional name or reply email. That form is handled
-          separately from the people-search/report datastore and may use a
-          configured transactional email provider to deliver the submission to
-          the project operator. The relevant mailbox/provider then retains the
-          message according to its own settings and retention rules.
+          separately from the people-search/report datastore and is delivered
+          to the project operator through the project&apos;s Google Apps Script
+          email service. Story submissions are not added to the Reports Sheet;
+          the receiving Google mailbox retains the message according to its own
+          settings and retention rules.
         </p>
         <p>
           Permission to use an anonymized excerpt is separate and optional. A

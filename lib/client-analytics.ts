@@ -25,7 +25,14 @@ export function trackEvent(
 
   const target = window as Window & {
     dataLayer?: Array<Record<string, unknown>>;
+    gtag?: (...args: unknown[]) => void;
   };
+
+  if (typeof target.gtag === "function") {
+    target.gtag("event", event, parameters);
+    return;
+  }
+
   target.dataLayer ??= [];
   target.dataLayer.push({ event, ...parameters });
 }

@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const isDevelopment = process.env.NODE_ENV !== "production";
-const analyticsEnabled = Boolean(process.env.NEXT_PUBLIC_GTM_ID?.trim());
+const analyticsEnabled = Boolean(
+  process.env.NEXT_PUBLIC_GTM_ID?.trim() ||
+    process.env.NEXT_PUBLIC_GA4_ID?.trim() ||
+    "GTM-TPGSP8XN",
+);
 
 const scriptSources = [
   "'self'",

@@ -13,9 +13,9 @@ export default function TermsPage() {
       <span className="eyebrow">Terms of use</span>
       <h1>Use evidence responsibly.</h1>
       <p className="lead">
-        Last updated: 30 August 2026. These terms are intended for the public
-        MVP and should receive jurisdiction-specific legal review before large
-        scale or paid launch.
+        Last updated: 31 August 2026. These terms apply to the public beta of
+        Before You Trust and do not limit mandatory rights that apply under
+        applicable law.
       </p>
 
       <div className="prose-card legal-copy">
@@ -49,8 +49,9 @@ export default function TermsPage() {
         <p>
           You may not use the service to stalk, harass, threaten, doxx, locate a
           victim, target a minor, discriminate unlawfully, facilitate violence,
-          evade platform safeguards, expose private credentials or conduct
-          unlawful surveillance.
+          evade platform safeguards, bypass access controls, expose private
+          credentials, scrape non-public account areas or conduct unlawful
+          surveillance.
         </p>
         <p>
           You must not use Before You Trust as a consumer report or as the basis

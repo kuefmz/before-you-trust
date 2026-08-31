@@ -65,6 +65,10 @@ export async function POST(request: Request) {
     });
   }
 
+  if (process.env.E2E_MOCK_EMAIL === "true") {
+    return response(200, { ok: true });
+  }
+
   let endpoint: string;
   let apiSecret: string | undefined;
   try {

@@ -122,7 +122,7 @@ describe("identity candidate building", () => {
     ]);
   });
 
-  it("recovers a related canonical identity when the searched name is approximate", () => {
+  it("does not substitute a similar or related name for the searched full name", () => {
     const candidates = buildIdentityCandidates(
       [
         result({
@@ -132,21 +132,11 @@ describe("identity candidate building", () => {
             "The documentary tells the story of Robert Hendy-Freegard, also known as Robert Freegard.",
           sourceType: "web",
         }),
-        result({
-          title: "The Puppet Master",
-          url: "https://www.raw.example/the-puppet-master",
-          snippet:
-            "A documentary about conman Robert Hendy-Freegard and his victims.",
-          sourceType: "web",
-        }),
       ],
       { name: "Robert Conman" },
     );
 
-    expect(candidates.length).toBeGreaterThan(0);
-    expect(candidates[0]?.searchName).toContain("Robert");
-    expect(candidates[0]?.searchName.toLowerCase()).toContain("freegard");
-    expect(candidates[0]?.supportingSignals.join(" ")).toMatch(/related name/i);
+    expect(candidates).toEqual([]);
   });
 
   it("shows neutral low-confidence possibilities when no strong match survives", () => {
@@ -177,7 +167,7 @@ describe("identity candidate building", () => {
       true,
     );
     expect(candidates[0]?.supportingSignals.join(" ")).toMatch(
-      /not confirmed|limited/i,
+      /exact full name/i,
     );
   });
 
@@ -206,6 +196,26 @@ describe("identity candidate building", () => {
     expect(candidates[0]?.supportingSignals.join(" ")).toMatch(
       /profile URL/i,
     );
+  });
+
+  it("rejects similar surnames even when location and employer match", () => {
+    const candidates = buildIdentityCandidates(
+      [
+        result({
+          title: "Sasza Swiatecki | LinkedIn",
+          url: "https://linkedin.com/in/sasza-swiatecki",
+          snippet: "Engineer at UBS in Zurich",
+          sourceType: "professional",
+        }),
+      ],
+      {
+        name: "Sasza Swiatek",
+        location: "Zurich",
+        company: "UBS",
+      },
+    );
+
+    expect(candidates).toEqual([]);
   });
 
   it("does not require a candidate when there are no results", () => {

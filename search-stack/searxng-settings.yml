@@ -10,3 +10,15 @@ server:
   # Required by SearXNG. Override this with SEARXNG_SECRET outside local dev.
   secret_key: "before-you-trust-local-change-me"
   limiter: false
+
+# Exact-name people search benefits materially from broad web engines.
+# Google and Bing are disabled in SearXNG defaults, so enable them explicitly.
+# Brave, DuckDuckGo and Startpage remain enabled from the default settings and
+# provide independent fallbacks if Google/Bing throttle a request.
+engines:
+  - name: google
+    disabled: false
+    timeout: 8.0
+  - name: bing
+    disabled: false
+    timeout: 8.0

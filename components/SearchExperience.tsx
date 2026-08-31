@@ -274,12 +274,18 @@ export function SearchExperience() {
     if (previousStageRef.current === stage) return;
     previousStageRef.current = stage;
 
-    window.requestAnimationFrame(() => {
-      panelRef.current?.scrollIntoView({
+    const scrollToPanel = () => {
+      panelRef.current?.scrollIntoView?.({
         behavior: "smooth",
         block: "start",
       });
-    });
+    };
+
+    if (typeof window.requestAnimationFrame === "function") {
+      window.requestAnimationFrame(scrollToPanel);
+    } else {
+      scrollToPanel();
+    }
   }, [stage]);
 
   const reportQuality = useMemo(() => {
@@ -631,9 +637,11 @@ export function SearchExperience() {
           <span className="eyebrow">Identity confirmation</span>
           <h2 id="candidate-title">Which person do you mean?</h2>
           <p>
-            {candidates.length === 1
-              ? "We found one likely identity. Please confirm it before we generate a report."
-              : `We found ${candidates.length} likely identity matches. Choose the correct person before we generate a report.`}
+            {candidates.length === 0
+              ? "We did not find a candidate with enough identity evidence to show safely. Add more context or use the manual Google searches above."
+              : candidates.length === 1
+                ? "We found one likely identity. Please confirm it before we generate a report."
+                : `We found ${candidates.length} likely identity matches. Choose the correct person before we generate a report.`}
           </p>
         </div>
 

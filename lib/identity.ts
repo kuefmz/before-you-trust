@@ -418,7 +418,9 @@ function buildLowConfidenceCandidates(
 
     candidates.push({
       id: stableId(`low:${seed.result.url}`),
-      label: seed.result.title || input.name,
+      label: seed.exactNameInTitle
+        ? seed.result.title || input.name
+        : `${input.name} — possible profile`,
       searchName: input.name,
       summary:
         seed.result.snippet ||

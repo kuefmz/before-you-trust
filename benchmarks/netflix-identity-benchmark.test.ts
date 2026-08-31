@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { netflixIdentityBenchmarkCases } from "@/benchmarks/netflix-identity-cases";
+import { canonicalNameWords } from "@/lib/exact-name";
 import { buildIdentityCandidates } from "@/lib/identity";
 import { buildIdentityQueries } from "@/lib/queries";
 import type { SearchInput, SearchResult } from "@/types/search";
@@ -110,8 +111,11 @@ describe("Netflix exact-identity release benchmark", () => {
       const queries = buildIdentityQueries(input);
       expect(queries.length).toBeGreaterThan(0);
 
+      const expectedTokens = canonicalNameWords(benchmark.name);
+
       for (const query of queries) {
-        expect(query.text).toContain(`"${benchmark.name}"`);
+        const quoted = query.text.match(/"([^"]+)"/)?.[1] ?? "";
+        expect(canonicalNameWords(quoted)).toEqual(expectedTokens);
       }
     });
   }

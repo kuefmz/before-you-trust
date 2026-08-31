@@ -7,4 +7,6 @@ search:
     - json
 
 server:
+  # Required by SearXNG. Override this with SEARXNG_SECRET outside local dev.
+  secret_key: "before-you-trust-local-change-me"
   limiter: false

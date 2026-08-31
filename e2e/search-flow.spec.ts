@@ -9,7 +9,6 @@ test("runs the complete lifecycle with the founder benchmark name", async ({
   await page.getByLabel("Full name *").fill("Jenifer Tabita Ciuciu-Kiss");
   await page.getByLabel("City or country").fill("Zurich, Switzerland");
   await page.getByLabel("Employer or organization").fill("UBS");
-  await page.getByLabel("Known username / handle").fill("kuefmz");
   await page
     .getByLabel("Known website or profile URL")
     .fill("https://jeniferciuciukiss.com/");
@@ -53,7 +52,7 @@ test("runs the complete lifecycle with the founder benchmark name", async ({
   await page.locator("#email-report").scrollIntoViewIfNeeded();
   await page.screenshot({ path: "lifecycle-05-email-report.png", fullPage: true });
   await page.getByLabel("Email address").fill("preview@example.test");
-  await page.getByLabel(/I understand my email is used/i).check();
+  await page.getByLabel(/private Before You Trust Google Sheet/i).check();
   await page.getByRole("button", { name: "Email me the report" }).click();
   await expect(page.getByText(/Check your inbox/i)).toBeVisible();
   await page.screenshot({ path: "lifecycle-06-email-sent.png", fullPage: true });

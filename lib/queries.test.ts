@@ -22,6 +22,14 @@ describe("query generation", () => {
     expect(queries.some((query) => /\sOR\s/i.test(query))).toBe(false);
   });
 
+  it("keeps exact-name discovery bounded to avoid overwhelming metasearch engines", () => {
+    const queries = buildIdentityQueries(base);
+    expect(queries.length).toBeLessThanOrEqual(16);
+    expect(
+      queries.every((query) => query.text.includes('"Jane Unique-Surname"')),
+    ).toBe(true);
+  });
+
   it("searches major social platforms in the identity stage", () => {
     const social = buildIdentityQueries({
       ...base,

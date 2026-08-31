@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 
-import { EmailConfigurationError, sendTransactionalEmail } from "@/lib/email";
 import { checkReportEmailRateLimit } from "@/lib/rate-limit";
-import { renderReportEmail, validateReportEmailRequest } from "@/lib/report-email";
+import {
+  buildAppsScriptPayload,
+  validateReportEmailRequest,
+} from "@/lib/report-email";
 import { getRuntimeSetting } from "@/lib/runtime-config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
 const MAX_BODY_BYTES = 75_000;
+const DEFAULT_REPORT_APPS_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbxe1s2hTRDF3m37UDcEHCj8Feb5iEDwjM82ZXizQ1sOgdZvJdNvkLbJsYi3FCJHA7Ml/exec";
 
 function clientKey(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -19,59 +24,113 @@ function clientKey(request: Request): string {
 function response(status: number, body: Record<string, unknown>) {
   return NextResponse.json(body, {
     status,
-    headers: { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", "X-Robots-Tag": "noindex, nofollow" },
+    headers: {
+      "Cache-Control": "no-store, max-age=0",
+      Pragma: "no-cache",
+      "X-Robots-Tag": "noindex, nofollow",
+    },
   });
 }
 
 export async function POST(request: Request) {
   const rate = checkReportEmailRateLimit(clientKey(request));
-  if (!rate.allowed) return response(429, { error: { code: "RATE_LIMITED", message: "Too many report-email requests. Please try again later." } });
+  if (!rate.allowed) {
+    return response(429, {
+      error: {
+        code: "RATE_LIMITED",
+        message: "Too many report-email requests. Please try again later.",
+      },
+    });
+  }
 
   let payload: unknown;
   try {
     const raw = await request.text();
-    if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) return response(413, { error: { code: "REQUEST_TOO_LARGE", message: "Report is too large." } });
+    if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) {
+      return response(413, {
+        error: { code: "REQUEST_TOO_LARGE", message: "Report is too large." },
+      });
+    }
     payload = JSON.parse(raw);
   } catch {
-    return response(400, { error: { code: "INVALID_JSON", message: "Request must be valid JSON." } });
+    return response(400, {
+      error: { code: "INVALID_JSON", message: "Request must be valid JSON." },
+    });
   }
 
   const validation = validateReportEmailRequest(payload);
-  if (!validation.ok) return response(400, { error: { code: "INVALID_REQUEST", message: validation.error } });
-
-  try {
-    await sendTransactionalEmail({
-      to: validation.data.email,
-      subject: "Your Before You Trust report",
-      text: renderReportEmail(validation.data),
-      idempotencyKey: crypto.randomUUID(),
-      tags: ["report-delivery"],
+  if (!validation.ok) {
+    return response(400, {
+      error: { code: "INVALID_REQUEST", message: validation.error },
     });
-  } catch (error) {
-    if (error instanceof EmailConfigurationError) return response(503, { error: { code: "REPORT_EMAIL_NOT_CONFIGURED", message: "Email delivery is not configured yet." } });
-    return response(502, { error: { code: "REPORT_EMAIL_FAILED", message: "The report could not be emailed. Please try again." } });
   }
 
+  let endpoint: string;
+  let apiSecret: string | undefined;
   try {
-    const operator = (await getRuntimeSetting("REPORT_REQUEST_NOTIFICATION_EMAIL")) || (await getRuntimeSetting("OWNER_NOTIFICATION_EMAIL"));
-    if (operator) {
-      await sendTransactionalEmail({
-        to: operator,
-        subject: "Before You Trust — report email requested",
-        text: [
-          "A visitor requested delivery of a Trust Brief.",
-          "",
-          `Delivery email: ${validation.data.email}`,
-          `Source count: ${validation.data.results.length}`,
-          "",
-          "The searched person's name and report contents are intentionally omitted from this operator notification.",
-          "Do not add this address to marketing without separate consent.",
-        ].join("\n"),
-        tags: ["report-request-notification"],
-      });
-    }
+    endpoint =
+      (await getRuntimeSetting("REPORT_APPS_SCRIPT_URL")) ??
+      DEFAULT_REPORT_APPS_SCRIPT_URL;
+    apiSecret = await getRuntimeSetting("REPORT_APPS_SCRIPT_SECRET");
   } catch {
-    console.error("Report-request operator notification could not be delivered.");
+    return response(503, {
+      error: {
+        code: "REPORT_EMAIL_NOT_CONFIGURED",
+        message: "Report delivery configuration could not be loaded.",
+      },
+    });
+  }
+
+  if (!apiSecret) {
+    return response(503, {
+      error: {
+        code: "REPORT_EMAIL_NOT_CONFIGURED",
+        message: "Report delivery is not configured yet.",
+      },
+    });
+  }
+
+  let upstream: Response;
+  try {
+    upstream = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        buildAppsScriptPayload(validation.data, apiSecret),
+      ),
+      cache: "no-store",
+      redirect: "follow",
+      signal: AbortSignal.timeout(20_000),
+    });
+  } catch {
+    return response(502, {
+      error: {
+        code: "REPORT_EMAIL_FAILED",
+        message: "The report service could not be reached. Please try again.",
+      },
+    });
+  }
+
+  let upstreamPayload: { ok?: boolean; error?: string } = {};
+  try {
+    upstreamPayload = (await upstream.json()) as {
+      ok?: boolean;
+      error?: string;
+    };
+  } catch {
+    // Treat a non-JSON response as an upstream failure.
+  }
+
+  if (!upstream.ok || upstreamPayload.ok !== true) {
+    return response(502, {
+      error: {
+        code: "REPORT_EMAIL_FAILED",
+        message:
+          upstreamPayload.error === "Unauthorized"
+            ? "Report delivery is not configured correctly."
+            : "The report could not be emailed. Please try again.",
+      },
+    });
   }
 
   return response(200, { ok: true });

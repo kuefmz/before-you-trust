@@ -40,6 +40,52 @@ function resultText(result: SearchResult): string {
   return normalizeText(`${result.title} ${result.snippet} ${result.url}`);
 }
 
+function nameParts(value: string): string[] {
+  return normalizeText(value)
+    .normalize("NFKD")
+    .replace(/\p{M}+/gu, "")
+    .split(/[\s._/-]+/)
+    .filter((part) => part.length > 1);
+}
+
+function containsExactFullName(value: string, name: string): boolean {
+  const haystack = nameParts(value);
+  const needle = nameParts(name);
+  if (needle.length < 2 || haystack.length < needle.length) return false;
+
+  for (let index = 0; index <= haystack.length - needle.length; index += 1) {
+    if (
+      needle.every((part, offset) => haystack[index + offset] === part)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function profileUrlContainsExactName(
+  result: SearchResult,
+  name: string,
+): boolean {
+  if (
+    result.sourceType !== "professional" &&
+    result.sourceType !== "social"
+  ) {
+    return false;
+  }
+
+  try {
+    return containsExactFullName(
+      decodeURIComponent(new URL(result.url).pathname.replace(/\+/g, " ")),
+      name,
+    );
+  } catch {
+    return false;
+  }
+}
+
+
 function identityUrlAnchor(url: string): string | null {
   try {
     const parsed = new URL(url);
@@ -109,8 +155,7 @@ export function filterResultsForConfirmedIdentity(
     ),
   ];
 
-  const name = normalizeText(input.name);
-  const nameWords = meaningfulWords(input.name);
+  const name = input.name;
   const locationWords = meaningfulWords(input.location);
   const companyWords = meaningfulWords(input.company);
   const socialHandles = (input.socialProfiles ?? [])
@@ -130,12 +175,19 @@ export function filterResultsForConfirmedIdentity(
 
     const text = resultText(result);
     const contentText = normalizeText(`${result.title} ${result.snippet}`);
-    const title = normalizeText(result.title);
-    const exactNameInTitle = Boolean(name && title.includes(name));
-    const exactNameAnywhere = Boolean(name && contentText.includes(name));
-    const allNameWords =
-      nameWords.length >= 2 && nameWords.every((word) => text.includes(word));
-    const nameMatches = exactNameAnywhere || allNameWords;
+    const exactNameInTitle = containsExactFullName(result.title, name);
+    const exactNameAnywhere = containsExactFullName(
+      `${result.title} ${result.snippet}`,
+      name,
+    );
+    const exactNameInProfileUrl = profileUrlContainsExactName(result, name);
+    const nameMatches =
+      exactNameAnywhere ||
+      exactNameInProfileUrl ||
+      urlMatchesKnownProfile(result.url, input.profileUrl) ||
+      (input.socialProfiles ?? [])
+        .filter((value) => /^https?:\/\//i.test(value))
+        .some((value) => urlMatchesKnownProfile(result.url, value));
 
     if (!nameMatches) return false;
 

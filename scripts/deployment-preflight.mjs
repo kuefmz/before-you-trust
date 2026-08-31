@@ -46,7 +46,6 @@ if (
 const forbiddenAmplifySecrets = [
   "YACY_PASSWORD",
   "GOOGLE_VISION_API_KEY",
-  "BREVO_API_KEY",
 ];
 
 for (const key of forbiddenAmplifySecrets) {
@@ -69,7 +68,6 @@ const requiredEnvKeys = [
   "YACY_PASSWORD",
   "GOOGLE_VISION_API_KEY",
   "REPORT_APPS_SCRIPT_URL",
-  "BREVO_API_KEY",
 ];
 
 for (const key of requiredEnvKeys) {

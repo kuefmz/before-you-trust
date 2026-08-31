@@ -16,8 +16,9 @@ import type {
 
 export { SearchConfigurationError };
 
-const QUERY_TIMEOUT_MS = 20_000;
-const CONCURRENCY = 2;
+const QUERY_TIMEOUT_MS = 7_500;
+const SEARCH_BUDGET_MS = 18_000;
+const CONCURRENCY = 4;
 
 export class SearchExecutionError extends Error {
   constructor(message: string) {
@@ -159,11 +160,25 @@ export async function executeSearch(
       ? buildIdentityQueries(input)
       : buildDeepQueries(input);
 
-  const queryResults = await runWithConcurrency(
-    queries,
-    CONCURRENCY,
-    (query) => executeQuery(query, requestSignal),
-  );
+  const budgetController = new AbortController();
+  const budgetTimer = setTimeout(() => {
+    budgetController.abort(new Error("Search request time budget reached."));
+  }, SEARCH_BUDGET_MS);
+  const combinedSignal = AbortSignal.any([
+    requestSignal,
+    budgetController.signal,
+  ]);
+
+  let queryResults: Awaited<ReturnType<typeof executeQuery>>[];
+  try {
+    queryResults = await runWithConcurrency(
+      queries,
+      CONCURRENCY,
+      (query) => executeQuery(query, combinedSignal),
+    );
+  } finally {
+    clearTimeout(budgetTimer);
+  }
 
   const contributions = queryResults.flatMap((item) => item.contributions);
   const warnings = [...new Set(queryResults.flatMap((item) => item.warnings))];

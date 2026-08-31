@@ -189,7 +189,8 @@ Attach a policy that permits only the Amplify operations used by the workflow:
       "Effect": "Allow",
       "Action": [
         "amplify:StartJob",
-        "amplify:GetJob"
+        "amplify:GetJob",
+        "amplify:StopJob"
       ],
       "Resource": "*"
     }
@@ -905,6 +906,7 @@ Check the role policy includes:
 ```text
 amplify:StartJob
 amplify:GetJob
+amplify:StopJob
 ```
 
 ## Duplicate Amplify builds

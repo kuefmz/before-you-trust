@@ -202,12 +202,14 @@ describe("SearchExperience", () => {
     );
 
     expect(
-      await screen.findByText(/low-confidence possibilit/i),
+      await screen.findByText(/possible or weak identity lead/i),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/Low-confidence identity leads only/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/Possible match #1/i)).toBeInTheDocument();
+    expect(screen.getByText(/45\/100 identity match/i)).toBeInTheDocument();
+    expect(screen.getByText(/ranking signal, not a probability/i)).toBeInTheDocument();
   });
 
   it("highlights Do it yourself when no identity candidate is found", async () => {

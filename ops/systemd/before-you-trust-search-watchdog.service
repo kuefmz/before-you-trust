@@ -5,4 +5,5 @@ Wants=docker.service network-online.target
 
 [Service]
 Type=oneshot
+EnvironmentFile=-/etc/default/before-you-trust-search-watchdog
 ExecStart=/usr/local/sbin/before-you-trust-search-watchdog

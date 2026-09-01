@@ -1,0 +1,8 @@
+[Unit]
+Description=Before You Trust search-stack watchdog
+After=docker.service network-online.target
+Wants=docker.service network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/before-you-trust-search-watchdog

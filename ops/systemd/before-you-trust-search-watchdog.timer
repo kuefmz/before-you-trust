@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Before You Trust search-stack watchdog every 2 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+Persistent=true
+Unit=before-you-trust-search-watchdog.service
+
+[Install]
+WantedBy=timers.target

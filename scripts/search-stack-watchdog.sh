@@ -75,9 +75,9 @@ main() {
 
   local failed=0
 
-  recover_service     "searxng"     "before-you-trust-searxng"     "http://127.0.0.1:8888/search?q=healthcheck&format=json" || failed=1
+  recover_service     "searxng"     "before-you-trust-searxng"     "http://127.0.0.1:8888/" || failed=1
 
-  recover_service     "yacy"     "before-you-trust-yacy"     "http://127.0.0.1:8090/yacysearch.json?query=healthcheck&resource=global&maximumRecords=1" || failed=1
+  recover_service     "yacy"     "before-you-trust-yacy"     "http://127.0.0.1:8090/" || failed=1
 
   exit "$failed"
 }

@@ -19,6 +19,13 @@ const STOP_WORDS = new Set([
   "profile",
   "official",
   "page",
+  "linkedin",
+  "instagram",
+  "facebook",
+  "tiktok",
+  "github",
+  "youtube",
+  "twitter",
 ]);
 
 function normalize(value: string): string {
@@ -61,6 +68,7 @@ interface ResultScore {
   nameEvidence: boolean;
   partialNameEvidence: boolean;
   nameAnchorEvidence: boolean;
+  nameSimilarity: number;
   exactNameInTitle: boolean;
   contextEvidence: boolean;
   profileEvidence: boolean;
@@ -75,7 +83,6 @@ function scoreResult(
 ): ResultScore {
   const text = contentText(result);
   const normalizedText = normalize(text);
-  const normalizedIdentityText = normalize(`${text} ${result.url}`);
   const url = urlText(result);
   const inputNameWords = [...new Set(words(input.name))];
   let score = 0;
@@ -105,23 +112,31 @@ function scoreResult(
     signals.push("Exact full name appears in the public result URL");
   }
 
+  let nameSimilarity = 0;
   if (!nameEvidence && inputNameWords.length > 0) {
-    const matchedNameWords = inputNameWords.filter((word) =>
-      normalizedIdentityText.includes(word),
+    const fieldWordSets = [
+      new Set(words(result.title)),
+      new Set(words(result.snippet)),
+      new Set(words(result.url)),
+    ];
+    const fieldSimilarities = fieldWordSets.map(
+      (fieldWords) =>
+        inputNameWords.filter((word) => fieldWords.has(word)).length /
+        inputNameWords.length,
     );
-    const similarity = matchedNameWords.length / inputNameWords.length;
+    nameSimilarity = Math.max(...fieldSimilarities);
     const lastNameWord = inputNameWords[inputNameWords.length - 1];
 
     nameAnchorEvidence = Boolean(
-      lastNameWord && normalizedIdentityText.includes(lastNameWord),
+      lastNameWord && fieldWordSets.some((fieldWords) => fieldWords.has(lastNameWord)),
     );
 
-    if (similarity >= 0.5) {
+    if (nameSimilarity >= 0.5) {
       partialNameEvidence = true;
-      score += Math.round(30 * similarity);
+      score += Math.round(30 * nameSimilarity);
       signals.push(
-        similarity >= 0.99
-          ? "All name tokens appear in the public result"
+        nameSimilarity >= 0.99
+          ? "All name tokens appear together in the public result"
           : "Some name tokens match the searched name",
       );
     }
@@ -231,6 +246,7 @@ function scoreResult(
     nameEvidence,
     partialNameEvidence,
     nameAnchorEvidence,
+    nameSimilarity,
     exactNameInTitle,
     contextEvidence,
     profileEvidence,
@@ -364,7 +380,8 @@ export function buildIdentityCandidates(
         entry.nameEvidence ||
         entry.profileEvidence ||
         (entry.partialNameEvidence &&
-          (entry.contextEvidence || entry.nameAnchorEvidence) &&
+          (entry.nameAnchorEvidence ||
+            (entry.contextEvidence && entry.nameSimilarity >= 2 / 3)) &&
           entry.score >= 20),
     )
     .sort((a, b) => {

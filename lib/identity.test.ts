@@ -296,4 +296,62 @@ describe("identity candidate building", () => {
       true,
     );
   });
+
+  it("returns a normalized identity match score and keeps contextual partial-name leads", () => {
+    const candidates = buildIdentityCandidates(
+      [
+        result({
+          title: "Jane Unique-Surname | LinkedIn",
+          url: "https://linkedin.com/in/jane-unique-surname",
+          snippet: "Data professional at Example AG in Zurich",
+          sourceType: "professional",
+        }),
+        result({
+          title: "Jane Unique | LinkedIn",
+          url: "https://linkedin.com/in/jane-unique",
+          snippet: "Engineer in Zurich",
+          sourceType: "professional",
+        }),
+      ],
+      {
+        name: "Jane Unique-Surname",
+        location: "Zurich",
+        company: "Example AG",
+      },
+    );
+
+    expect(candidates.length).toBeGreaterThanOrEqual(2);
+    expect(candidates[0]?.matchScore).toBeGreaterThanOrEqual(80);
+    expect(
+      candidates.some(
+        (candidate) =>
+          candidate.matchScore >= 40 && candidate.matchScore < 80,
+      ),
+    ).toBe(true);
+    expect(
+      candidates.every(
+        (candidate) => candidate.matchScore >= 0 && candidate.matchScore <= 100,
+      ),
+    ).toBe(true);
+  });
+
+  it("shows a same-surname identity profile as a weak lead instead of hiding it", () => {
+    const candidates = buildIdentityCandidates(
+      [
+        result({
+          title: "A. Morgan | LinkedIn",
+          url: "https://linkedin.com/in/a-morgan",
+          snippet: "Public professional profile",
+          sourceType: "professional",
+        }),
+      ],
+      { name: "Alex Morgan" },
+    );
+
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.matchScore).toBeGreaterThanOrEqual(20);
+    expect(candidates[0]?.matchScore).toBeLessThan(40);
+    expect(candidates[0]?.confidence).toBe("low");
+  });
+
 });

@@ -15,11 +15,18 @@ ensure_docker() {
 }
 
 ensure_container() {
-  local name="$1"
+  local service="$1"
+  local name="$2"
 
   if ! docker inspect "$name" >/dev/null 2>&1; then
-    log "Container $name does not exist; cannot auto-recreate it. Run docker compose up -d."
-    return 1
+    if [ -n "${BYT_COMPOSE_FILE:-}" ] && [ -f "$BYT_COMPOSE_FILE" ]; then
+      log "Container $name is missing; recreating $service from Docker Compose."
+      docker compose -f "$BYT_COMPOSE_FILE" up -d "$service"
+      sleep 12
+    else
+      log "Container $name does not exist and BYT_COMPOSE_FILE is unavailable."
+      return 1
+    fi
   fi
 
   if [ "$(docker inspect -f '{{.State.Running}}' "$name" 2>/dev/null || echo false)" != "true" ]; then
@@ -35,10 +42,11 @@ endpoint_ok() {
 }
 
 recover_service() {
-  local name="$1"
-  local url="$2"
+  local service="$1"
+  local name="$2"
+  local url="$3"
 
-  ensure_container "$name" || return 1
+  ensure_container "$service" "$name" || return 1
 
   if endpoint_ok "$url"; then
     return 0
@@ -67,9 +75,9 @@ main() {
 
   local failed=0
 
-  recover_service     "before-you-trust-searxng"     "http://127.0.0.1:8888/search?q=healthcheck&format=json" || failed=1
+  recover_service     "searxng"     "before-you-trust-searxng"     "http://127.0.0.1:8888/search?q=healthcheck&format=json" || failed=1
 
-  recover_service     "before-you-trust-yacy"     "http://127.0.0.1:8090/yacysearch.json?query=healthcheck&resource=global&maximumRecords=1" || failed=1
+  recover_service     "yacy"     "before-you-trust-yacy"     "http://127.0.0.1:8090/yacysearch.json?query=healthcheck&resource=global&maximumRecords=1" || failed=1
 
   exit "$failed"
 }

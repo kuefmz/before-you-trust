@@ -59,6 +59,8 @@ interface ResultScore {
   signals: string[];
   conflicts: string[];
   nameEvidence: boolean;
+  partialNameEvidence: boolean;
+  nameAnchorEvidence: boolean;
   exactNameInTitle: boolean;
   contextEvidence: boolean;
   profileEvidence: boolean;
@@ -73,9 +75,13 @@ function scoreResult(
 ): ResultScore {
   const text = contentText(result);
   const normalizedText = normalize(text);
+  const normalizedIdentityText = normalize(`${text} ${result.url}`);
   const url = urlText(result);
+  const inputNameWords = [...new Set(words(input.name))];
   let score = 0;
   let nameEvidence = false;
+  let partialNameEvidence = false;
+  let nameAnchorEvidence = false;
   let exactNameInTitle = false;
   let contextEvidence = false;
   let profileEvidence = false;
@@ -83,20 +89,42 @@ function scoreResult(
   const conflicts: string[] = [];
 
   if (containsExactFullName(result.title, input.name)) {
-    score += 6;
+    score += 45;
     nameEvidence = true;
     exactNameInTitle = true;
     signals.push("Exact full name appears in the result title");
   } else if (containsExactFullName(text, input.name)) {
-    score += 5;
+    score += 40;
     nameEvidence = true;
     signals.push("Exact full name appears in the page title or snippet");
   }
 
   if (!nameEvidence && resultUrlContainsExactName(result, input.name)) {
-    score += 4;
+    score += 36;
     nameEvidence = true;
     signals.push("Exact full name appears in the public result URL");
+  }
+
+  if (!nameEvidence && inputNameWords.length > 0) {
+    const matchedNameWords = inputNameWords.filter((word) =>
+      normalizedIdentityText.includes(word),
+    );
+    const similarity = matchedNameWords.length / inputNameWords.length;
+    const lastNameWord = inputNameWords[inputNameWords.length - 1];
+
+    nameAnchorEvidence = Boolean(
+      lastNameWord && normalizedIdentityText.includes(lastNameWord),
+    );
+
+    if (similarity >= 0.5) {
+      partialNameEvidence = true;
+      score += Math.round(30 * similarity);
+      signals.push(
+        similarity >= 0.99
+          ? "All name tokens appear in the public result"
+          : "Some name tokens match the searched name",
+      );
+    }
   }
 
   if (input.location) {
@@ -105,7 +133,7 @@ function scoreResult(
       normalizedText.includes(word),
     );
     if (matched.length > 0) {
-      score += 2;
+      score += 15;
       contextEvidence = true;
       signals.push("Location context matches");
     }
@@ -117,7 +145,7 @@ function scoreResult(
       normalizedText.includes(word),
     );
     if (matched.length > 0) {
-      score += 3;
+      score += 15;
       contextEvidence = true;
       signals.push("Employer or organization context matches");
     }
@@ -131,7 +159,7 @@ function scoreResult(
         normalizedSocial.replace(/^@/, ""),
       )
     ) {
-      score += 4;
+      score += 18;
       contextEvidence = true;
       profileEvidence = true;
       signals.push("Known social profile or handle matches");
@@ -149,7 +177,7 @@ function scoreResult(
           (actual.pathname === expectedPath ||
             actual.pathname.startsWith(`${expectedPath}/`))
         ) {
-          score += 6;
+          score += 28;
           contextEvidence = true;
           profileEvidence = true;
           signals.push("Known social profile URL matches");
@@ -162,7 +190,7 @@ function scoreResult(
   }
 
   if (result.queryKinds.includes("image")) {
-    score += 3;
+    score += 12;
     contextEvidence = true;
     signals.push("Uploaded photo matched this public web page");
   }
@@ -178,7 +206,7 @@ function scoreResult(
         (actual.pathname === expectedPath ||
           actual.pathname.startsWith(`${expectedPath}/`))
       ) {
-        score += 7;
+        score += 30;
         contextEvidence = true;
         profileEvidence = true;
         signals.push("Provided profile URL matches");
@@ -189,18 +217,20 @@ function scoreResult(
   }
 
   if (
-    nameEvidence &&
+    (nameEvidence || partialNameEvidence) &&
     (result.sourceType === "professional" || result.sourceType === "social")
   ) {
-    score += 1;
+    score += 5;
     signals.push("Result is an identity-bearing profile source");
   }
 
   return {
-    score,
+    score: Math.max(0, Math.min(100, score)),
     signals: [...new Set(signals)],
     conflicts,
     nameEvidence,
+    partialNameEvidence,
+    nameAnchorEvidence,
     exactNameInTitle,
     contextEvidence,
     profileEvidence,
@@ -219,8 +249,8 @@ function candidateConfidence(
     return "low";
   }
 
-  if (entry.score >= 9) return "high";
-  if (entry.score >= 6) return "medium";
+  if (entry.score >= 80) return "high";
+  if (entry.score >= 55) return "medium";
   return "low";
 }
 
@@ -329,7 +359,14 @@ export function buildIdentityCandidates(
       result,
       ...scoreResult(result, input),
     }))
-    .filter((entry) => entry.nameEvidence || entry.profileEvidence)
+    .filter(
+      (entry) =>
+        entry.nameEvidence ||
+        entry.profileEvidence ||
+        (entry.partialNameEvidence &&
+          (entry.contextEvidence || entry.nameAnchorEvidence) &&
+          entry.score >= 20),
+    )
     .sort((a, b) => {
       const confidenceDifference =
         ({ high: 3, medium: 2, low: 1 }[
@@ -347,7 +384,7 @@ export function buildIdentityCandidates(
   const candidates: IdentityCandidate[] = [];
   const consumed = new Set<string>();
 
-  for (const seed of scored.slice(0, 8)) {
+  for (const seed of scored.slice(0, 12)) {
     if (consumed.has(seed.result.url)) continue;
 
     const sources = scored
@@ -367,14 +404,15 @@ export function buildIdentityCandidates(
       searchName: input.name,
       summary:
         seed.result.snippet ||
-        "Exact-name public profile or page. Additional context is needed to distinguish namesakes.",
+        "Possible public identity lead. Review the source and matching signals before confirming.",
       confidence: candidateConfidence(seed, hasProvidedContext),
+      matchScore: seed.score,
       supportingSignals: seed.signals,
       conflictingSignals: seed.conflicts,
       sources: sources.length > 0 ? sources : [seed.result],
     });
 
-    if (candidates.length >= 5) break;
+    if (candidates.length >= 8) break;
   }
 
   return candidates;

@@ -65,6 +65,16 @@ function identityMatchTone(score: number): "high" | "medium" | "low" {
   return "low";
 }
 
+function isSensitiveUnconfirmedLead(result: SearchResult): boolean {
+  return (
+    result.sourceType === "official" ||
+    result.sourceType === "news" ||
+    result.queryKinds.some((kind) =>
+      ["official", "news", "concern", "claim"].includes(kind),
+    )
+  );
+}
+
 async function parseApiResponse<T>(
   response: Response,
   fallbackMessage: string,
@@ -247,6 +257,47 @@ function CandidateCard({
   );
 }
 
+function UnconfirmedLeadCard({
+  candidate,
+}: {
+  candidate: IdentityCandidate;
+}) {
+  return (
+    <article className="candidate-card candidate-card--unconfirmed">
+      <div className="candidate-card__top">
+        <span className="match-rank">Unconfirmed lead</span>
+        <span
+          className={`confidence confidence--${identityMatchTone(candidate.matchScore)}`}
+          title="Identity match score, not a probability"
+        >
+          {candidate.matchScore}/100 identity match
+        </span>
+      </div>
+      <h3>{candidate.label}</h3>
+      <p>{candidate.summary}</p>
+      {candidate.supportingSignals.length > 0 ? (
+        <ul className="signal-list">
+          {candidate.supportingSignals.slice(0, 5).map((signal) => (
+            <li key={signal}>{signal}</li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="candidate-sources">
+        {candidate.sources.slice(0, 3).map((source) => (
+          <a
+            href={source.url}
+            key={source.url}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            {hostname(source.url)} ↗
+          </a>
+        ))}
+      </div>
+    </article>
+  );
+}
+
 export function SearchExperience() {
   const [form, setForm] = useState<FormState>(initialForm);
   const [accepted, setAccepted] = useState(false);
@@ -340,7 +391,13 @@ export function SearchExperience() {
   }, [stage]);
 
   const reportQuality = useMemo(() => {
-    if (!confirmed) return { results: [] as SearchResult[], excludedCount: 0 };
+    if (!confirmed) {
+      return {
+        results: [] as SearchResult[],
+        excludedResults: [] as SearchResult[],
+        excludedCount: 0,
+      };
+    }
 
     const filteredDeep = filterResultsForConfirmedIdentity(
       deepResponse?.results ?? [],
@@ -359,6 +416,7 @@ export function SearchExperience() {
         [...confirmed.sources, ...filteredDeep.results],
         80,
       ),
+      excludedResults: filteredDeep.excludedResults,
       excludedCount: filteredDeep.excludedCount,
     };
   }, [
@@ -372,6 +430,36 @@ export function SearchExperience() {
   ]);
 
   const reportResults = reportQuality.results;
+
+  const unconfirmedLeadCandidates = useMemo(() => {
+    if (!confirmed) return [];
+
+    const nonSensitiveExcluded = reportQuality.excludedResults.filter(
+      (result) => !isSensitiveUnconfirmedLead(result),
+    );
+
+    return buildIdentityCandidates(nonSensitiveExcluded, {
+      name: confirmed.searchName || form.name,
+      location: form.location || undefined,
+      company: form.company || undefined,
+      profileUrl: form.profileUrl || undefined,
+      socialProfiles: parseSocialProfiles(form.socialProfiles),
+    }).slice(0, 6);
+  }, [
+    confirmed,
+    reportQuality.excludedResults,
+    form.name,
+    form.location,
+    form.company,
+    form.profileUrl,
+    form.socialProfiles,
+  ]);
+
+  const hiddenSensitiveExcludedCount = useMemo(
+    () =>
+      reportQuality.excludedResults.filter(isSensitiveUnconfirmedLead).length,
+    [reportQuality.excludedResults],
+  );
 
   const reportSections = useMemo(
     () => buildReportSections(reportResults),
@@ -587,9 +675,23 @@ export function SearchExperience() {
             <p>
               <strong>
                 {reportQuality.excludedCount} low-confidence result
-                {reportQuality.excludedCount === 1 ? " was" : "s were"} excluded
-                because it could not be linked strongly enough to this person.
-              </strong>
+                {reportQuality.excludedCount === 1 ? " was" : "s were"} kept out
+                of the confirmed findings because they could not be linked
+                strongly enough to this person.
+              </strong>{" "}
+              Non-sensitive possibilities may appear below as unconfirmed leads.
+            </p>
+          ) : null}
+          {hiddenSensitiveExcludedCount > 0 ? (
+            <p>
+              <strong>
+                {hiddenSensitiveExcludedCount} potentially sensitive
+                low-confidence result
+                {hiddenSensitiveExcludedCount === 1 ? " is" : "s are"} not shown
+                as a lead.
+              </strong>{" "}
+              This avoids attaching allegations, court/regulatory results or
+              news to the wrong person.
             </p>
           ) : null}
         </div>
@@ -636,6 +738,29 @@ export function SearchExperience() {
             </section>
           ))}
         </div>
+
+        {unconfirmedLeadCandidates.length > 0 ? (
+          <section className="unconfirmed-leads" aria-labelledby="unconfirmed-leads-title">
+            <div className="report-section__heading">
+              <span className="eyebrow">Manual review only</span>
+              <h3 id="unconfirmed-leads-title">Unconfirmed identity leads</h3>
+              <p>
+                These public pages appeared in the search but did not meet the
+                threshold to become findings about the selected person. Their
+                identity match scores are ranking signals, not probabilities.
+                Open the original source and verify the person yourself.
+              </p>
+            </div>
+            <div className="candidate-grid">
+              {unconfirmedLeadCandidates.map((candidate) => (
+                <UnconfirmedLeadCard
+                  candidate={candidate}
+                  key={candidate.id}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <EmailReportForm
           claim={form.claim || undefined}

@@ -33,7 +33,7 @@ test("runs the complete lifecycle with the founder benchmark name", async ({
   await expect(
     page.getByRole("heading", { name: "Which person do you mean?" }),
   ).toBeVisible();
-  await expect(page.getByText("Top match #1")).toBeVisible();
+  await expect(page.getByText(/\/100 identity match/).first()).toBeVisible();
   await expect(page.getByText(/Photo web match:/)).toBeVisible();
   await expect(page.getByRole("button", { name: "None of these — refine search" })).toBeVisible();
   await page.screenshot({ path: "lifecycle-03-confirm-identity.png", fullPage: true });

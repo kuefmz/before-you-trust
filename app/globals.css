@@ -414,7 +414,9 @@ select:focus-visible {
   align-items: center;
   color: var(--muted);
   display: flex;
+  flex-wrap: wrap;
   font-size: 0.76rem;
+  gap: 8px 12px;
   justify-content: space-between;
 }
 

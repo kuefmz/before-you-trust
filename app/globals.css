@@ -547,6 +547,17 @@ select:focus-visible {
   gap: 34px;
 }
 
+.unconfirmed-leads {
+  border-top: 1px solid var(--line);
+  margin-top: 34px;
+  padding-top: 30px;
+}
+
+.candidate-card--unconfirmed {
+  background: #fbfdff;
+  border-style: dashed;
+}
+
 .report-section {
   border-top: 1px solid var(--line);
   padding-top: 30px;

@@ -8,6 +8,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+COMPOSE_FILE="$REPO_ROOT/search-stack/docker-compose.yml"
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "Docker is required before installing the watchdog."
@@ -19,14 +20,22 @@ if ! command -v curl >/dev/null 2>&1; then
   exit 1
 fi
 
+systemctl enable --now docker
+
+# Apply the production restart policy immediately and ensure both containers exist.
+docker compose -f "$COMPOSE_FILE" up -d
+
 install -m 0755   "$REPO_ROOT/scripts/search-stack-watchdog.sh"   /usr/local/sbin/before-you-trust-search-watchdog
 
 install -m 0644   "$REPO_ROOT/ops/systemd/before-you-trust-search-watchdog.service"   /etc/systemd/system/before-you-trust-search-watchdog.service
 
 install -m 0644   "$REPO_ROOT/ops/systemd/before-you-trust-search-watchdog.timer"   /etc/systemd/system/before-you-trust-search-watchdog.timer
 
+cat > /etc/default/before-you-trust-search-watchdog <<EOF
+BYT_COMPOSE_FILE="$COMPOSE_FILE"
+EOF
+
 systemctl daemon-reload
-systemctl enable docker
 systemctl enable --now before-you-trust-search-watchdog.timer
 systemctl start before-you-trust-search-watchdog.service
 

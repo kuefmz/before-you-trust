@@ -52,6 +52,19 @@ function hostname(url: string): string {
   }
 }
 
+function identityMatchLabel(score: number): string {
+  if (score >= 80) return "Strong match";
+  if (score >= 60) return "Likely match";
+  if (score >= 40) return "Possible match";
+  return "Weak lead";
+}
+
+function identityMatchTone(score: number): "high" | "medium" | "low" {
+  if (score >= 80) return "high";
+  if (score >= 60) return "medium";
+  return "low";
+}
+
 async function parseApiResponse<T>(
   response: Response,
   fallbackMessage: string,
@@ -188,10 +201,13 @@ function CandidateCard({
     <article className="candidate-card">
       <div className="candidate-card__top">
         <span className="match-rank">
-          {candidate.confidence === "low" ? "Possible match" : "Top match"} #{rank}
+          {identityMatchLabel(candidate.matchScore)} #{rank}
         </span>
-        <span className={`confidence confidence--${candidate.confidence}`}>
-          {candidate.confidence} confidence
+        <span
+          className={`confidence confidence--${identityMatchTone(candidate.matchScore)}`}
+          title="Identity match score, not a probability"
+        >
+          {candidate.matchScore}/100 identity match
         </span>
         <span>
           {candidate.sources.length} source
@@ -469,6 +485,7 @@ export function SearchExperience() {
     setConfirmed(candidate);
     trackEvent("identity_confirmed", {
       confidence: candidate.confidence,
+      match_score: candidate.matchScore,
       source_count: candidate.sources.length,
     });
 
@@ -670,12 +687,12 @@ export function SearchExperience() {
           <h2 id="candidate-title">Which person do you mean?</h2>
           <p>
             {candidates.length === 0
-              ? "We found no result with enough exact full-name identity evidence to show as a candidate. Similar names are deliberately excluded. You can add context or inspect the manual Google searches above."
+              ? "We could not find even a plausible public identity lead from this search. Add more context or inspect the manual Google searches above."
               : onlyLowConfidenceCandidates
-                ? `We did not find a strong identity match, but we found ${candidates.length} low-confidence possibilit${candidates.length === 1 ? "y" : "ies"}. Review the source carefully before confirming anyone.`
+                ? `We did not find a strong identity match, but we found ${candidates.length} possible or weak identity lead${candidates.length === 1 ? "" : "s"}. Review the source and score carefully before confirming anyone.`
                 : candidates.length === 1
-                  ? "We found one likely identity. Please confirm it before we generate a report."
-                  : `We found ${candidates.length} likely identity matches. Choose the correct person before we generate a report.`}
+                  ? "We found one public identity lead. Please review its match score and source before confirming it."
+                  : `We found ${candidates.length} public identity leads, including lower-confidence possibilities. Choose the correct person before we generate a report.`}
           </p>
         </div>
 
@@ -714,11 +731,21 @@ export function SearchExperience() {
           <div className="quality-note" role="note">
             <strong>
               {identityExcludedCount} raw search result
-              {identityExcludedCount === 1 ? " did" : "s did"} not match the
-              exact identity strongly enough.
+              {identityExcludedCount === 1 ? " was" : "s were"} too weak or
+              unrelated to show even as an identity lead.
             </strong>{" "}
-            Similar names, unrelated pages, weak snippets and duplicates are
-            deliberately excluded.
+            These results remain excluded rather than being presented as
+            possible matches.
+          </div>
+        ) : null}
+
+        {candidates.length > 0 ? (
+          <div className="quality-note" role="note">
+            <strong>About the identity match score.</strong>{" "}
+            The 0–100 score compares the public result with the name and context
+            you entered. It is a ranking signal, not a probability, verification,
+            or finding about the person. Lower-scoring leads require more manual
+            checking.
           </div>
         ) : null}
 

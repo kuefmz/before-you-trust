@@ -305,7 +305,7 @@ describe("SearchExperience", () => {
     await user.click(screen.getByRole("checkbox"));
     await user.click(screen.getByRole("button", { name: "Search the public web →" }));
 
-    expect(await screen.findByText(/one likely identity/i)).toBeInTheDocument();
+    expect(await screen.findByText(/one public identity lead/i)).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("heading", { name: "Trust Brief" })).not.toBeInTheDocument();
 

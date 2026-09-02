@@ -27,6 +27,9 @@ describe("MobileNavigation", () => {
     expect(
       screen.getByRole("navigation", { name: "Mobile primary navigation" }),
     ).toBeVisible();
+    expect(
+      screen.getByRole("link", { name: "Look up a person" }),
+    ).toHaveAttribute("href", "/#search");
     expect(toggle).toHaveAttribute("aria-expanded", "true");
 
     await user.keyboard("{Escape}");

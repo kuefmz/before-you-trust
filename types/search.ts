@@ -90,6 +90,7 @@ export interface IdentityCandidate {
   searchName: string;
   summary: string;
   confidence: "high" | "medium" | "low";
+  matchScore: number;
   supportingSignals: string[];
   conflictingSignals: string[];
   sources: SearchResult[];

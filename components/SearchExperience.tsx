@@ -52,6 +52,29 @@ function hostname(url: string): string {
   }
 }
 
+function identityMatchLabel(score: number): string {
+  if (score >= 80) return "Strong match";
+  if (score >= 60) return "Likely match";
+  if (score >= 40) return "Possible match";
+  return "Weak lead";
+}
+
+function identityMatchTone(score: number): "high" | "medium" | "low" {
+  if (score >= 80) return "high";
+  if (score >= 60) return "medium";
+  return "low";
+}
+
+function isSensitiveUnconfirmedLead(result: SearchResult): boolean {
+  return (
+    result.sourceType === "official" ||
+    result.sourceType === "news" ||
+    result.queryKinds.some((kind) =>
+      ["official", "news", "concern", "claim"].includes(kind),
+    )
+  );
+}
+
 async function parseApiResponse<T>(
   response: Response,
   fallbackMessage: string,
@@ -188,10 +211,13 @@ function CandidateCard({
     <article className="candidate-card">
       <div className="candidate-card__top">
         <span className="match-rank">
-          {candidate.confidence === "low" ? "Possible match" : "Top match"} #{rank}
+          {identityMatchLabel(candidate.matchScore)} #{rank}
         </span>
-        <span className={`confidence confidence--${candidate.confidence}`}>
-          {candidate.confidence} confidence
+        <span
+          className={`confidence confidence--${identityMatchTone(candidate.matchScore)}`}
+          title="Identity match score, not a probability"
+        >
+          {candidate.matchScore}/100 identity match
         </span>
         <span>
           {candidate.sources.length} source
@@ -227,6 +253,47 @@ function CandidateCard({
       >
         {busy && confirming ? "Building Trust Brief…" : "This is them"}
       </button>
+    </article>
+  );
+}
+
+function UnconfirmedLeadCard({
+  candidate,
+}: {
+  candidate: IdentityCandidate;
+}) {
+  return (
+    <article className="candidate-card candidate-card--unconfirmed">
+      <div className="candidate-card__top">
+        <span className="match-rank">Unconfirmed lead</span>
+        <span
+          className={`confidence confidence--${identityMatchTone(candidate.matchScore)}`}
+          title="Identity match score, not a probability"
+        >
+          {candidate.matchScore}/100 identity match
+        </span>
+      </div>
+      <h3>{candidate.label}</h3>
+      <p>{candidate.summary}</p>
+      {candidate.supportingSignals.length > 0 ? (
+        <ul className="signal-list">
+          {candidate.supportingSignals.slice(0, 5).map((signal) => (
+            <li key={signal}>{signal}</li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="candidate-sources">
+        {candidate.sources.slice(0, 3).map((source) => (
+          <a
+            href={source.url}
+            key={source.url}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            {hostname(source.url)} ↗
+          </a>
+        ))}
+      </div>
     </article>
   );
 }
@@ -324,7 +391,13 @@ export function SearchExperience() {
   }, [stage]);
 
   const reportQuality = useMemo(() => {
-    if (!confirmed) return { results: [] as SearchResult[], excludedCount: 0 };
+    if (!confirmed) {
+      return {
+        results: [] as SearchResult[],
+        excludedResults: [] as SearchResult[],
+        excludedCount: 0,
+      };
+    }
 
     const filteredDeep = filterResultsForConfirmedIdentity(
       deepResponse?.results ?? [],
@@ -343,6 +416,7 @@ export function SearchExperience() {
         [...confirmed.sources, ...filteredDeep.results],
         80,
       ),
+      excludedResults: filteredDeep.excludedResults,
       excludedCount: filteredDeep.excludedCount,
     };
   }, [
@@ -356,6 +430,36 @@ export function SearchExperience() {
   ]);
 
   const reportResults = reportQuality.results;
+
+  const unconfirmedLeadCandidates = useMemo(() => {
+    if (!confirmed) return [];
+
+    const nonSensitiveExcluded = reportQuality.excludedResults.filter(
+      (result) => !isSensitiveUnconfirmedLead(result),
+    );
+
+    return buildIdentityCandidates(nonSensitiveExcluded, {
+      name: confirmed.searchName || form.name,
+      location: form.location || undefined,
+      company: form.company || undefined,
+      profileUrl: form.profileUrl || undefined,
+      socialProfiles: parseSocialProfiles(form.socialProfiles),
+    }).slice(0, 6);
+  }, [
+    confirmed,
+    reportQuality.excludedResults,
+    form.name,
+    form.location,
+    form.company,
+    form.profileUrl,
+    form.socialProfiles,
+  ]);
+
+  const hiddenSensitiveExcludedCount = useMemo(
+    () =>
+      reportQuality.excludedResults.filter(isSensitiveUnconfirmedLead).length,
+    [reportQuality.excludedResults],
+  );
 
   const reportSections = useMemo(
     () => buildReportSections(reportResults),
@@ -469,6 +573,7 @@ export function SearchExperience() {
     setConfirmed(candidate);
     trackEvent("identity_confirmed", {
       confidence: candidate.confidence,
+      match_score: candidate.matchScore,
       source_count: candidate.sources.length,
     });
 
@@ -570,9 +675,23 @@ export function SearchExperience() {
             <p>
               <strong>
                 {reportQuality.excludedCount} low-confidence result
-                {reportQuality.excludedCount === 1 ? " was" : "s were"} excluded
-                because it could not be linked strongly enough to this person.
-              </strong>
+                {reportQuality.excludedCount === 1 ? " was" : "s were"} kept out
+                of the confirmed findings because they could not be linked
+                strongly enough to this person.
+              </strong>{" "}
+              Non-sensitive possibilities may appear below as unconfirmed leads.
+            </p>
+          ) : null}
+          {hiddenSensitiveExcludedCount > 0 ? (
+            <p>
+              <strong>
+                {hiddenSensitiveExcludedCount} potentially sensitive
+                low-confidence result
+                {hiddenSensitiveExcludedCount === 1 ? " is" : "s are"} not shown
+                as a lead.
+              </strong>{" "}
+              This avoids attaching allegations, court/regulatory results or
+              news to the wrong person.
             </p>
           ) : null}
         </div>
@@ -619,6 +738,29 @@ export function SearchExperience() {
             </section>
           ))}
         </div>
+
+        {unconfirmedLeadCandidates.length > 0 ? (
+          <section className="unconfirmed-leads" aria-labelledby="unconfirmed-leads-title">
+            <div className="report-section__heading">
+              <span className="eyebrow">Manual review only</span>
+              <h3 id="unconfirmed-leads-title">Unconfirmed identity leads</h3>
+              <p>
+                These public pages appeared in the search but did not meet the
+                threshold to become findings about the selected person. Their
+                identity match scores are ranking signals, not probabilities.
+                Open the original source and verify the person yourself.
+              </p>
+            </div>
+            <div className="candidate-grid">
+              {unconfirmedLeadCandidates.map((candidate) => (
+                <UnconfirmedLeadCard
+                  candidate={candidate}
+                  key={candidate.id}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <EmailReportForm
           claim={form.claim || undefined}
@@ -670,12 +812,12 @@ export function SearchExperience() {
           <h2 id="candidate-title">Which person do you mean?</h2>
           <p>
             {candidates.length === 0
-              ? "We found no result with enough exact full-name identity evidence to show as a candidate. Similar names are deliberately excluded. You can add context or inspect the manual Google searches above."
+              ? "We could not find even a plausible public identity lead from this search. Add more context or inspect the manual Google searches above."
               : onlyLowConfidenceCandidates
-                ? `We did not find a strong identity match, but we found ${candidates.length} low-confidence possibilit${candidates.length === 1 ? "y" : "ies"}. Review the source carefully before confirming anyone.`
+                ? `We did not find a strong identity match, but we found ${candidates.length} possible or weak identity lead${candidates.length === 1 ? "" : "s"}. Review the source and score carefully before confirming anyone.`
                 : candidates.length === 1
-                  ? "We found one likely identity. Please confirm it before we generate a report."
-                  : `We found ${candidates.length} likely identity matches. Choose the correct person before we generate a report.`}
+                  ? "We found one public identity lead. Please review its match score and source before confirming it."
+                  : `We found ${candidates.length} public identity leads, including lower-confidence possibilities. Choose the correct person before we generate a report.`}
           </p>
         </div>
 
@@ -714,11 +856,21 @@ export function SearchExperience() {
           <div className="quality-note" role="note">
             <strong>
               {identityExcludedCount} raw search result
-              {identityExcludedCount === 1 ? " did" : "s did"} not match the
-              exact identity strongly enough.
+              {identityExcludedCount === 1 ? " was" : "s were"} too weak or
+              unrelated to show even as an identity lead.
             </strong>{" "}
-            Similar names, unrelated pages, weak snippets and duplicates are
-            deliberately excluded.
+            These results remain excluded rather than being presented as
+            possible matches.
+          </div>
+        ) : null}
+
+        {candidates.length > 0 ? (
+          <div className="quality-note" role="note">
+            <strong>About the identity match score.</strong>{" "}
+            The 0–100 score compares the public result with the name and context
+            you entered. It is a ranking signal, not a probability, verification,
+            or finding about the person. Lower-scoring leads require more manual
+            checking.
           </div>
         ) : null}
 
@@ -848,108 +1000,119 @@ export function SearchExperience() {
           />
         </label>
 
-        <label className="field">
-          <span>Known website or profile URL</span>
-          <input
-            autoComplete="off"
-            maxLength={500}
-            onChange={(event) => update("profileUrl", event.target.value)}
-            placeholder="https://…"
-            type="url"
-            value={form.profileUrl}
-          />
-        </label>
+        <details className="search-advanced field--wide">
+          <summary>Add more information to improve the match</summary>
+          <div className="search-advanced__content">
+            <p className="search-advanced__hint">
+              Optional clues can help separate namesakes. Add only what you
+              already know.
+            </p>
+            <div className="search-advanced__grid">
+              <label className="field field--wide">
+                <span>Known website or profile URL</span>
+                <input
+                  autoComplete="off"
+                  maxLength={500}
+                  onChange={(event) => update("profileUrl", event.target.value)}
+                  placeholder="https://…"
+                  type="url"
+                  value={form.profileUrl}
+                />
+              </label>
 
-        <label className="field field--wide">
-          <span>Social profiles or handles</span>
-          <small>
-            Instagram, TikTok, Facebook, X, LinkedIn, YouTube or GitHub —
-            paste links or handles, separated by commas or new lines.
-          </small>
-          <textarea
-            maxLength={2500}
-            onChange={(event) => update("socialProfiles", event.target.value)}
-            placeholder={"@knownhandle\nhttps://instagram.com/knownprofile"}
-            rows={3}
-            value={form.socialProfiles}
-          />
-        </label>
+              <label className="field field--wide">
+                <span>Social profiles or handles</span>
+                <small>
+                  Instagram, TikTok, Facebook, X, LinkedIn, YouTube or GitHub —
+                  paste links or handles, separated by commas or new lines.
+                </small>
+                <textarea
+                  maxLength={2500}
+                  onChange={(event) => update("socialProfiles", event.target.value)}
+                  placeholder={"@knownhandle\nhttps://instagram.com/knownprofile"}
+                  rows={3}
+                  value={form.socialProfiles}
+                />
+              </label>
 
-        <label className="photo-upload field--wide">
-          <span>Photo (optional)</span>
-          <small>
-            JPG, PNG or WebP, up to 5 MB. We use it only for transient public-web
-            image matching; it is not stored by Before You Trust.
-          </small>
-          <input
-            accept="image/jpeg,image/png,image/webp"
-            aria-label="Photo of the person"
-            onChange={(event) => {
-              const nextPhoto = event.target.files?.[0] ?? null;
-              if (nextPhoto && nextPhoto.size > 5 * 1024 * 1024) {
-                setError("Photo must be 5 MB or smaller.");
-                event.target.value = "";
-                return;
-              }
-              if (photoPreview) URL.revokeObjectURL(photoPreview);
-              setPhoto(nextPhoto);
-              setPhotoPreview(nextPhoto ? URL.createObjectURL(nextPhoto) : null);
-              setPhotoWarning(null);
-            }}
-            type="file"
-          />
-          {photoPreview ? (
-            <div className="photo-preview">
-              <Image
-                alt="Selected person preview"
-                height={92}
-                src={photoPreview}
-                unoptimized
-                width={92}
-              />
-              <button
-                className="button button--ghost"
-                onClick={() => {
-                  URL.revokeObjectURL(photoPreview);
-                  setPhoto(null);
-                  setPhotoPreview(null);
-                }}
-                type="button"
-              >
-                Remove photo
-              </button>
+              <label className="photo-upload field--wide">
+                <span>Photo (optional)</span>
+                <small>
+                  JPG, PNG or WebP, up to 5 MB. We use it only for transient
+                  public-web image matching; it is not stored by Before You Trust.
+                </small>
+                <input
+                  accept="image/jpeg,image/png,image/webp"
+                  aria-label="Photo of the person"
+                  onChange={(event) => {
+                    const nextPhoto = event.target.files?.[0] ?? null;
+                    if (nextPhoto && nextPhoto.size > 5 * 1024 * 1024) {
+                      setError("Photo must be 5 MB or smaller.");
+                      event.target.value = "";
+                      return;
+                    }
+                    if (photoPreview) URL.revokeObjectURL(photoPreview);
+                    setPhoto(nextPhoto);
+                    setPhotoPreview(nextPhoto ? URL.createObjectURL(nextPhoto) : null);
+                    setPhotoWarning(null);
+                  }}
+                  type="file"
+                />
+                {photoPreview ? (
+                  <div className="photo-preview">
+                    <Image
+                      alt="Selected person preview"
+                      height={92}
+                      src={photoPreview}
+                      unoptimized
+                      width={92}
+                    />
+                    <button
+                      className="button button--ghost"
+                      onClick={() => {
+                        URL.revokeObjectURL(photoPreview);
+                        setPhoto(null);
+                        setPhotoPreview(null);
+                      }}
+                      type="button"
+                    >
+                      Remove photo
+                    </button>
+                  </div>
+                ) : null}
+              </label>
+
+              <label className="field">
+                <span>Context</span>
+                <select
+                  onChange={(event) =>
+                    update("context", event.target.value as SearchContext | "")
+                  }
+                  value={form.context}
+                >
+                  <option value="">Not specified</option>
+                  <option value="dating">Dating / personal</option>
+                  <option value="business">Business / investment</option>
+                  <option value="professional">Professional</option>
+                  <option value="community">Community / organization</option>
+                  <option value="online">Online identity</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+
+              <label className="field field--wide">
+                <span>Specific claim to check</span>
+                <textarea
+                  maxLength={300}
+                  onChange={(event) => update("claim", event.target.value)}
+                  placeholder="Optional: “They say they are the founder of…”"
+                  rows={3}
+                  value={form.claim}
+                />
+              </label>
             </div>
-          ) : null}
-        </label>
-
-        <label className="field">
-          <span>Context</span>
-          <select
-            onChange={(event) =>
-              update("context", event.target.value as SearchContext | "")
-            }
-            value={form.context}
-          >
-            <option value="">Not specified</option>
-            <option value="dating">Dating / personal</option>
-            <option value="business">Business / investment</option>
-            <option value="professional">Professional</option>
-            <option value="community">Community / organization</option>
-            <option value="online">Online identity</option>
-            <option value="other">Other</option>
-          </select>
-        </label>
-
-        <label className="field field--wide">
-          <span>Specific claim to check</span>
-          <textarea
-            maxLength={300}
-            onChange={(event) => update("claim", event.target.value)}
-            placeholder="Optional: “They say they are the founder of…”"
-            rows={3}
-            value={form.claim}
-          />
-        </label>
+          </div>
+        </details>
 
         <label className="responsible-use field--wide">
           <input

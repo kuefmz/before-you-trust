@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { AnalyticsConsent } from "@/components/AnalyticsConsent";
 import { BrandMark } from "@/components/BrandMark";
+import { MobileNavigation } from "@/components/MobileNavigation";
 import { PrivacyPreferencesButton } from "@/components/PrivacyPreferencesButton";
 import { SupportLink } from "@/components/SupportLink";
 import {
@@ -63,12 +64,13 @@ export default function RootLayout({
               <BrandMark />
               <span>Before You Trust</span>
             </Link>
-            <nav aria-label="Primary navigation">
+            <nav aria-label="Primary navigation" className="desktop-nav">
               <Link href="/how-it-works">How it works</Link>
               <Link href="/about">About</Link>
               <Link href="/share-your-story">Share your story</Link>
               {supportUrl ? <SupportLink href={supportUrl} /> : null}
             </nav>
+            <MobileNavigation supportUrl={supportUrl} />
           </div>
         </header>
 

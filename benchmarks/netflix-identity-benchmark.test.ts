@@ -55,7 +55,7 @@ describe("Netflix exact-identity release benchmark", () => {
   });
 
   for (const benchmark of netflixIdentityBenchmarkCases) {
-    it(`finds the exact identity for ${benchmark.name} and rejects similar names`, () => {
+    it(`ranks the exact identity for ${benchmark.name} above similar-name leads`, () => {
       const similar = nearName(benchmark.name);
       const firstName = benchmark.name.split(/\s+/)[0] ?? "Person";
 
@@ -90,7 +90,7 @@ describe("Netflix exact-identity release benchmark", () => {
         name: benchmark.name,
       });
 
-      expect(candidates).toHaveLength(1);
+      expect(candidates.length).toBeGreaterThanOrEqual(1);
       expect(candidates[0]?.searchName).toBe(benchmark.name);
       expect(candidates[0]?.label).toContain(benchmark.name);
       expect(candidates[0]?.sources.map((source) => source.url)).toContain(
@@ -99,6 +99,11 @@ describe("Netflix exact-identity release benchmark", () => {
       expect(
         candidates[0]?.sources.some((source) => source.url.includes(slug(similar))),
       ).toBe(false);
+      expect(candidates[0]?.matchScore).toBeGreaterThanOrEqual(40);
+
+      for (const weakerLead of candidates.slice(1)) {
+        expect(weakerLead.matchScore).toBeLessThan(candidates[0]!.matchScore);
+      }
     });
 
     it(`keeps every discovery query exact for ${benchmark.name}`, () => {

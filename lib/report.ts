@@ -116,7 +116,11 @@ export function filterResultsForConfirmedIdentity(
     SearchInput,
     "name" | "location" | "company" | "profileUrl" | "socialProfiles"
   >,
-): { results: SearchResult[]; excludedCount: number } {
+): {
+  results: SearchResult[];
+  excludedResults: SearchResult[];
+  excludedCount: number;
+} {
   const selectedUrls = new Set(
     selectedSources.map((source) => normalizeUrl(source.url)),
   );
@@ -204,9 +208,15 @@ export function filterResultsForConfirmedIdentity(
     return hasStrongContext ? contextMatches : exactNameInTitle;
   });
 
+  const keptUrls = new Set(kept.map((result) => normalizeUrl(result.url)));
+  const excludedResults = results.filter(
+    (result) => !keptUrls.has(normalizeUrl(result.url)),
+  );
+
   return {
     results: kept,
-    excludedCount: Math.max(0, results.length - kept.length),
+    excludedResults,
+    excludedCount: excludedResults.length,
   };
 }
 

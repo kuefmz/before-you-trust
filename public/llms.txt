@@ -3,10 +3,11 @@
 > Before You Trust is a public-web research assistant that helps users verify a person's public online footprint, confirm the correct identity, review public claims, and inspect original sources before placing meaningful trust.
 
 Canonical site: https://beforeyoutrust.org
+Last reviewed: 2026-09-02
 
 ## Primary pages
 
-- Home: https://beforeyoutrust.org/
+- Home and search interface: https://beforeyoutrust.org/#search
 - How it works: https://beforeyoutrust.org/how-it-works
 - About: https://beforeyoutrust.org/about
 - Acceptable use: https://beforeyoutrust.org/acceptable-use

@@ -5,7 +5,7 @@ import { trackEvent } from "@/lib/client-analytics";
 export function SupportLink({
   href,
   className = "button button--support",
-  children = "Buy me a coffee",
+  children,
 }: {
   href: string;
   className?: string;
@@ -19,7 +19,12 @@ export function SupportLink({
       rel="noopener noreferrer"
       target="_blank"
     >
-      {children}
+      {children ?? (
+        <>
+          <span aria-hidden="true">☕</span>
+          <span>Buy me a coffee</span>
+        </>
+      )}
     </a>
   );
 }

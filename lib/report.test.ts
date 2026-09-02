@@ -87,6 +87,7 @@ describe("Trust Brief grouping", () => {
     );
 
     expect(filtered.results).toEqual([correctPerson]);
+    expect(filtered.excludedResults).toEqual([wrongPerson]);
     expect(filtered.excludedCount).toBe(1);
   });
 
@@ -111,6 +112,7 @@ describe("Trust Brief grouping", () => {
     );
 
     expect(filtered.results).toEqual([]);
+    expect(filtered.excludedResults).toEqual([similarName]);
     expect(filtered.excludedCount).toBe(1);
   });
 

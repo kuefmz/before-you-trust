@@ -127,6 +127,15 @@ describe("query generation", () => {
     expect(company.some((query) => query.text.includes('"Example Shop" reviews'))).toBe(true);
     expect(company.some((query) => query.text.includes('"Example Shop" scam'))).toBe(true);
     expect(company.some((query) => query.text.includes('"Example Shop" complaints'))).toBe(true);
+    expect(company.some((query) => query.text === '"example-shop.test"')).toBe(true);
+    expect(
+      company.some(
+        (query) =>
+          query.text === '"Example Shop" "example-shop.test"' &&
+          query.kind === "identity",
+      ),
+    ).toBe(true);
+    expect(company.some((query) => query.text.includes('"example-shop.test" complaints'))).toBe(true);
     expect(company.some((query) => query.text.includes('"example-shop.test" scam'))).toBe(true);
     expect(company.some((query) => query.kind === "official")).toBe(true);
     expect(company.some((query) => query.kind === "claim")).toBe(true);

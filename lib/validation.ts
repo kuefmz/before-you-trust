@@ -3,6 +3,7 @@ import type {
   SearchContext,
   SearchInput,
   SearchMode,
+  SearchSubjectType,
 } from "@/types/search";
 
 const CONTROL_CHARACTERS = /[\u0000-\u001F\u007F]/;
@@ -102,6 +103,12 @@ function cleanMode(value: unknown): SearchMode {
   throw new Error("Search mode is invalid.");
 }
 
+function cleanSubjectType(value: unknown): SearchSubjectType {
+  if (value === undefined || value === null || value === "") return "person";
+  if (value === "person" || value === "company") return value;
+  throw new Error("Search subject type is invalid.");
+}
+
 function cleanContext(value: unknown): SearchContext | undefined {
   if (value === undefined || value === null || value === "") return undefined;
   if (typeof value !== "string" || !ALLOWED_CONTEXTS.has(value as SearchContext)) {
@@ -158,6 +165,7 @@ export function validateSearchRequest(payload: unknown): ValidationResult {
 
     const record = payload as Record<string, unknown>;
     const mode = cleanMode(record.mode);
+    const subjectType = cleanSubjectType(record.subjectType);
 
     if (record.lawfulUseAccepted !== true) {
       return {
@@ -167,7 +175,13 @@ export function validateSearchRequest(payload: unknown): ValidationResult {
     }
 
     const data: SearchInput = {
-      name: cleanText(record.name, "Full name", 120, true)!,
+      name: cleanText(
+        record.name,
+        subjectType === "company" ? "Company name" : "Full name",
+        120,
+        true,
+      )!,
+      subjectType,
       location: cleanText(record.location, "Location", 160),
       company: cleanText(record.company, "Employer or organization", 180),
       profileUrl: cleanUrl(record.profileUrl),

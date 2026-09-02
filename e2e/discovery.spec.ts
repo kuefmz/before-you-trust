@@ -6,7 +6,7 @@ test("robots, sitemap and llms discovery files are populated", async ({
   const robotsResponse = await request.get("/robots.txt");
   expect(robotsResponse.ok()).toBe(true);
   const robots = await robotsResponse.text();
-  expect(robots).toContain("User-agent:");
+  expect(robots).toContain("User-Agent:");
   expect(robots).toContain("https://beforeyoutrust.org/sitemap.xml");
 
   const sitemapResponse = await request.get("/sitemap.xml");

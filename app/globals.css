@@ -703,6 +703,8 @@ select:focus-visible {
   border-radius: 15px;
   display: grid;
   gap: 8px;
+  min-width: 0;
+  overflow: hidden;
   padding: 16px;
   transition:
     border-color 0.15s ease,
@@ -720,17 +722,26 @@ select:focus-visible {
   align-items: center;
   color: var(--muted);
   display: flex;
+  flex-wrap: wrap;
   font-size: 0.72rem;
   gap: 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .result-link > strong {
   line-height: 1.28;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .result-link > span:not(.result-link__meta):not(.result-link__open) {
   color: var(--muted);
   font-size: 0.84rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .result-link__open {

@@ -31,16 +31,6 @@ test("homepage is usable on a phone-sized viewport", async ({ page }) => {
 
   await page.getByRole("link", { name: "Start a free search →" }).click();
   await expect(page.getByLabel("Full name *")).toBeVisible();
-  await expect(
-    page.getByText("Add more information to improve the match", { exact: true }),
-  ).toBeVisible();
-  await expect(page.getByLabel("Known website or profile URL")).not.toBeVisible();
-
-  await page
-    .locator("summary")
-    .filter({ hasText: "Add more information to improve the match" })
-    .click();
-
   await expect(page.getByLabel("Known website or profile URL")).toBeVisible();
   await expect(page.getByLabel("Photo of the person")).toBeVisible();
   expect(

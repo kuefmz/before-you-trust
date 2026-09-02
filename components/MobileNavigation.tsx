@@ -26,7 +26,8 @@ export function MobileNavigation({ supportUrl }: { supportUrl?: string }) {
       {supportUrl ? (
         <SupportLink className="mobile-nav__support" href={supportUrl}>
           <span aria-hidden="true">☕</span>
-          <span>Coffee</span>
+          <span className="mobile-nav__support-long">Buy me a coffee</span>
+          <span className="mobile-nav__support-short">Coffee</span>
         </SupportLink>
       ) : null}
 

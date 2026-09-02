@@ -1000,8 +1000,7 @@ export function SearchExperience() {
           />
         </label>
 
-        <details className="search-advanced field--wide">
-          <summary>Add more information to improve the match</summary>
+        <div className="search-advanced search-advanced--always-open field--wide">
           <div className="search-advanced__content">
             <p className="search-advanced__hint">
               Optional clues can help separate namesakes. Add only what you
@@ -1112,7 +1111,7 @@ export function SearchExperience() {
               </label>
             </div>
           </div>
-        </details>
+        </div>
 
         <label className="responsible-use field--wide">
           <input

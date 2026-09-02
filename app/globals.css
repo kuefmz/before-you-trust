@@ -125,11 +125,15 @@ select:focus-visible {
   border-radius: 11px;
   color: #6b4b00;
   display: inline-flex;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 800;
   gap: 6px;
   min-height: 42px;
-  padding: 9px 11px;
+  padding: 8px 9px;
+}
+
+.mobile-nav__support-short {
+  display: none;
 }
 
 .mobile-nav__toggle {
@@ -1099,10 +1103,12 @@ select:focus-visible {
     width: 32px;
   }
 
-  .mobile-nav__support {
-    font-size: 0.76rem;
-    padding-left: 9px;
-    padding-right: 9px;
+  .mobile-nav__support-long {
+    display: none;
+  }
+
+  .mobile-nav__support-short {
+    display: inline;
   }
 }
 

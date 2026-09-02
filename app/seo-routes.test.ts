@@ -40,6 +40,15 @@ describe("crawl discovery routes", () => {
     ]);
   });
 
+  it("keeps the sitemap populated in local development without a site-url env var", () => {
+    delete process.env.NEXT_PUBLIC_SITE_URL;
+
+    const entries = sitemap();
+
+    expect(entries).toHaveLength(6);
+    expect(entries[0]?.url).toBe("https://beforeyoutrust.org/");
+  });
+
   it("keeps sitemap discovery in robots while staging remains blocked", () => {
     expect(robots()).toMatchObject({
       rules: {

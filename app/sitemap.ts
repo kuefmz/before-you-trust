@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { canonicalUrl, indexingEnabled } from "@/lib/seo";
+import { canonicalUrl } from "@/lib/seo";
 
 const INDEXABLE_PAGES = [
   { path: "/", changeFrequency: "weekly" as const, priority: 1 },
@@ -12,8 +12,6 @@ const INDEXABLE_PAGES = [
 ] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  if (!indexingEnabled()) return [];
-
   return INDEXABLE_PAGES.flatMap((page) => {
     const url = canonicalUrl(page.path);
     return url

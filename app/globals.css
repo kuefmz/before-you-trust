@@ -1088,6 +1088,24 @@ select:focus-visible {
   }
 }
 
+@media (max-width: 360px) {
+  .brand {
+    font-size: 0.88rem;
+    gap: 7px;
+  }
+
+  .brand svg {
+    height: 32px;
+    width: 32px;
+  }
+
+  .mobile-nav__support {
+    font-size: 0.76rem;
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

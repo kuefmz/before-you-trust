@@ -1000,108 +1000,119 @@ export function SearchExperience() {
           />
         </label>
 
-        <label className="field">
-          <span>Known website or profile URL</span>
-          <input
-            autoComplete="off"
-            maxLength={500}
-            onChange={(event) => update("profileUrl", event.target.value)}
-            placeholder="https://…"
-            type="url"
-            value={form.profileUrl}
-          />
-        </label>
+        <details className="search-advanced field--wide">
+          <summary>Add more information to improve the match</summary>
+          <div className="search-advanced__content">
+            <p className="search-advanced__hint">
+              Optional clues can help separate namesakes. Add only what you
+              already know.
+            </p>
+            <div className="search-advanced__grid">
+              <label className="field field--wide">
+                <span>Known website or profile URL</span>
+                <input
+                  autoComplete="off"
+                  maxLength={500}
+                  onChange={(event) => update("profileUrl", event.target.value)}
+                  placeholder="https://…"
+                  type="url"
+                  value={form.profileUrl}
+                />
+              </label>
 
-        <label className="field field--wide">
-          <span>Social profiles or handles</span>
-          <small>
-            Instagram, TikTok, Facebook, X, LinkedIn, YouTube or GitHub —
-            paste links or handles, separated by commas or new lines.
-          </small>
-          <textarea
-            maxLength={2500}
-            onChange={(event) => update("socialProfiles", event.target.value)}
-            placeholder={"@knownhandle\nhttps://instagram.com/knownprofile"}
-            rows={3}
-            value={form.socialProfiles}
-          />
-        </label>
+              <label className="field field--wide">
+                <span>Social profiles or handles</span>
+                <small>
+                  Instagram, TikTok, Facebook, X, LinkedIn, YouTube or GitHub —
+                  paste links or handles, separated by commas or new lines.
+                </small>
+                <textarea
+                  maxLength={2500}
+                  onChange={(event) => update("socialProfiles", event.target.value)}
+                  placeholder={"@knownhandle\nhttps://instagram.com/knownprofile"}
+                  rows={3}
+                  value={form.socialProfiles}
+                />
+              </label>
 
-        <label className="photo-upload field--wide">
-          <span>Photo (optional)</span>
-          <small>
-            JPG, PNG or WebP, up to 5 MB. We use it only for transient public-web
-            image matching; it is not stored by Before You Trust.
-          </small>
-          <input
-            accept="image/jpeg,image/png,image/webp"
-            aria-label="Photo of the person"
-            onChange={(event) => {
-              const nextPhoto = event.target.files?.[0] ?? null;
-              if (nextPhoto && nextPhoto.size > 5 * 1024 * 1024) {
-                setError("Photo must be 5 MB or smaller.");
-                event.target.value = "";
-                return;
-              }
-              if (photoPreview) URL.revokeObjectURL(photoPreview);
-              setPhoto(nextPhoto);
-              setPhotoPreview(nextPhoto ? URL.createObjectURL(nextPhoto) : null);
-              setPhotoWarning(null);
-            }}
-            type="file"
-          />
-          {photoPreview ? (
-            <div className="photo-preview">
-              <Image
-                alt="Selected person preview"
-                height={92}
-                src={photoPreview}
-                unoptimized
-                width={92}
-              />
-              <button
-                className="button button--ghost"
-                onClick={() => {
-                  URL.revokeObjectURL(photoPreview);
-                  setPhoto(null);
-                  setPhotoPreview(null);
-                }}
-                type="button"
-              >
-                Remove photo
-              </button>
+              <label className="photo-upload field--wide">
+                <span>Photo (optional)</span>
+                <small>
+                  JPG, PNG or WebP, up to 5 MB. We use it only for transient
+                  public-web image matching; it is not stored by Before You Trust.
+                </small>
+                <input
+                  accept="image/jpeg,image/png,image/webp"
+                  aria-label="Photo of the person"
+                  onChange={(event) => {
+                    const nextPhoto = event.target.files?.[0] ?? null;
+                    if (nextPhoto && nextPhoto.size > 5 * 1024 * 1024) {
+                      setError("Photo must be 5 MB or smaller.");
+                      event.target.value = "";
+                      return;
+                    }
+                    if (photoPreview) URL.revokeObjectURL(photoPreview);
+                    setPhoto(nextPhoto);
+                    setPhotoPreview(nextPhoto ? URL.createObjectURL(nextPhoto) : null);
+                    setPhotoWarning(null);
+                  }}
+                  type="file"
+                />
+                {photoPreview ? (
+                  <div className="photo-preview">
+                    <Image
+                      alt="Selected person preview"
+                      height={92}
+                      src={photoPreview}
+                      unoptimized
+                      width={92}
+                    />
+                    <button
+                      className="button button--ghost"
+                      onClick={() => {
+                        URL.revokeObjectURL(photoPreview);
+                        setPhoto(null);
+                        setPhotoPreview(null);
+                      }}
+                      type="button"
+                    >
+                      Remove photo
+                    </button>
+                  </div>
+                ) : null}
+              </label>
+
+              <label className="field">
+                <span>Context</span>
+                <select
+                  onChange={(event) =>
+                    update("context", event.target.value as SearchContext | "")
+                  }
+                  value={form.context}
+                >
+                  <option value="">Not specified</option>
+                  <option value="dating">Dating / personal</option>
+                  <option value="business">Business / investment</option>
+                  <option value="professional">Professional</option>
+                  <option value="community">Community / organization</option>
+                  <option value="online">Online identity</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+
+              <label className="field field--wide">
+                <span>Specific claim to check</span>
+                <textarea
+                  maxLength={300}
+                  onChange={(event) => update("claim", event.target.value)}
+                  placeholder="Optional: “They say they are the founder of…”"
+                  rows={3}
+                  value={form.claim}
+                />
+              </label>
             </div>
-          ) : null}
-        </label>
-
-        <label className="field">
-          <span>Context</span>
-          <select
-            onChange={(event) =>
-              update("context", event.target.value as SearchContext | "")
-            }
-            value={form.context}
-          >
-            <option value="">Not specified</option>
-            <option value="dating">Dating / personal</option>
-            <option value="business">Business / investment</option>
-            <option value="professional">Professional</option>
-            <option value="community">Community / organization</option>
-            <option value="online">Online identity</option>
-            <option value="other">Other</option>
-          </select>
-        </label>
-
-        <label className="field field--wide">
-          <span>Specific claim to check</span>
-          <textarea
-            maxLength={300}
-            onChange={(event) => update("claim", event.target.value)}
-            placeholder="Optional: “They say they are the founder of…”"
-            rows={3}
-            value={form.claim}
-          />
-        </label>
+          </div>
+        </details>
 
         <label className="responsible-use field--wide">
           <input

@@ -67,6 +67,9 @@ export default function RootLayout({
             <nav aria-label="Primary navigation" className="desktop-nav">
               <Link href="/how-it-works">How it works</Link>
               <Link href="/about">About</Link>
+              <Link className="nav-person-lookup" href="/#search">
+                Look up a person
+              </Link>
               <Link href="/check-company">Check a company</Link>
               <Link href="/share-your-story">Share your story</Link>
               {supportUrl ? <SupportLink href={supportUrl} /> : null}

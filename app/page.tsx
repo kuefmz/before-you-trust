@@ -53,6 +53,20 @@ export default function HomePage() {
               claims, and inspect original sources before making an important
               personal or business decision.
             </p>
+            <div className="hero-actions">
+              <a className="button button--primary" href="#search">
+                Start a free search →
+              </a>
+              <Link className="button button--outline-light" href="/how-it-works">
+                How it works
+              </Link>
+            </div>
+            <div className="hero-assurances" aria-label="Service highlights">
+              <span>Public sources only</span>
+              <span>No signup</span>
+              <span>You confirm the identity</span>
+              <span>Source-linked results</span>
+            </div>
           </div>
 
           <aside className="trust-preview" aria-label="Trust Brief preview">
@@ -77,7 +91,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <div className="shell search-shell">
+      <div className="shell search-shell" id="search">
         <SearchExperience />
       </div>
 

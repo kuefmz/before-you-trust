@@ -29,11 +29,12 @@ describe("crawl discovery routes", () => {
   it("keeps the sitemap populated even when indexing is disabled", () => {
     const entries = sitemap();
 
-    expect(entries).toHaveLength(6);
+    expect(entries).toHaveLength(7);
     expect(entries.map((entry) => entry.url)).toEqual([
       "https://beforeyoutrust.org/",
       "https://beforeyoutrust.org/how-it-works",
       "https://beforeyoutrust.org/about",
+      "https://beforeyoutrust.org/check-company",
       "https://beforeyoutrust.org/acceptable-use",
       "https://beforeyoutrust.org/privacy",
       "https://beforeyoutrust.org/terms",
@@ -45,7 +46,7 @@ describe("crawl discovery routes", () => {
 
     const entries = sitemap();
 
-    expect(entries).toHaveLength(6);
+    expect(entries).toHaveLength(7);
     expect(entries[0]?.url).toBe("https://beforeyoutrust.org/");
   });
 

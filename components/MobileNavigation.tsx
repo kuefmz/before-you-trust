@@ -50,17 +50,17 @@ export function MobileNavigation({ supportUrl }: { supportUrl?: string }) {
         id="mobile-primary-navigation"
       >
         <nav aria-label="Mobile primary navigation">
-          <Link href="/how-it-works" onClick={close}>
-            How it works
-          </Link>
-          <Link href="/about" onClick={close}>
-            About
-          </Link>
           <Link href="/#search" onClick={close}>
             Look up a person
           </Link>
           <Link href="/check-company" onClick={close}>
             Check a company
+          </Link>
+          <Link href="/how-it-works" onClick={close}>
+            How it works
+          </Link>
+          <Link href="/about" onClick={close}>
+            About
           </Link>
           <Link href="/share-your-story" onClick={close}>
             Share your story

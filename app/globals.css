@@ -1715,6 +1715,21 @@ select:focus-visible {
   padding: 18px;
 }
 
+.search-advanced--always-open {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.search-advanced--always-open .search-advanced__content {
+  padding: 0;
+}
+
+.search-advanced--always-open .search-advanced__hint {
+  margin-bottom: 18px;
+}
+
 .search-advanced__hint {
   color: var(--muted);
   font-size: 0.8rem;

@@ -76,7 +76,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: homepage-screenshot
-          path: homepage-desktop.png
+          path: homepage-*.png
           if-no-files-found: ignore
           retention-days: 7
 

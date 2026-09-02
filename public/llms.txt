@@ -10,6 +10,7 @@ Last reviewed: 2026-09-02
 - Home and search interface: https://beforeyoutrust.org/#search
 - How it works: https://beforeyoutrust.org/how-it-works
 - About: https://beforeyoutrust.org/about
+- Check a company or online shop: https://beforeyoutrust.org/check-company
 - Acceptable use: https://beforeyoutrust.org/acceptable-use
 - Privacy: https://beforeyoutrust.org/privacy
 - Terms: https://beforeyoutrust.org/terms
@@ -19,6 +20,7 @@ Last reviewed: 2026-09-02
 - Searches public web sources through the project's search stack.
 - Tries to separate namesakes and asks the user to confirm the intended identity before deeper research.
 - Organizes source-linked findings into a Trust Brief.
+- Can also research a company or online shop using its name and domain, with company-focused registry, review, news, complaint, scam, fraud, refund, and counterfeit queries.
 - Keeps allegations, complaints, search snippets, and established facts distinct.
 - Does not assign a person-level trustworthiness, danger, or safety score.
 - Does not guarantee completeness or accuracy.

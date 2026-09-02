@@ -10,7 +10,10 @@ test("homepage is usable on a phone-sized viewport", async ({ page }) => {
       name: "Verify someone online before trust gets expensive.",
     }),
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: /coffee/i })).toBeVisible();
+  await expect(page.locator(".mobile-nav__support")).toBeVisible();
+  await expect(page.locator(".mobile-nav__support")).toContainText(
+    "Buy me a coffee",
+  );
 
   const menuButton = page.getByRole("button", { name: "Open navigation menu" });
   await expect(menuButton).toBeVisible();

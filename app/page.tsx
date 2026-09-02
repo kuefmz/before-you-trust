@@ -135,6 +135,22 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="company-home-cta">
+        <div className="shell company-home-cta__inner">
+          <div>
+            <span className="eyebrow">Shopping online?</span>
+            <h2>Buying from a company you don&apos;t recognize?</h2>
+            <p>
+              Before sending money, check what public sources say about the
+              company or online shop behind the website.
+            </p>
+          </div>
+          <Link className="button button--ghost" href="/check-company">
+            Check a company →
+          </Link>
+        </div>
+      </section>
+
       <section className="community-cta">
         <div className="shell community-cta__inner">
           <div>

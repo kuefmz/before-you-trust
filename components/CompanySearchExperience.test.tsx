@@ -19,7 +19,7 @@ describe("CompanySearchExperience", () => {
       "Example Shop",
     );
     await user.type(
-      screen.getByLabelText("Website URL *"),
+      screen.getByLabelText(/Website URL/),
       "https://example-shop.test",
     );
     await user.click(
@@ -106,7 +106,7 @@ describe("CompanySearchExperience", () => {
       "Example Shop",
     );
     await user.type(
-      screen.getByLabelText("Website URL *"),
+      screen.getByLabelText(/Website URL/),
       "https://example-shop.test",
     );
     await user.type(

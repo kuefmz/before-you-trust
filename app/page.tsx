@@ -151,10 +151,7 @@ export default function HomePage() {
               Share your story
             </Link>
             {supportUrl ? (
-              <SupportLink
-                className="button button--outline-light"
-                href={supportUrl}
-              />
+              <SupportLink href={supportUrl} />
             ) : null}
           </div>
         </div>

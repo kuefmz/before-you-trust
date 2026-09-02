@@ -86,6 +86,8 @@ function buildCompanyIdentityQueries(input: SearchInput): SearchQuery[] {
 
   if (siteHost) {
     queries.push(
+      { text: quote(siteHost), kind: "identity" },
+      { text: `${name} ${quote(siteHost)}`, kind: "identity" },
       { text: `${name} site:${siteHost}`, kind: "identity" },
       { text: `${quote(siteHost)} reviews`, kind: "general" },
     );
@@ -118,8 +120,11 @@ function buildCompanyDeepQueries(input: SearchInput): SearchQuery[] {
 
   if (siteHost) {
     queries.push(
+      { text: quote(siteHost), kind: "identity" },
+      { text: `${name} ${quote(siteHost)}`, kind: "identity" },
       { text: `${name} site:${siteHost}`, kind: "identity" },
       { text: `${quote(siteHost)} reviews`, kind: "general" },
+      { text: `${quote(siteHost)} complaints`, kind: "concern" },
       { text: `${quote(siteHost)} scam`, kind: "concern" },
     );
   }

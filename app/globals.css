@@ -112,19 +112,6 @@ select:focus-visible {
   font-weight: 600;
 }
 
-.desktop-nav .nav-person-lookup {
-  background: var(--blue);
-  border-radius: 11px;
-  color: var(--white);
-  font-weight: 800;
-  padding: 9px 13px;
-}
-
-.desktop-nav .nav-person-lookup:hover,
-.desktop-nav .nav-person-lookup:focus-visible {
-  background: #1d4ed8;
-  color: var(--white);
-}
 
 .desktop-nav a:hover,
 .footer-links a:hover {
@@ -209,15 +196,6 @@ select:focus-visible {
   color: var(--white);
 }
 
-.mobile-nav__panel .mobile-nav__person-lookup {
-  background: var(--blue);
-  color: var(--white);
-}
-
-.mobile-nav__panel .mobile-nav__person-lookup:hover,
-.mobile-nav__panel .mobile-nav__person-lookup:focus-visible {
-  background: #1d4ed8;
-}
 
 .hero {
   background:

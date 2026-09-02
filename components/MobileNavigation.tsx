@@ -56,6 +56,9 @@ export function MobileNavigation({ supportUrl }: { supportUrl?: string }) {
           <Link href="/about" onClick={close}>
             About
           </Link>
+          <Link href="/check-company" onClick={close}>
+            Check a company
+          </Link>
           <Link href="/share-your-story" onClick={close}>
             Share your story
           </Link>

@@ -10,10 +10,6 @@ test("runs the complete lifecycle with the founder benchmark name", async ({
   await page.getByLabel("City or country").fill("Zurich, Switzerland");
   await page.getByLabel("Employer or organization").fill("UBS");
   await page
-    .locator("summary")
-    .filter({ hasText: "Add more information to improve the match" })
-    .click();
-  await page
     .getByLabel("Known website or profile URL")
     .fill("https://jeniferciuciukiss.com/");
   await page

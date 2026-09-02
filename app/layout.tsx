@@ -65,10 +65,10 @@ export default function RootLayout({
               <span>Before You Trust</span>
             </Link>
             <nav aria-label="Primary navigation" className="desktop-nav">
-              <Link href="/how-it-works">How it works</Link>
-              <Link href="/about">About</Link>
               <Link href="/#search">Look up a person</Link>
               <Link href="/check-company">Check a company</Link>
+              <Link href="/how-it-works">How it works</Link>
+              <Link href="/about">About</Link>
               <Link href="/share-your-story">Share your story</Link>
               {supportUrl ? <SupportLink href={supportUrl} /> : null}
             </nav>

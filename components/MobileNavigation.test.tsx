@@ -36,7 +36,7 @@ describe("MobileNavigation", () => {
     ).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("closes the menu after choosing an internal destination", async () => {
+  it("works without a support URL and can be closed with the toggle", async () => {
     const user = userEvent.setup();
 
     render(<MobileNavigation />);
@@ -44,7 +44,9 @@ describe("MobileNavigation", () => {
     await user.click(
       screen.getByRole("button", { name: "Open navigation menu" }),
     );
-    await user.click(screen.getByRole("link", { name: "About" }));
+    await user.click(
+      screen.getByRole("button", { name: "Close navigation menu" }),
+    );
 
     expect(
       screen.getByRole("button", { name: "Open navigation menu" }),

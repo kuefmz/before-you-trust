@@ -18,6 +18,33 @@ describe("validateSearchRequest", () => {
     }
   });
 
+  it("accepts company searches and preserves their subject type", () => {
+    const result = validateSearchRequest({
+      name: "Example Shop",
+      subjectType: "company",
+      profileUrl: "https://example-shop.test",
+      mode: "identity",
+      lawfulUseAccepted: true,
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.subjectType).toBe("company");
+      expect(result.data.name).toBe("Example Shop");
+    }
+  });
+
+  it("defaults existing searches to a person subject", () => {
+    const result = validateSearchRequest({
+      name: "Jane Unique-Surname",
+      mode: "identity",
+      lawfulUseAccepted: true,
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.subjectType).toBe("person");
+  });
+
   it("requires responsible-use confirmation", () => {
     const result = validateSearchRequest({
       name: "Jane Unique-Surname",

@@ -98,11 +98,13 @@ export default function HomePage() {
       <section className="principles">
         <div className="shell">
           <div className="section-heading">
-            <span className="eyebrow">Different by design</span>
-            <h2>No fake warnings. No blind trust score.</h2>
+            <span className="eyebrow">Public evidence, clearly sourced</span>
+            <h2>Built on public web findings, not assumptions.</h2>
             <p>
-              The product is built to make evidence easier to review, not to
-              decide whether a human being is “good” or “bad”.
+              Before You Trust helps you research someone&apos;s public online
+              footprint by organizing relevant findings from the open web and
+              linking back to original sources. You review the evidence and
+              decide what it means.
             </p>
           </div>
 
@@ -132,6 +134,22 @@ export default function HomePage() {
               </p>
             </article>
           </div>
+        </div>
+      </section>
+
+      <section className="company-home-cta">
+        <div className="shell company-home-cta__inner">
+          <div>
+            <span className="eyebrow">Shopping online?</span>
+            <h2>Buying from a company you don&apos;t recognize?</h2>
+            <p>
+              Before sending money, check what public sources say about the
+              company or online shop behind the website.
+            </p>
+          </div>
+          <Link className="button button--ghost" href="/check-company">
+            Check a company →
+          </Link>
         </div>
       </section>
 

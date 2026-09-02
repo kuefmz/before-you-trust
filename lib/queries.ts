@@ -72,7 +72,91 @@ function buildSocialQueries(input: SearchInput, name: string): SearchQuery[] {
   return unique(queries).slice(0, 10);
 }
 
+function buildCompanyIdentityQueries(input: SearchInput): SearchQuery[] {
+  const name = quote(input.name);
+  const queries: SearchQuery[] = [{ text: name, kind: "identity" }];
+  const siteHost = hostname(input.profileUrl);
+
+  if (input.location) {
+    queries.push({
+      text: `${name} ${quote(input.location)}`,
+      kind: "identity",
+    });
+  }
+
+  if (siteHost) {
+    queries.push(
+      { text: quote(siteHost), kind: "identity" },
+      { text: `${name} ${quote(siteHost)}`, kind: "identity" },
+      { text: `${name} site:${siteHost}`, kind: "identity" },
+      { text: `${quote(siteHost)} reviews`, kind: "general" },
+    );
+  }
+
+  queries.push(
+    { text: `${name} reviews`, kind: "general" },
+    { text: `${name} registry`, kind: "official" },
+    { text: `${name} company register`, kind: "official" },
+    { text: `${name} news`, kind: "news" },
+  );
+
+  return unique(queries).slice(0, 16);
+}
+
+function buildCompanyDeepQueries(input: SearchInput): SearchQuery[] {
+  const researchName = input.confirmedIdentity?.searchName?.trim() || input.name;
+  const name = quote(researchName);
+  const queries: SearchQuery[] = [{ text: name, kind: "identity" }];
+  const siteHost =
+    hostname(input.profileUrl) ||
+    input.confirmedIdentity?.urls.map((url) => hostname(url)).find(Boolean);
+
+  if (input.location) {
+    queries.push({
+      text: `${name} ${quote(input.location)}`,
+      kind: "identity",
+    });
+  }
+
+  if (siteHost) {
+    queries.push(
+      { text: quote(siteHost), kind: "identity" },
+      { text: `${name} ${quote(siteHost)}`, kind: "identity" },
+      { text: `${name} site:${siteHost}`, kind: "identity" },
+      { text: `${quote(siteHost)} reviews`, kind: "general" },
+      { text: `${quote(siteHost)} complaints`, kind: "concern" },
+      { text: `${quote(siteHost)} scam`, kind: "concern" },
+    );
+  }
+
+  if (input.claim) {
+    queries.push({
+      text: `${name} ${quote(input.claim)}`,
+      kind: "claim",
+    });
+  }
+
+  queries.push(
+    { text: `${name} reviews`, kind: "general" },
+    { text: `${name} registry`, kind: "official" },
+    { text: `${name} company register`, kind: "official" },
+    { text: `${name} regulator`, kind: "official" },
+    { text: `${name} news`, kind: "news" },
+    { text: `${name} complaints`, kind: "concern" },
+    { text: `${name} scam`, kind: "concern" },
+    { text: `${name} fraud`, kind: "concern" },
+    { text: `${name} refund`, kind: "concern" },
+    { text: `${name} counterfeit`, kind: "concern" },
+  );
+
+  return unique(queries).slice(0, 20);
+}
+
 export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
+  if (input.subjectType === "company") {
+    return buildCompanyIdentityQueries(input);
+  }
+
   const name = quote(input.name);
   const equivalentName = quote(exactNameSearchVariant(input.name));
   const queries: SearchQuery[] = [
@@ -123,6 +207,10 @@ export function buildIdentityQueries(input: SearchInput): SearchQuery[] {
 }
 
 export function buildDeepQueries(input: SearchInput): SearchQuery[] {
+  if (input.subjectType === "company") {
+    return buildCompanyDeepQueries(input);
+  }
+
   const researchName = input.confirmedIdentity?.searchName?.trim() || input.name;
   const name = quote(researchName);
   const equivalentName = quote(exactNameSearchVariant(researchName));

@@ -65,6 +65,8 @@ export default function RootLayout({
               <span>Before You Trust</span>
             </Link>
             <nav aria-label="Primary navigation" className="desktop-nav">
+              <Link href="/#search">Look up a person</Link>
+              <Link href="/check-company">Check a company</Link>
               <Link href="/how-it-works">How it works</Link>
               <Link href="/about">About</Link>
               <Link href="/share-your-story">Share your story</Link>
@@ -87,6 +89,7 @@ export default function RootLayout({
             </div>
             <div className="footer-links">
               <Link href="/about">About</Link>
+              <Link href="/check-company">Check a company</Link>
               <Link href="/share-your-story">Share your story</Link>
               <Link href="/privacy">Privacy</Link>
               <Link href="/terms">Terms</Link>

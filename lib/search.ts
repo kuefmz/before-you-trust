@@ -1,3 +1,4 @@
+import { rankCompanyResults } from "@/lib/company-relevance";
 import {
   containsExactFullName,
   urlPathContainsExactFullName,
@@ -199,9 +200,11 @@ export async function executeSearch(
     input.mode === "identity" ? 160 : 90,
   );
   const results =
-    input.mode === "identity"
-      ? rankIdentityResults(deduped, input.name).slice(0, 70)
-      : deduped.slice(0, 60);
+    input.subjectType === "company"
+      ? rankCompanyResults(deduped, input).slice(0, 40)
+      : input.mode === "identity"
+        ? rankIdentityResults(deduped, input.name).slice(0, 70)
+        : deduped.slice(0, 60);
 
   return {
     mode: input.mode,

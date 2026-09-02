@@ -106,6 +106,33 @@ describe("query generation", () => {
     ).toBe(true);
   });
 
+  it("builds company-focused due-diligence queries without changing the person flow", () => {
+    const company = buildDeepQueries({
+      name: "Example Shop",
+      subjectType: "company",
+      location: "Switzerland",
+      profileUrl: "https://example-shop.test",
+      claim: "Authorized reseller",
+      mode: "deep",
+      lawfulUseAccepted: true,
+      confirmedIdentity: {
+        label: "Example Shop",
+        searchName: "Example Shop",
+        confidence: "high",
+        supportingSignals: ["Website supplied by the user"],
+        urls: ["https://example-shop.test"],
+      },
+    });
+
+    expect(company.some((query) => query.text.includes('"Example Shop" reviews'))).toBe(true);
+    expect(company.some((query) => query.text.includes('"Example Shop" scam'))).toBe(true);
+    expect(company.some((query) => query.text.includes('"Example Shop" complaints'))).toBe(true);
+    expect(company.some((query) => query.text.includes('"example-shop.test" scam'))).toBe(true);
+    expect(company.some((query) => query.kind === "official")).toBe(true);
+    expect(company.some((query) => query.kind === "claim")).toBe(true);
+    expect(company.some((query) => query.text.includes("linkedin.com"))).toBe(false);
+  });
+
   it("deduplicates repeated query strings", () => {
     const queries = buildDeepQueries({
       ...base,

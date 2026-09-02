@@ -40,6 +40,11 @@ test("homepage is usable on a phone-sized viewport", async ({ page }) => {
 
   await expect(page.getByLabel("Known website or profile URL")).toBeVisible();
   await expect(page.getByLabel("Photo of the person")).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
 
   await page.screenshot({ path: "homepage-mobile.png", fullPage: true });
 });

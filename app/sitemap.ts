@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { canonicalUrl } from "@/lib/seo";
+import { configuredSiteUrl, PRODUCTION_SITE_URL } from "@/lib/seo";
 
 const INDEXABLE_PAGES = [
   { path: "/", changeFrequency: "weekly" as const, priority: 1 },
@@ -11,17 +11,16 @@ const INDEXABLE_PAGES = [
   { path: "/terms", changeFrequency: "monthly" as const, priority: 0.4 },
 ] as const;
 
+function sitemapUrl(path: string): string {
+  const base = configuredSiteUrl() ?? PRODUCTION_SITE_URL;
+  const normalized = path === "/" ? "/" : `/${path.replace(/^\/+|\/+$/g, "")}`;
+  return `${base}${normalized}`;
+}
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  return INDEXABLE_PAGES.flatMap((page) => {
-    const url = canonicalUrl(page.path);
-    return url
-      ? [
-          {
-            url,
-            changeFrequency: page.changeFrequency,
-            priority: page.priority,
-          },
-        ]
-      : [];
-  });
+  return INDEXABLE_PAGES.map((page) => ({
+    url: sitemapUrl(page.path),
+    changeFrequency: page.changeFrequency,
+    priority: page.priority,
+  }));
 }

@@ -1,4 +1,5 @@
 export type SearchMode = "identity" | "deep";
+export type SearchSubjectType = "person" | "company";
 
 export type SearchContext =
   | "dating"
@@ -37,6 +38,7 @@ export interface ConfirmedIdentity {
 
 export interface SearchInput {
   name: string;
+  subjectType?: SearchSubjectType;
   location?: string;
   company?: string;
   profileUrl?: string;

@@ -95,6 +95,13 @@ export default function RootLayout({
               <Link href="/terms">Terms</Link>
               <Link href="/acceptable-use">Acceptable use</Link>
               <a
+                href="https://websiteli.ch"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Built by Websiteli.ch
+              </a>
+              <a
                 aria-label="View the Before You Trust source code on GitHub"
                 className="source-code-link"
                 href="https://github.com/kuefmz/before-you-trust"

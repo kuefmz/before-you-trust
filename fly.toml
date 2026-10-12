@@ -1,4 +1,4 @@
-# Reuses the existing Kiss AI frontend Fly app; deployment is manual until approved.
+# Before You Trust API on the existing Fly backend app.
 app = "kiss-ai-backend"
 primary_region = "cdg"
 
@@ -8,7 +8,8 @@ primary_region = "cdg"
 [env]
   NODE_ENV = "production"
   PORT = "3000"
-  SEARCH_PROVIDER = "auto"
+  SEARCH_PROVIDER = "searxng"
+  SEARXNG_BASE_URL = "http://kiss-ai.internal:8080"
   YACY_RESOURCE = "global"
 
 [http_service]

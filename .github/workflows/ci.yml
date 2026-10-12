@@ -56,6 +56,13 @@ jobs:
       - name: Production build
         run: npm run build
 
+      - name: GitHub Pages static export
+        run: node scripts/build-pages.mjs
+        env:
+          NEXT_PUBLIC_API_BASE_URL: https://api.beforeyoutrust.org
+          NEXT_PUBLIC_SITE_URL: https://beforeyoutrust.org
+          NEXT_PUBLIC_ALLOW_INDEXING: "true"
+
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 

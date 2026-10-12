@@ -49,7 +49,7 @@ export function EmailReportForm({
     trackEvent("report_email_requested", { source_count: results.length });
 
     try {
-      const response = await fetch("/api/report-email", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ""}/api/report-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",

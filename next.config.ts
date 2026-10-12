@@ -16,6 +16,7 @@ const scriptSources = [
 
 const connectSources = [
   "'self'",
+  "https://api.beforeyoutrust.org",
   ...(analyticsEnabled
     ? ["https://www.google-analytics.com", "https://*.google-analytics.com"]
     : []),
@@ -67,10 +68,14 @@ if (!isDevelopment) {
   });
 }
 
+const pagesExport = process.env.PAGES_EXPORT === "true";
+
 const nextConfig: NextConfig = {
+  output: pagesExport ? "export" : "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
   async headers() {
+    if (pagesExport) return [];
     return [
       {
         source: "/(.*)",

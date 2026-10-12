@@ -1,0 +1,13 @@
+# Reuses kiss-ai for private SearXNG; no public HTTP service is exposed.
+app = "kiss-ai"
+primary_region = "cdg"
+
+[build]
+  dockerfile = "Dockerfile.search.fly"
+
+[env]
+  SEARXNG_BASE_URL = "http://kiss-ai.internal:8080/"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

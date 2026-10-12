@@ -1,5 +1,5 @@
 # Reuses the existing Kiss AI frontend Fly app; deployment is manual until approved.
-app = "kiss-ai"
+app = "kiss-ai-backend"
 primary_region = "cdg"
 
 [build]

@@ -77,7 +77,7 @@ async function parseApiResponse<T>(
 }
 
 async function callCompanySearch(body: SearchInput): Promise<SearchResponse> {
-  const response = await fetch("/api/search", {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ""}/api/search`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     cache: "no-store",

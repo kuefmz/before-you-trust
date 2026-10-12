@@ -115,7 +115,7 @@ async function parseApiResponse<T>(
 }
 
 async function callSearch(body: SearchInput): Promise<SearchResponse> {
-  const response = await fetch("/api/search", {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ""}/api/search`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     cache: "no-store",
@@ -140,7 +140,7 @@ function parseSocialProfiles(value: string): string[] | undefined {
 async function callImageSearch(photo: File): Promise<ImageSearchResponse> {
   const formData = new FormData();
   formData.append("photo", photo);
-  const response = await fetch("/api/image-search", {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ""}/api/image-search`, {
     method: "POST",
     cache: "no-store",
     body: formData,

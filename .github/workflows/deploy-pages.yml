@@ -1,6 +1,8 @@
 name: Deploy GitHub Pages
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
 
 permissions:
   contents: read
@@ -29,7 +31,7 @@ jobs:
         env:
           NEXT_PUBLIC_API_BASE_URL: https://api.beforeyoutrust.org
           NEXT_PUBLIC_SITE_URL: https://beforeyoutrust.org
-          NEXT_PUBLIC_ALLOW_INDEXING: "false"
+          NEXT_PUBLIC_ALLOW_INDEXING: "true"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
